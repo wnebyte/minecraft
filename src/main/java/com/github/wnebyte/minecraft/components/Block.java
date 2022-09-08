@@ -4,6 +4,9 @@ import java.util.Objects;
 import com.github.wnebyte.minecraft.core.Component;
 import com.github.wnebyte.minecraft.core.Transform;
 import com.github.wnebyte.minecraft.renderer.Sprite;
+import com.github.wnebyte.minecraft.renderer.Texture;
+import org.joml.Vector2f;
+import org.joml.Vector4f;
 
 // 8 x 8 cube
 // The 8 vertices will look like this:
@@ -18,31 +21,50 @@ import com.github.wnebyte.minecraft.renderer.Sprite;
 // v2 --------- v3
 public class Block extends Component {
 
-    private Transform transform;
+    public Transform transform;
 
-    private Sprite mesh;
-
-    private Sprite normal;
+    private Vector4f color;
 
     private boolean dirty;
 
+    private Texture texture;
+
+    private Vector2f[] texCoords = new Vector2f[] {
+            new Vector2f(1, 1), // TR
+            new Vector2f(1, 0), // BR
+            new Vector2f(0, 0), // BL
+            new Vector2f(0, 1)  // TL
+    };
+
     public Block() {
-        this(null, null, null);
+        this(null);
     }
 
     public Block(Transform transform) {
-        this(transform, null, null);
+        this(transform, null);
     }
 
-    public Block(Transform transform, Sprite mesh) {
-        this(transform, mesh, null);
+    public Block(Transform transform, Texture texture) {
+        this(transform, texture, new Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
     }
 
-    public Block(Transform transform, Sprite mesh, Sprite normal) {
+    public Block(Transform transform, Texture texture, Vector4f color) {
         this.transform = transform;
-        this.mesh = mesh;
-        this.normal = normal;
+        this.texture = texture;
+        this.color = color;
         this.dirty = true;
+    }
+
+    public Vector2f getTexCoords(int index) {
+        Vector2f[] uvx = new Vector2f[] {
+                texCoords[0], // TR
+                texCoords[3], // TL
+                texCoords[2], // BL
+                texCoords[1], // BR
+                texCoords[0], // TR
+                texCoords[2]  // BL
+        };
+        return uvx[index];
     }
 
     public Transform getTransform() {
@@ -54,20 +76,19 @@ public class Block extends Component {
         setDirty();
     }
 
-    public Sprite getMesh() {
-        return mesh;
+    public Vector4f getColor() {
+        return color;
     }
 
-    public void setMesh(Sprite mesh) {
-        this.mesh = mesh;
+    public void setColor(Vector4f color) {
+        if (!this.color.equals(color)) {
+            this.color.set(color);
+            setDirty();
+        }
     }
 
-    public Sprite getNormal() {
-        return normal;
-    }
-
-    public void setNormal(Sprite normal) {
-        this.normal = normal;
+    public Texture getTexture() {
+        return texture;
     }
 
     public boolean isDirty() {
@@ -89,8 +110,6 @@ public class Block extends Component {
         if (!(o instanceof Block)) return false;
         Block block = (Block) o;
         return Objects.equals(block.transform, this.transform) &&
-                Objects.equals(block.mesh, this.mesh) &&
-                Objects.equals(block.normal, this.normal) &&
                 Objects.equals(block.dirty, this.dirty) &&
                 super.equals(block);
     }
@@ -101,8 +120,6 @@ public class Block extends Component {
         return 2 *
                 result +
                 Objects.hashCode(this.transform) +
-                Objects.hashCode(this.mesh) +
-                Objects.hashCode(this.normal) +
                 Objects.hashCode(this.dirty) +
                 super.hashCode();
     }

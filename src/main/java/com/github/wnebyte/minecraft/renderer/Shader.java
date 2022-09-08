@@ -27,6 +27,10 @@ public class Shader {
 
     public static final String U_NORMAL_TEXTURE = "uNormalTexture";
 
+    public static final String U_LIGHT_POS = "uLightPos";
+
+    public static final String U_VIEW_POS = "uViewPos";
+
     private int id;
 
     private String path;

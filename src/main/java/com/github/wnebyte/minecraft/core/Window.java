@@ -6,10 +6,10 @@ import java.util.Random;
 
 import com.github.wnebyte.minecraft.renderer.Renderer;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.glfw.GLFWErrorCallback;
-import com.github.wnebyte.minecraft.renderer.Sprite;
 import com.github.wnebyte.minecraft.renderer.Texture;
 import com.github.wnebyte.minecraft.components.Block;
 import com.github.wnebyte.minecraft.util.Assets;
@@ -46,11 +46,13 @@ public class Window {
 
     private Camera camera;
 
-    private Vector3f lightingPos;
-
     private float dt = 0.0f;
 
     private float lastFrame = 0.0f;
+
+    private Block lightSource;
+
+    private Vector3f lightSourcePos;
 
     private Window() {
         this.title = "Window";
@@ -58,7 +60,7 @@ public class Window {
                 new Vector3f(0.0f, 0.0f, 3.0f),  // position
                 new Vector3f(0.0f, 0.0f, -1.0f), // front
                 new Vector3f(0.0f, 1.0f, 0.0f)); // up
-        this.lightingPos = new Vector3f(1.2f, 1.0f, 2.0f);
+        this.lightSourcePos = new Vector3f(1.2f, 1.0f, 2.0f);
     }
 
     public static Window get() {
@@ -140,22 +142,22 @@ public class Window {
 
     public void loop() {
         Renderer renderer = new Renderer(2, camera);
+        createLightSource();
 
         List<Texture> textures = Arrays.asList(
                 Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/bricks.png"),
                 Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/chiseled_quartz_block.png"),
                 Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/chiseled_sandstone.png"),
                 Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/chiseled_stone_bricks.png"));
-        Random rand = new Random();
-        Block block = new Block();
-        block.setMesh(new Sprite(textures.get(rand.nextInt(textures.size()))));
-        block.setTransform(new Transform(
+        Block block = new Block(new Transform(
                 new Vector3f(0.0f, 0.0f, 0.0f),
                 new Vector3f(1.0f, 1.0f, 1.0f),
                 0.0f
-        ));
-        renderer.start();
+        ), null, new Vector4f(1.0f, 0.5f, 0.31f, 1.0f));
+
+        renderer.addLs(lightSource);
         renderer.add(block);
+        renderer.start();
 
         while (!glfwWindowShouldClose(glfwWindow)) {
             float currentFrame = (float)glfwGetTime();
@@ -164,7 +166,8 @@ public class Window {
 
             processInput(glfwWindow);
 
-            glClearColor(39.0f / 255.0f, 40.0f / 255.0f, 34.0f / 255.0f, 1.0f);
+           // glClearColor(39.0f / 255.0f, 40.0f / 255.0f, 34.0f / 255.0f, 1.0f);
+            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             if (dt >= 0) {
@@ -176,6 +179,13 @@ public class Window {
         }
 
         renderer.destroy();
+    }
+
+    private void createLightSource() {
+        this.lightSource = new Block(new Transform(
+                new Vector3f(lightSourcePos),
+                new Vector3f(0.2f, 0.2f, 0.2f),
+                0.0f));
     }
 
     private void processInput(long window) {
@@ -202,6 +212,30 @@ public class Window {
         }
         if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_PRESS) {
             camera.resetZoom();
+        }
+        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+            float movementSpeed = 2.5f;
+            float velocity = movementSpeed * dt;
+            lightSource.transform.position.z += velocity;
+            lightSource.setDirty();
+        }
+        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+            float movementSpeed = 2.5f;
+            float velocity = movementSpeed * dt;
+            lightSource.transform.position.z -= velocity;
+            lightSource.setDirty();
+        }
+        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+            float movementSpeed = 2.5f;
+            float velocity = movementSpeed * dt;
+            lightSource.transform.position.x += velocity;
+            lightSource.setDirty();
+        }
+        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+            float movementSpeed = 2.5f;
+            float velocity = movementSpeed * dt;
+            lightSource.transform.position.x -= velocity;
+            lightSource.setDirty();
         }
     }
 
@@ -305,7 +339,7 @@ public class Window {
                         new Vector3f(x - 5, 0, z - 5),
                         new Vector3f(1.0f, 1.0f, 1.0f),
                         0.0f),
-                        new Sprite(textures.get(rand.nextInt(textures.size()))));
+                        textures.get(rand.nextInt(textures.size())));
                 renderer.add(block);
             }
         }

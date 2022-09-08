@@ -32,7 +32,7 @@ public class Camera {
 
     public static final float DEFAULT_MOVEMENT_SPEED    =  2.5f;
 
-    public static final float DEFAULT_MOUSE_SENSITIVITY =  0.1f;
+    public static final float DEFAULT_MOUSE_SENSITIVITY =  0.08f;
 
     public static final float DEFAULT_ZOOM              =  45.0f;
 
@@ -51,6 +51,8 @@ public class Camera {
     private Vector3f front;
 
     private Vector3f up;
+
+    private Vector3f worldUp;
 
     private Vector3f right;
 
@@ -102,7 +104,8 @@ public class Camera {
                   float zNear, float zFar) {
         this.position = position;
         this.front = front;
-        this.up = up;
+        this.up = new Vector3f();
+        this.worldUp = up;
         this.right = new Vector3f();
         this.yaw = yaw;
         this.pitch = pitch;
@@ -173,7 +176,7 @@ public class Camera {
     public void handleMouseMovement(float xOffset, float yOffset, boolean constrainPitch) {
         xOffset *= mouseSensitivity;
         yOffset *= mouseSensitivity;
-        yaw     += 2.0f * xOffset;
+        yaw     += 1.7f * xOffset;
         pitch   += 0.1f * yOffset;
 
         // make sure that when pitch is out of bounds, screen doesn't get flipped
@@ -212,7 +215,7 @@ public class Camera {
         f.normalize(front);
         // calculate the new right vector
         Vector3f r = new Vector3f(right);
-        front.cross(up, r);
+        front.cross(worldUp, r);
         r.normalize(right);
         // calculate the new up vector
         Vector3f u = new Vector3f(up);
@@ -234,5 +237,9 @@ public class Camera {
 
     public float getZoom() {
         return zoom;
+    }
+
+    public Vector3f getPosition() {
+        return position;
     }
 }
