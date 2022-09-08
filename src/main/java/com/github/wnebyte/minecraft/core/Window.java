@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.Arrays;
 import java.util.Random;
 
+import com.github.wnebyte.minecraft.renderer.Material;
 import com.github.wnebyte.minecraft.renderer.Renderer;
+import com.github.wnebyte.minecraft.util.BlockBuilder;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL;
@@ -52,15 +54,12 @@ public class Window {
 
     private Block lightSource;
 
-    private Vector3f lightSourcePos;
-
     private Window() {
         this.title = "Window";
         this.camera = new Camera(
                 new Vector3f(0.0f, 0.0f, 3.0f),  // position
                 new Vector3f(0.0f, 0.0f, -1.0f), // front
                 new Vector3f(0.0f, 1.0f, 0.0f)); // up
-        this.lightSourcePos = new Vector3f(1.2f, 1.0f, 2.0f);
     }
 
     public static Window get() {
@@ -141,20 +140,16 @@ public class Window {
     }
 
     public void loop() {
+        List<Texture> textures = getTextures();
+        this.lightSource = new BlockBuilder()
+                .setPosition(new Vector3f(1.2f, 1.0f, 2.0f))
+                .setScale(new Vector3f(0.2f, 0.2f, 0.2f))
+                .build();
+        Block block = new BlockBuilder()
+                .setMaterial(Material.CYAN_PLASTIC)
+                .build();
+
         Renderer renderer = new Renderer(2, camera);
-        createLightSource();
-
-        List<Texture> textures = Arrays.asList(
-                Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/bricks.png"),
-                Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/chiseled_quartz_block.png"),
-                Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/chiseled_sandstone.png"),
-                Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/chiseled_stone_bricks.png"));
-        Block block = new Block(new Transform(
-                new Vector3f(0.0f, 0.0f, 0.0f),
-                new Vector3f(1.0f, 1.0f, 1.0f),
-                0.0f
-        ), null, new Vector4f(1.0f, 0.5f, 0.31f, 1.0f));
-
         renderer.addLs(lightSource);
         renderer.add(block);
         renderer.start();
@@ -181,12 +176,7 @@ public class Window {
         renderer.destroy();
     }
 
-    private void createLightSource() {
-        this.lightSource = new Block(new Transform(
-                new Vector3f(lightSourcePos),
-                new Vector3f(0.2f, 0.2f, 0.2f),
-                0.0f));
-    }
+
 
     private void processInput(long window) {
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -237,6 +227,18 @@ public class Window {
             lightSource.transform.position.x -= velocity;
             lightSource.setDirty();
         }
+        if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS) {
+            float movementSpeed = 2.5f;
+            float velocity = movementSpeed * dt;
+            lightSource.transform.position.y += velocity;
+            lightSource.setDirty();
+        }
+        if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) {
+            float movementSpeed = 2.5f;
+            float velocity = movementSpeed * dt;
+            lightSource.transform.position.y -= velocity;
+            lightSource.setDirty();
+        }
     }
 
     private void framebufferSizeCallback(long window, int width, int height) {
@@ -258,11 +260,19 @@ public class Window {
         lastX = (float)xPos;
         lastY = (float)yPos;
 
-        camera.handleMouseMovement(xOffset, yOffset, false);
+        camera.handleMouseMovement(xOffset, yOffset, true);
     }
 
     private void scrollCallback(long window, double xOffset, double yOffset) {
         camera.handleMouseScroll((float)yOffset);
+    }
+
+    private List<Texture> getTextures() {
+        return Arrays.asList(
+                Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/bricks.png"),
+                Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/chiseled_quartz_block.png"),
+                Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/chiseled_sandstone.png"),
+                Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/chiseled_stone_bricks.png"));
     }
 
     /*

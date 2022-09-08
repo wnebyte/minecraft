@@ -5,11 +5,12 @@ import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
+import com.github.wnebyte.minecraft.components.Light;
 import org.joml.*;
 import org.lwjgl.BufferUtils;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
 import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.opengl.GL20.glUniform1iv;
 
 public class Shader {
 
@@ -27,9 +28,19 @@ public class Shader {
 
     public static final String U_NORMAL_TEXTURE = "uNormalTexture";
 
-    public static final String U_LIGHT_POS = "uLightPos";
-
     public static final String U_VIEW_POS = "uViewPos";
+
+    public static final String U_MATERIALS = "uMaterials";
+
+    public static final String U_LIGHT = "uLight";
+
+    public static final String U_LIGHT_POSITION = "uLight.position";
+
+    public static final String U_LIGHT_AMBIENT = "uLight.ambient";
+
+    public static final String U_LIGHT_DIFFUSE = "uLight.diffuse";
+
+    public static final String U_LIGHT_SPECULAR = "uLight.specular";
 
     private int id;
 
@@ -222,6 +233,26 @@ public class Shader {
         int varLocation = glGetUniformLocation(id, varName);
         use();
         glUniform1iv(varLocation, array);
+    }
+
+    public void uploadMaterialArray(String varName, Iterable<Material> iterable) {
+        use();
+        int i = 0;
+        for (Material material : iterable) {
+            uploadVec3f(varName + "[" + i + "].ambient",   material.getAmbient());
+            uploadVec3f(varName + "[" + i + "].diffuse",   material.getDiffuse());
+            uploadVec3f(varName + "[" + i + "].specular",  material.getSpecular());
+            uploadFloat(varName + "[" + i + "].shininess", material.getShininess());
+            i++;
+        }
+    }
+
+    public void uploadLight(String varName, Light light) {
+        use();
+        uploadVec3f(varName + ".position", light.getPosition());
+        uploadVec3f(varName + ".ambient", light.getAmbient());
+        uploadVec3f(varName + ".diffuse", light.getDiffuse());
+        uploadVec3f(varName + ".specular", light.getSpecular());
     }
 
     @Override

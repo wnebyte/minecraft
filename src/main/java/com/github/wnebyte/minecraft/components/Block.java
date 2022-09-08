@@ -1,12 +1,12 @@
 package com.github.wnebyte.minecraft.components;
 
 import java.util.Objects;
-import com.github.wnebyte.minecraft.core.Component;
-import com.github.wnebyte.minecraft.core.Transform;
-import com.github.wnebyte.minecraft.renderer.Sprite;
-import com.github.wnebyte.minecraft.renderer.Texture;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
+import com.github.wnebyte.minecraft.core.Component;
+import com.github.wnebyte.minecraft.core.Transform;
+import com.github.wnebyte.minecraft.renderer.Texture;
+import com.github.wnebyte.minecraft.renderer.Material;
 
 // 8 x 8 cube
 // The 8 vertices will look like this:
@@ -25,9 +25,11 @@ public class Block extends Component {
 
     private Vector4f color;
 
-    private boolean dirty;
-
     private Texture texture;
+
+    private Material material;
+
+    private boolean dirty;
 
     private Vector2f[] texCoords = new Vector2f[] {
             new Vector2f(1, 1), // TR
@@ -45,12 +47,17 @@ public class Block extends Component {
     }
 
     public Block(Transform transform, Texture texture) {
-        this(transform, texture, new Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
+        this(transform, texture, null);
     }
 
-    public Block(Transform transform, Texture texture, Vector4f color) {
+    public Block(Transform transform, Texture texture, Material material) {
+        this(transform, texture, material, new Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
+    }
+
+    public Block(Transform transform, Texture texture, Material material, Vector4f color) {
         this.transform = transform;
         this.texture = texture;
+        this.material = material;
         this.color = color;
         this.dirty = true;
     }
@@ -91,6 +98,20 @@ public class Block extends Component {
         return texture;
     }
 
+    public void setTexture(Texture texture) {
+        this.texture = texture;
+        setDirty();
+    }
+
+    public Material getMaterial() {
+        return material;
+    }
+
+    public void setMaterial(Material material) {
+        this.material = material;
+        setDirty();
+    }
+
     public boolean isDirty() {
         return dirty;
     }
@@ -110,6 +131,8 @@ public class Block extends Component {
         if (!(o instanceof Block)) return false;
         Block block = (Block) o;
         return Objects.equals(block.transform, this.transform) &&
+                Objects.equals(block.texture, this.texture) &&
+                Objects.equals(block.material, this.material) &&
                 Objects.equals(block.dirty, this.dirty) &&
                 super.equals(block);
     }
@@ -120,6 +143,8 @@ public class Block extends Component {
         return 2 *
                 result +
                 Objects.hashCode(this.transform) +
+                Objects.hashCode(this.texture) +
+                Objects.hashCode(this.material) +
                 Objects.hashCode(this.dirty) +
                 super.hashCode();
     }

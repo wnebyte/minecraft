@@ -4,12 +4,11 @@ import java.util.List;
 import java.util.ArrayList;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.core.Transform;
 import com.github.wnebyte.minecraft.components.Block;
 import com.github.wnebyte.minecraft.util.Assets;
-import org.joml.Vector4f;
-
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
@@ -18,10 +17,10 @@ import static org.lwjgl.opengl.GL30.*;
 public class Renderer {
 
     //                                                   VAO
-    // ================================================================================================================
-    // Pos                      Color                            Tex Coords         Tex Id       Normal              //
-    // float, float,float       float, float, float, float       float, float       float        float, float, float //
-    // ================================================================================================================
+    // ==============================================================================================================
+    // Pos                   Color                         Tex Coords      Tex Id    Mat Id    Normal              //
+    // float, float,float    float, float, float, float    float, float    float     float     float, float, float //
+    // ==============================================================================================================
 
     // The 8 vertices will look like this:
     //   v4 ----------- v5
@@ -117,6 +116,8 @@ public class Renderer {
 
     private static final int TEX_ID_SIZE = 1;
 
+    private static final int MAT_ID_SIZE = 1;
+
     private static final int NORMAL_SIZE = 3;
 
     private static final int POS_OFFSET = 0;
@@ -127,9 +128,11 @@ public class Renderer {
 
     private static final int TEX_ID_OFFSET = TEX_COORDS_OFFSET + (TEX_COORDS_SIZE * Float.BYTES);
 
-    private static final int NORMAL_OFFSET = TEX_ID_OFFSET + (TEX_ID_SIZE * Float.BYTES);
+    private static final int MAT_ID_OFFSET = TEX_ID_OFFSET + (TEX_ID_SIZE * Float.BYTES);
 
-    private static final int STRIDE = POS_SIZE + COLOR_SIZE + TEX_COORDS_SIZE + TEX_ID_SIZE + NORMAL_SIZE;
+    private static final int NORMAL_OFFSET = MAT_ID_OFFSET + (MAT_ID_SIZE * Float.BYTES);
+
+    private static final int STRIDE = POS_SIZE + COLOR_SIZE + TEX_COORDS_SIZE + TEX_ID_SIZE + MAT_ID_SIZE + NORMAL_SIZE;
 
     private static final int STRIDE_BYTES = STRIDE * Float.BYTES;
 
@@ -167,6 +170,8 @@ public class Renderer {
 
     private List<Texture> textures;
 
+    private List<Material> materials;
+
     private Texture normal;
 
     private Block lightSource;
@@ -181,7 +186,8 @@ public class Renderer {
         this.blocks = new Block[maxBatchSize];
         this.size = 0;
         this.hasSpace = true;
-        this.textures = new ArrayList<>(MAX_TEX_SLOTS);
+        this.textures = new ArrayList<>(7);
+        this.materials = new ArrayList<>(8);
         this.maxBatchSize = maxBatchSize;
         this.camera = camera;
         this.shader = Assets.getShader(
@@ -212,8 +218,11 @@ public class Renderer {
         glVertexAttribPointer(3, TEX_ID_SIZE, GL_FLOAT, false, STRIDE_BYTES, TEX_ID_OFFSET);
         glEnableVertexAttribArray(3);
 
-        glVertexAttribPointer(4, NORMAL_SIZE, GL_FLOAT, false, STRIDE_BYTES, NORMAL_OFFSET);
+        glVertexAttribPointer(4, MAT_ID_SIZE, GL_FLOAT, false, STRIDE_BYTES, MAT_ID_OFFSET);
         glEnableVertexAttribArray(4);
+
+        glVertexAttribPointer(5, NORMAL_SIZE, GL_FLOAT, false, STRIDE_BYTES, NORMAL_OFFSET);
+        glEnableVertexAttribArray(5);
 
         startLs();
     }
@@ -238,8 +247,11 @@ public class Renderer {
         glVertexAttribPointer(3, TEX_ID_SIZE, GL_FLOAT, false, STRIDE_BYTES, TEX_ID_OFFSET);
         glEnableVertexAttribArray(3);
 
-        glVertexAttribPointer(4, NORMAL_SIZE, GL_FLOAT, false, STRIDE_BYTES, NORMAL_OFFSET);
+        glVertexAttribPointer(4, MAT_ID_SIZE, GL_FLOAT, false, STRIDE_BYTES, MAT_ID_OFFSET);
         glEnableVertexAttribArray(4);
+
+        glVertexAttribPointer(5, NORMAL_SIZE, GL_FLOAT, false, STRIDE_BYTES, NORMAL_OFFSET);
+        glEnableVertexAttribArray(5);
     }
 
     public void destroy() {
@@ -253,7 +265,8 @@ public class Renderer {
         int index = size;
         blocks[index] = block;
         size++;
-        addTexture(block);
+        addTexture(block.getTexture());
+        addMaterial(block.getMaterial());
         loadVertexAttributes(index);
         if (size >= maxBatchSize) {
             hasSpace = false;
@@ -299,7 +312,14 @@ public class Renderer {
         shader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
         shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
         shader.uploadVec3f(Shader.U_VIEW_POS, camera.getPosition());
-        shader.uploadVec3f(Shader.U_LIGHT_POS, lightSource.transform.position);
+
+        shader.uploadVec3f(Shader.U_LIGHT_POSITION, lightSource.transform.position);
+        shader.uploadVec3f(Shader.U_LIGHT_AMBIENT, new Vector3f(0.2f, 0.2f, 0.2f));
+        shader.uploadVec3f(Shader.U_LIGHT_DIFFUSE, new Vector3f(0.5f, 0.5f, 0.5f));
+        shader.uploadVec3f(Shader.U_LIGHT_SPECULAR, new Vector3f(1.0f, 1.0f, 1.0f));
+
+        shader.uploadMaterialArray(Shader.U_MATERIALS, materials);
+
         int i = 0;
         for (Texture texture : textures) {
             glActiveTexture(GL_TEXTURE0 + (i + 1));
@@ -398,6 +418,7 @@ public class Renderer {
             Vector3f pos = vertexArray[j];
             Vector2f texCoords = block.getTexCoords(i % 6);
             int texId = (block.getTexture() == null) ? 0 : textures.indexOf(block.getTexture()) + 1;
+            int materialId = (block.getMaterial() == null) ? -1 : materials.indexOf(block.getMaterial());
             float[] normals       = NORMALS_2D[i / 6];
             vertices[offset]      = pos.x;
             vertices[offset + 1]  = pos.y;
@@ -409,9 +430,10 @@ public class Renderer {
             vertices[offset + 7]  = texCoords.x;
             vertices[offset + 8]  = texCoords.y;
             vertices[offset + 9]  = texId;
-            vertices[offset + 10] = normals[0];
-            vertices[offset + 11] = normals[1];
-            vertices[offset + 12] = normals[2];
+            vertices[offset + 10] = materialId;
+            vertices[offset + 11] = normals[0];
+            vertices[offset + 12] = normals[1];
+            vertices[offset + 13] = normals[2];
             offset += STRIDE;
         }
     }
@@ -426,6 +448,7 @@ public class Renderer {
             Vector3f pos = vertexArray[j];
             Vector2f texCoords = new Vector2f(0.0f, 0.0f);
             int texId = 0;
+            int materialId = -1;
             float[] normals         = NORMALS_2D[i / 6];
             verticesLs[offset]      = pos.x;
             verticesLs[offset + 1]  = pos.y;
@@ -437,9 +460,10 @@ public class Renderer {
             verticesLs[offset + 7]  = texCoords.x;
             verticesLs[offset + 8]  = texCoords.y;
             verticesLs[offset + 9]  = texId;
-            verticesLs[offset + 10] = normals[0];
-            verticesLs[offset + 11] = normals[1];
-            verticesLs[offset + 12] = normals[2];
+            verticesLs[offset + 10] = materialId;
+            verticesLs[offset + 11] = normals[0];
+            verticesLs[offset + 12] = normals[1];
+            verticesLs[offset + 13] = normals[2];
             offset += STRIDE;
         }
     }
@@ -458,17 +482,30 @@ public class Renderer {
     }
 
     public boolean hasTextureSpace() {
-        return (textures.size() < MAX_TEX_SLOTS);
+        return (textures.size() < 7);
     }
 
     public boolean hasTexture(Texture texture) {
         return textures.contains(texture);
     }
 
-    private void addTexture(Block block) {
-        Texture texture = block.getTexture();
+    private void addTexture(Texture texture) {
         if (texture != null && !hasTexture(texture)) {
             textures.add(texture);
+        }
+    }
+
+    public boolean hasMaterialSpace() {
+        return (materials.size() < 8);
+    }
+
+    public boolean hasMaterial(Material material) {
+        return materials.contains(material);
+    }
+
+    private void addMaterial(Material material) {
+        if (material != null && !hasMaterial(material)) {
+            materials.add(material);
         }
     }
 }
