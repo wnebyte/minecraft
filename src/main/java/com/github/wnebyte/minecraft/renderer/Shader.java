@@ -6,7 +6,9 @@ import java.nio.FloatBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import com.github.wnebyte.minecraft.components.Light;
+import com.github.wnebyte.minecraft.light.DirectionalCaster;
+import com.github.wnebyte.minecraft.light.Light;
+import com.github.wnebyte.minecraft.light.PointCaster;
 import org.joml.*;
 import org.lwjgl.BufferUtils;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
@@ -32,7 +34,13 @@ public class Shader {
 
     public static final String U_MATERIALS = "uMaterials";
 
+    public static final String U_DIFFUSE_MAPS = "uDiffuseMaps";
+
+    public static final String U_SPECULAR_MAPS = "uSpecularMaps";
+
     public static final String U_LIGHT = "uLight";
+
+    public static final String U_LIGHT_DIRECTION = "uLight.direction";
 
     public static final String U_LIGHT_POSITION = "uLight.position";
 
@@ -41,6 +49,16 @@ public class Shader {
     public static final String U_LIGHT_DIFFUSE = "uLight.diffuse";
 
     public static final String U_LIGHT_SPECULAR = "uLight.specular";
+
+    public static final String U_LIGHT_CONSTANT = "uLight.constant";
+
+    public static final String U_LIGHT_LINEAR = "uLight.linear";
+
+    public static final String U_LIGHT_QUADRATIC = "uLight.quadratic";
+
+    public static final String U_POINT_LIGHTS = "uPointLights";
+
+    public static final String U_DIR_LIGHT = "uDirLight";
 
     private int id;
 
@@ -235,24 +253,44 @@ public class Shader {
         glUniform1iv(varLocation, array);
     }
 
-    public void uploadMaterialArray(String varName, Iterable<Material> iterable) {
+    public void uploadFloatArray(String varName, float[] array) {
+        int varLocation = glGetUniformLocation(id, varName);
         use();
-        int i = 0;
-        for (Material material : iterable) {
-            uploadVec3f(varName + "[" + i + "].ambient",   material.getAmbient());
-            uploadVec3f(varName + "[" + i + "].diffuse",   material.getDiffuse());
-            uploadVec3f(varName + "[" + i + "].specular",  material.getSpecular());
-            uploadFloat(varName + "[" + i + "].shininess", material.getShininess());
-            i++;
+        glUniform1fv(varLocation, array);
+    }
+
+    public void uploadPointCasterArray(String varName, PointCaster[] array) {
+        int varLocation = glGetUniformLocation(id, varName);
+        use();
+        for (int i = 0; i < array.length; i++) {
+            PointCaster caster = array[i];
+            uploadVec3f(varName + "[" + i + "].position", caster.getPosition());
+            uploadFloat(varName + "[" + i + "].constant", caster.getConstant());
+            uploadFloat(varName + "[" + i + "].linear", caster.getLinear());
+            uploadFloat(varName + "[" + i + "].quadratic", caster.getQuadratic());
+            uploadVec3f(varName + "[" + i + "].ambient", caster.getLight().getAmbient());
+            uploadVec3f(varName + "[" + i + "].diffuse", caster.getLight().getDiffuse());
+            uploadVec3f(varName + "[" + i + "].specular", caster.getLight().getSpecular());
         }
     }
 
-    public void uploadLight(String varName, Light light) {
+    public void uploadDirectionalCaster(String varName, DirectionalCaster dirCaster) {
+        int varLocation = glGetUniformLocation(id, varName);
         use();
-        uploadVec3f(varName + ".position", light.getPosition());
-        uploadVec3f(varName + ".ambient", light.getAmbient());
-        uploadVec3f(varName + ".diffuse", light.getDiffuse());
-        uploadVec3f(varName + ".specular", light.getSpecular());
+        uploadVec3f(varName + ".direction", dirCaster.getDirection());
+        uploadVec3f(varName + ".ambient", dirCaster.getLight().getAmbient());
+        uploadVec3f(varName + ".diffuse", dirCaster.getLight().getDiffuse());
+        uploadVec3f(varName + ".specular", dirCaster.getLight().getSpecular());
+    }
+
+    public void uploadMaterialArray(String varName, Material[] array) {
+        use();
+        for (int i = 0; i < array.length; i++) {
+            Material material = array[i];
+            uploadVec3f(varName + "[" + i + "].diffuse", material.getDiffuseColor());
+            uploadVec3f(varName + "[" + i + "].specular", material.getSpecularColor());
+            uploadFloat(varName + "[" + i + "].shininess", 0.0f);
+        }
     }
 
     @Override

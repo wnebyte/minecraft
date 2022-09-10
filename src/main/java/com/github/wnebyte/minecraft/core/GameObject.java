@@ -12,6 +12,8 @@ public class GameObject {
 
     private static int ID_COUNTER = 0;
 
+    public Transform transform;
+
     private int id = -1;
 
     private String name;
@@ -20,6 +22,9 @@ public class GameObject {
 
     public GameObject(String name) {
         this.name = name;
+        if (id == -1) {
+            id = ID_COUNTER++;
+        }
         this.components = new ArrayList<>();
     }
 
@@ -44,39 +49,12 @@ public class GameObject {
         return null;
     }
 
-    public <T extends Component> List<T> getComponents(Class<T> componentClass) {
-        List<T> myComponents = new ArrayList<>();
-        for (Component c : components) {
-            if (componentClass.isAssignableFrom(c.getClass())) {
-                try {
-                    T myComponent = componentClass.cast(c);
-                    myComponents.add(myComponent);
-                } catch (ClassCastException e) {
-                    e.printStackTrace();
-                    assert false : String.format("Error: (GameObject) Casting Component: '%s'", c.getClass());
-                }
-            }
-        }
-
-        return myComponents;
-    }
-
     public <T extends Component> void removeComponent(Class<T> componentClass) {
         for (int i = 0; i < components.size(); i++) {
             Component c = components.get(i);
             if (componentClass.isAssignableFrom(c.getClass())) {
                 components.remove(i);
                 return;
-            }
-        }
-    }
-
-    public <T extends Component> void removeComponents(Class<T> componentClass) {
-        for (int i = 0; i < components.size(); i++) {
-            Component c = components.get(i);
-            if (componentClass.isAssignableFrom(c.getClass())) {
-                components.remove(i);
-                i--;
             }
         }
     }

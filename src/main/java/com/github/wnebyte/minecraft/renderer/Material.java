@@ -1,10 +1,15 @@
 package com.github.wnebyte.minecraft.renderer;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 public class Material {
 
+    /*
     public static final Material DEFAULT = new Material(
             new Vector3f(1.0f, 0.5f, 0.31f),
             new Vector3f(1.0f, 0.5f, 0.31f),
@@ -18,48 +23,68 @@ public class Material {
             new Vector3f(0.50196078f, 0.50196078f, 0.50196078f),
             32.0f
     );
+     */
 
-    private Vector3f ambient;
+    private static final Vector3f DEFAULT_DIFFUSE_COLOR =
+            new Vector3f(1.0f, 1.0f, 1.0f);
 
-    private Vector3f diffuse;
+    private static final Vector3f DEFAULT_SPECULAR_COLOR =
+            new Vector3f(1.0f, 1.f, 1.f);
 
-    private Vector3f specular;
+    private Texture diffuseMap;
+
+    private Texture specularMap;
+
+    private Vector3f diffuseColor;
+
+    private Vector3f specularColor;
 
     private float shininess;
 
-    public Material() {
-
-    }
-
-    public Material(Vector3f ambient, Vector3f diffuse, Vector3f specular, float shininess) {
-        this.ambient = ambient;
-        this.diffuse = diffuse;
-        this.specular = specular;
+    public Material(Texture diffuseMap, Texture specularMap, float shininess) {
+        this.diffuseMap = diffuseMap;
+        this.specularMap = specularMap;
+        this.diffuseColor = new Vector3f(DEFAULT_DIFFUSE_COLOR);
+        this.specularColor = new Vector3f(DEFAULT_SPECULAR_COLOR);
         this.shininess = shininess;
     }
 
-    public Vector3f getAmbient() {
-        return ambient;
+    public Material(Vector3f diffuseColor, Vector3f specularColor, float shininess) {
+        this.diffuseColor = diffuseColor;
+        this.specularColor = specularColor;
+        this.shininess = shininess;
     }
 
-    public void setAmbient(Vector3f ambient) {
-        this.ambient = ambient;
+    public Texture getDiffuseMap() {
+        return diffuseMap;
     }
 
-    public Vector3f getDiffuse() {
-        return diffuse;
+    public void setDiffuseMap(Texture diffuseMap) {
+        this.diffuseMap = diffuseMap;
     }
 
-    public void setDiffuse(Vector3f diffuse) {
-        this.diffuse = diffuse;
+    public Texture getSpecularMap() {
+        return specularMap;
     }
 
-    public Vector3f getSpecular() {
-        return specular;
+    public void setSpecularMap(Texture specularMap) {
+        this.specularMap = specularMap;
     }
 
-    public void setSpecular(Vector3f specular) {
-        this.specular = specular;
+    public Vector3f getDiffuseColor() {
+        return diffuseColor;
+    }
+
+    public void setDiffuseColor(Vector3f diffuseColor) {
+        this.diffuseColor = diffuseColor;
+    }
+
+    public Vector3f getSpecularColor() {
+        return specularColor;
+    }
+
+    public void setSpecularColor(Vector3f specularColor) {
+        this.specularColor = specularColor;
     }
 
     public float getShininess() {
@@ -70,15 +95,20 @@ public class Material {
         this.shininess = shininess;
     }
 
+    public List<Texture> getTextures() {
+        return Arrays.asList(diffuseMap, specularMap);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null) return false;
         if (o == this) return true;
         if (!(o instanceof Material)) return false;
         Material material = (Material) o;
-        return Objects.equals(material.ambient, this.ambient) &&
-                Objects.equals(material.diffuse, this.diffuse) &&
-                Objects.equals(material.specular, this.specular) &&
+        return Objects.equals(material.diffuseMap, this.diffuseMap) &&
+                Objects.equals(material.specularMap, this.specularMap) &&
+                Objects.equals(material.diffuseColor, this.diffuseColor) &&
+                Objects.equals(material.specularColor, this.specularColor) &&
                 Objects.equals(material.shininess, this.shininess);
     }
 
@@ -87,15 +117,10 @@ public class Material {
         int result = 85;
         return 2 *
                 result +
-                Objects.hashCode(this.ambient) +
-                Objects.hashCode(this.diffuse) +
-                Objects.hashCode(this.specular) +
+                Objects.hashCode(this.diffuseMap) +
+                Objects.hashCode(this.specularMap) +
+                Objects.hashCode(this.diffuseColor) +
+                Objects.hashCode(this.specularColor) +
                 Objects.hashCode(this.shininess);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("Material[ambient: %s, diffuse: %s, specular: %s shininess: %.2f]",
-                this.ambient, this.diffuse, this.specular, this.shininess);
     }
 }

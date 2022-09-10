@@ -1,10 +1,8 @@
 package com.github.wnebyte.minecraft.util;
 
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 import com.github.wnebyte.minecraft.core.Transform;
 import com.github.wnebyte.minecraft.components.Block;
-import com.github.wnebyte.minecraft.renderer.Texture;
 import com.github.wnebyte.minecraft.renderer.Material;
 
 public class BlockBuilder {
@@ -13,11 +11,7 @@ public class BlockBuilder {
 
     private Vector3f scale = new Vector3f(1.0f, 1.0f, 1.0f);
 
-    private Vector4f color = new Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
-
     private float rotation = 0.0f;
-
-    private Texture texture = null;
 
     private String texturePath = null;
 
@@ -40,25 +34,12 @@ public class BlockBuilder {
         return this;
     }
 
-    public BlockBuilder setTexture(Texture texture) {
-        this.texture = texture;
-        return this;
-    }
-
-    public BlockBuilder setTexturePath(String texturePath) {
-        this.texturePath = texturePath;
-        return this;
-    }
-
     public BlockBuilder setMaterial(Material material) {
         this.material = material;
         return this;
     }
 
     public Block build() {
-        if (texturePath != null) {
-            texture = Assets.getTexture(texturePath);
-        }
-        return new Block(new Transform(position, scale, rotation), texture, material, color);
+        return new Block(new Transform(position, scale, rotation), material);
     }
 }

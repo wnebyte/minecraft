@@ -1,12 +1,9 @@
-package com.github.wnebyte.minecraft.components;
+package com.github.wnebyte.minecraft.light;
 
 import java.util.Objects;
 import org.joml.Vector3f;
-import com.github.wnebyte.minecraft.core.Component;
 
-public class Light extends Component {
-
-    private Vector3f position;
+public class Light {
 
     private Vector3f ambient;
 
@@ -16,19 +13,10 @@ public class Light extends Component {
 
     public Light() {}
 
-    public Light(Vector3f position, Vector3f ambient, Vector3f diffuse, Vector3f specular) {
-        this.position = position;
+    public Light(Vector3f ambient, Vector3f diffuse, Vector3f specular) {
         this.ambient = ambient;
         this.diffuse = diffuse;
         this.specular = specular;
-    }
-
-    public Vector3f getPosition() {
-        return position;
-    }
-
-    public void setPosition(Vector3f position) {
-        this.position = position;
     }
 
     public Vector3f getAmbient() {
@@ -59,10 +47,9 @@ public class Light extends Component {
     public boolean equals(Object o) {
         if (o == null) return false;
         if (o == this) return true;
-        if (!(o instanceof Light)) return false;
+        if (!(o instanceof Caster)) return false;
         Light light = (Light) o;
-        return Objects.equals(light.position, this.position) &&
-                Objects.equals(light.ambient, this.ambient) &&
+        return Objects.equals(light.ambient, this.ambient) &&
                 Objects.equals(light.diffuse, this.diffuse) &&
                 Objects.equals(light.specular, this.specular);
     }
@@ -72,7 +59,6 @@ public class Light extends Component {
         int result = 4;
         return 3 *
                 result +
-                Objects.hashCode(this.position) +
                 Objects.hashCode(this.ambient) +
                 Objects.hashCode(this.diffuse) +
                 Objects.hashCode(this.specular);

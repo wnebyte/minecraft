@@ -4,7 +4,7 @@ import java.util.Objects;
 import org.joml.Vector3f;
 import org.joml.Matrix4f;
 
-public class Transform {
+public class Transform extends Component {
 
     /*
     ###########################
@@ -66,7 +66,7 @@ public class Transform {
         transform.rotation = this.rotation;
     }
 
-    public Matrix4f getTransformMatrix() {
+    public Matrix4f toMatrix() {
         Matrix4f transformMatrix = new Matrix4f().identity();
         transformMatrix.translate(position.x, position.y, position.z);
         transformMatrix.rotate((float)Math.toRadians(rotation), 0, 0, 1);

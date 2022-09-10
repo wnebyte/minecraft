@@ -2,17 +2,14 @@ package com.github.wnebyte.minecraft.core;
 
 import java.util.List;
 import java.util.Arrays;
-import java.util.Random;
 
-import com.github.wnebyte.minecraft.renderer.Material;
-import com.github.wnebyte.minecraft.renderer.Renderer;
+import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.util.BlockBuilder;
+import com.github.wnebyte.minecraft.util.MaterialBuilder;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.glfw.GLFWErrorCallback;
-import com.github.wnebyte.minecraft.renderer.Texture;
 import com.github.wnebyte.minecraft.components.Block;
 import com.github.wnebyte.minecraft.util.Assets;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
@@ -140,19 +137,26 @@ public class Window {
     }
 
     public void loop() {
+        Renderer renderer = new Renderer(camera);
+        Skybox skybox = new Skybox(camera);
         List<Texture> textures = getTextures();
-        this.lightSource = new BlockBuilder()
-                .setPosition(new Vector3f(1.2f, 1.0f, 2.0f))
-                .setScale(new Vector3f(0.2f, 0.2f, 0.2f))
-                .build();
-        Block block = new BlockBuilder()
-                .setMaterial(Material.CYAN_PLASTIC)
+        Material material = new MaterialBuilder()
+                .setDiffuseMapPath("c:/users/ralle/dev/java/minecraft/assets/images/container.png")
+                .setSpecularMapPath("c:/users/ralle/dev/java/minecraft/assets/images/container_specular.png")
+                .setShininess(32.0f)
                 .build();
 
-        Renderer renderer = new Renderer(2, camera);
-        renderer.addLs(lightSource);
-        renderer.add(block);
+        for (int i = 0; i < 8; i++) {
+            Block block = new BlockBuilder()
+                    .setPosition(new Vector3f(Renderer.POS_2D[i][0] * 5, Renderer.POS_2D[i][1] * 5, Renderer.POS_2D[i][2] * 5))
+                    .setRotation(20.0f * i)
+                    .setMaterial(material)
+                    .build();
+            renderer.add(block);
+        }
+
         renderer.start();
+        skybox.start();
 
         while (!glfwWindowShouldClose(glfwWindow)) {
             float currentFrame = (float)glfwGetTime();
@@ -161,22 +165,23 @@ public class Window {
 
             processInput(glfwWindow);
 
-           // glClearColor(39.0f / 255.0f, 40.0f / 255.0f, 34.0f / 255.0f, 1.0f);
+            // draw scene
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            renderer.render();
 
-            if (dt >= 0) {
-                renderer.render();
-            }
+            // draw skybox
+            glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
+            skybox.render();
+            glDepthFunc(GL_LESS); // reset depth function
 
             glfwSwapBuffers(glfwWindow);
             glfwPollEvents();
         }
 
         renderer.destroy();
+        skybox.destroy();
     }
-
-
 
     private void processInput(long window) {
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -203,6 +208,7 @@ public class Window {
         if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_PRESS) {
             camera.resetZoom();
         }
+        /*
         if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
             float movementSpeed = 2.5f;
             float velocity = movementSpeed * dt;
@@ -239,6 +245,7 @@ public class Window {
             lightSource.transform.position.y -= velocity;
             lightSource.setDirty();
         }
+         */
     }
 
     private void framebufferSizeCallback(long window, int width, int height) {
@@ -335,12 +342,9 @@ public class Window {
         glfwSetErrorCallback(null);
     }
 
+    /*
     private void createBlocks(Renderer renderer) {
-        List<Texture> textures = Arrays.asList(
-                Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/bricks.png"),
-                Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/chiseled_quartz_block.png"),
-                Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/chiseled_sandstone.png"),
-                Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/chiseled_stone_bricks.png"));
+        List<Texture> textures = getTextures();
         Random rand = new Random();
 
         for (int x = 0; x < 10; x++) {
@@ -354,6 +358,7 @@ public class Window {
             }
         }
     }
+     */
 
     public static int getWidth() {
         return Window.window.width;

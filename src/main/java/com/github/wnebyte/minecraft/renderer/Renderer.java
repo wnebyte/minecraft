@@ -2,13 +2,22 @@ package com.github.wnebyte.minecraft.renderer;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
+
+import com.github.wnebyte.minecraft.light.Caster;
+import com.github.wnebyte.minecraft.light.DirectionalCaster;
+import com.github.wnebyte.minecraft.light.Light;
+import com.github.wnebyte.minecraft.light.PointCaster;
+import com.github.wnebyte.minecraft.util.LightBuilder;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.joml.Matrix4f;
 import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.core.Transform;
 import com.github.wnebyte.minecraft.components.Block;
 import com.github.wnebyte.minecraft.util.Assets;
+import com.github.wnebyte.minecraft.util.Collections;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
@@ -44,7 +53,7 @@ public class Renderer {
      */
 
     // 8
-    private static final float[] POS = {
+    public static final float[] POS = {
             // 8 vertices per cube
             -0.5f,  0.5f,  0.5f,
              0.5f,  0.5f,  0.5f,
@@ -54,6 +63,17 @@ public class Renderer {
              0.5f,  0.5f, -0.5f,
             -0.5f, -0.5f, -0.5f,
              0.5f, -0.5f, -0.5f
+    };
+
+    public static final float[][] POS_2D = {
+            { -0.5f,  0.5f,  0.5f },
+            {  0.5f,  0.5f,  0.5f } ,
+            { -0.5f, -0.5f,  0.5f },
+            {  0.5f, -0.5f,  0.5f },
+            { -0.5f,  0.5f, -0.5f },
+            {  0.5f,  0.5f, -0.5f },
+            { -0.5f, -0.5f, -0.5f },
+            {  0.5f, -0.5f, -0.5f }
     };
 
     // 6 * 6 = 36
@@ -110,37 +130,27 @@ public class Renderer {
 
     private static final int POS_SIZE = 3;
 
-    private static final int COLOR_SIZE = 4;
+    private static final int MAT_ID_SIZE = 1;
 
     private static final int TEX_COORDS_SIZE = 2;
-
-    private static final int TEX_ID_SIZE = 1;
-
-    private static final int MAT_ID_SIZE = 1;
 
     private static final int NORMAL_SIZE = 3;
 
     private static final int POS_OFFSET = 0;
 
-    private static final int COLOR_OFFSET = POS_OFFSET + (POS_SIZE * Float.BYTES);
+    private static final int MAT_ID_OFFSET = POS_OFFSET + (POS_SIZE * Float.BYTES);
 
-    private static final int TEX_COORDS_OFFSET = COLOR_OFFSET + (COLOR_SIZE * Float.BYTES);
+    private static final int TEX_COORDS_OFFSET = MAT_ID_OFFSET + (MAT_ID_SIZE * Float.BYTES);
 
-    private static final int TEX_ID_OFFSET = TEX_COORDS_OFFSET + (TEX_COORDS_SIZE * Float.BYTES);
+    private static final int NORMAL_OFFSET = TEX_COORDS_OFFSET + (TEX_COORDS_SIZE * Float.BYTES);
 
-    private static final int MAT_ID_OFFSET = TEX_ID_OFFSET + (TEX_ID_SIZE * Float.BYTES);
-
-    private static final int NORMAL_OFFSET = MAT_ID_OFFSET + (MAT_ID_SIZE * Float.BYTES);
-
-    private static final int STRIDE = POS_SIZE + COLOR_SIZE + TEX_COORDS_SIZE + TEX_ID_SIZE + MAT_ID_SIZE + NORMAL_SIZE;
+    private static final int STRIDE = POS_SIZE + MAT_ID_SIZE + TEX_COORDS_SIZE + NORMAL_SIZE;
 
     private static final int STRIDE_BYTES = STRIDE * Float.BYTES;
 
     private static final int DEFAULT_MAX_BATCH_SIZE = 100;
 
     private static final int[] TEX_SLOTS = { 0, 1, 2, 3, 4, 5, 6, 7 };
-
-    private static final int MAX_TEX_SLOTS = TEX_SLOTS.length;
 
     private int vaoID;
 
@@ -152,13 +162,9 @@ public class Renderer {
 
     private Shader shader;
 
-    private Shader shaderLs;
-
     private Camera camera;
 
     public float[] vertices;
-
-    public float[] verticesLs;
 
     private Block[] blocks;
 
@@ -168,13 +174,31 @@ public class Renderer {
 
     private boolean hasSpace;
 
-    private List<Texture> textures;
-
     private List<Material> materials;
 
-    private Texture normal;
+    public static Light light = new LightBuilder()
+            .setAmbient(new Vector3f(0.2f, 0.2f, 0.2f))
+            .setDiffuse(new Vector3f(0.5f, 0.5f, 0.5f))
+            .setSpecular(new Vector3f(1.0f, 1.0f, 1.0f))
+            .build();
 
-    private Block lightSource;
+    public static List<PointCaster> pointCasters = new ArrayList<PointCaster>() {
+        { add(new PointCaster(new Vector3f(0.7f, 0.2f, 2.0f), light,
+                1.0f, 0.09f, 0.032f)); }
+        { add(new PointCaster(new Vector3f(2.3f, -3.3f, -4.0f), light,
+                1.0f, 0.09f, 0.032f)); }
+        { add(new PointCaster(new Vector3f(-4.0f, 2.0f, -12.0f), light,
+                1.0f, 0.09f, 0.032f)); }
+        { add(new PointCaster(new Vector3f(0.0f, 0.0f, -3.0f), light,
+                1.0f, 0.09f, 0.032f)); }
+    };
+
+    public static DirectionalCaster dirCaster = new DirectionalCaster(new Vector3f(-0.2f, -1.0f, -0.3f), light);
+
+    public static List<Caster> casters = new ArrayList<Caster>() {
+        { addAll(pointCasters); }
+        { add(dirCaster); }
+    };
 
     public Renderer(Camera camera) {
         this(DEFAULT_MAX_BATCH_SIZE, camera);
@@ -182,20 +206,13 @@ public class Renderer {
 
     public Renderer(int maxBatchSize, Camera camera) {
         this.vertices = new float[36 * STRIDE * maxBatchSize];
-        this.verticesLs = new float[36 * STRIDE];
         this.blocks = new Block[maxBatchSize];
         this.size = 0;
         this.hasSpace = true;
-        this.textures = new ArrayList<>(7);
         this.materials = new ArrayList<>(8);
         this.maxBatchSize = maxBatchSize;
         this.camera = camera;
-        this.shader = Assets.getShader(
-                "C:/users/ralle/dev/java/minecraft/assets/shaders/block.glsl");
-        this.shaderLs = Assets.getShader(
-                "C:/users/ralle/dev/java/minecraft/assets/shaders/lightsource.glsl");
-        this.normal = Assets.getTexture(
-                "C:/users/ralle/dev/java/minecraft/assets/images/normal.jpg");
+        this.shader = Assets.getShader("C:/users/ralle/dev/java/minecraft/assets/shaders/lit.glsl");
     }
 
     public void start() {
@@ -209,63 +226,20 @@ public class Renderer {
         glVertexAttribPointer(0, POS_SIZE, GL_FLOAT, false, STRIDE_BYTES, POS_OFFSET);
         glEnableVertexAttribArray(0);
 
-        glVertexAttribPointer(1, COLOR_SIZE, GL_FLOAT, false, STRIDE_BYTES, COLOR_OFFSET);
+        glVertexAttribPointer(1, MAT_ID_SIZE, GL_FLOAT, false, STRIDE_BYTES, MAT_ID_OFFSET);
         glEnableVertexAttribArray(1);
 
         glVertexAttribPointer(2, TEX_COORDS_SIZE, GL_FLOAT, false, STRIDE_BYTES, TEX_COORDS_OFFSET);
         glEnableVertexAttribArray(2);
 
-        glVertexAttribPointer(3, TEX_ID_SIZE, GL_FLOAT, false, STRIDE_BYTES, TEX_ID_OFFSET);
+        glVertexAttribPointer(3, NORMAL_SIZE, GL_FLOAT, false, STRIDE_BYTES, NORMAL_OFFSET);
         glEnableVertexAttribArray(3);
-
-        glVertexAttribPointer(4, MAT_ID_SIZE, GL_FLOAT, false, STRIDE_BYTES, MAT_ID_OFFSET);
-        glEnableVertexAttribArray(4);
-
-        glVertexAttribPointer(5, NORMAL_SIZE, GL_FLOAT, false, STRIDE_BYTES, NORMAL_OFFSET);
-        glEnableVertexAttribArray(5);
-
-        startLs();
-    }
-
-    private void startLs() {
-        vaoLsID = glGenVertexArrays();
-        glBindVertexArray(vaoLsID);
-
-        vboLsID = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, vboLsID);
-        glBufferData(GL_ARRAY_BUFFER, verticesLs, GL_STATIC_DRAW);
-
-        glVertexAttribPointer(0, POS_SIZE, GL_FLOAT, false, STRIDE_BYTES, POS_OFFSET);
-        glEnableVertexAttribArray(0);
-
-        glVertexAttribPointer(1, COLOR_SIZE, GL_FLOAT, false, STRIDE_BYTES, COLOR_OFFSET);
-        glEnableVertexAttribArray(1);
-
-        glVertexAttribPointer(2, TEX_COORDS_SIZE, GL_FLOAT, false, STRIDE_BYTES, TEX_COORDS_OFFSET);
-        glEnableVertexAttribArray(2);
-
-        glVertexAttribPointer(3, TEX_ID_SIZE, GL_FLOAT, false, STRIDE_BYTES, TEX_ID_OFFSET);
-        glEnableVertexAttribArray(3);
-
-        glVertexAttribPointer(4, MAT_ID_SIZE, GL_FLOAT, false, STRIDE_BYTES, MAT_ID_OFFSET);
-        glEnableVertexAttribArray(4);
-
-        glVertexAttribPointer(5, NORMAL_SIZE, GL_FLOAT, false, STRIDE_BYTES, NORMAL_OFFSET);
-        glEnableVertexAttribArray(5);
-    }
-
-    public void destroy() {
-        glDeleteBuffers(vboID);
-        glDeleteVertexArrays(vaoID);
-        glDeleteBuffers(vboLsID);
-        glDeleteVertexArrays(vaoLsID);
     }
 
     public void add(Block block) {
         int index = size;
         blocks[index] = block;
         size++;
-        addTexture(block.getTexture());
         addMaterial(block.getMaterial());
         loadVertexAttributes(index);
         if (size >= maxBatchSize) {
@@ -273,9 +247,19 @@ public class Renderer {
         }
     }
 
-    public void addLs(Block block) {
-        loadVertexAttributesLs(block);
-        this.lightSource = block;
+    public boolean destroy(Block block) {
+        for (int i = 0; i < size; i++) {
+            Block b = blocks[i];
+            if (b.equals(block)) {
+                for (int j = i; j < size - 1; j++) {
+                    blocks[j] = blocks[j + 1];
+                    blocks[j].setDirty();
+                }
+                size--;
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean rebuffer() {
@@ -291,17 +275,6 @@ public class Renderer {
         return rebuffer;
     }
 
-    public boolean rebufferLs() {
-        boolean rebuffer = false;
-        Block ls = lightSource;
-        if (ls.isDirty()) {
-            loadVertexAttributesLs(ls);
-            ls.setClean();
-            rebuffer = true;
-        }
-        return rebuffer;
-    }
-
     public void render() {
         if (rebuffer()) {
             glBindBuffer(GL_ARRAY_BUFFER, vboID);
@@ -312,158 +285,89 @@ public class Renderer {
         shader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
         shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
         shader.uploadVec3f(Shader.U_VIEW_POS, camera.getPosition());
-
-        shader.uploadVec3f(Shader.U_LIGHT_POSITION, lightSource.transform.position);
-        shader.uploadVec3f(Shader.U_LIGHT_AMBIENT, new Vector3f(0.2f, 0.2f, 0.2f));
-        shader.uploadVec3f(Shader.U_LIGHT_DIFFUSE, new Vector3f(0.5f, 0.5f, 0.5f));
-        shader.uploadVec3f(Shader.U_LIGHT_SPECULAR, new Vector3f(1.0f, 1.0f, 1.0f));
-
-        shader.uploadMaterialArray(Shader.U_MATERIALS, materials);
+        shader.uploadDirectionalCaster(Shader.U_DIR_LIGHT, dirCaster);
 
         int i = 0;
-        for (Texture texture : textures) {
-            glActiveTexture(GL_TEXTURE0 + (i + 1));
-            texture.bind();
-            i++;
+        for (Material material : materials) {
+            glActiveTexture(GL_TEXTURE0 + i);
+            material.getDiffuseMap().bind();
         }
-        shader.uploadIntArray(Shader.U_TEXTURES, TEX_SLOTS);
+        shader.uploadIntArray(Shader.U_DIFFUSE_MAPS, new int[]{ 0, 1, 2, 3, 4, 5, 6, 7 });
+
+        i = 0;
+        for (Material material : materials) {
+            glActiveTexture(GL_TEXTURE8 + i);
+            material.getSpecularMap().bind();
+        }
+        shader.uploadIntArray(Shader.U_SPECULAR_MAPS, new int[]{ 8, 9, 10, 11, 12, 13, 14, 15 });
 
         glBindVertexArray(vaoID);
         glDrawArrays(GL_TRIANGLES, 0, 36 * maxBatchSize);
 
-        for (Texture texture : textures) {
-            texture.unbind();
-        }
-        shader.detach();
-
-        renderLs();
-    }
-
-    private void renderLs() {
-        if (rebufferLs()) {
-            glBindBuffer(GL_ARRAY_BUFFER, vboLsID);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, verticesLs);
-        }
-
-        shaderLs.use();
-        shaderLs.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
-        shaderLs.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
-
-        glBindVertexArray(vaoLsID);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-
-        shaderLs.detach();
-    }
-
-    private Vector3f[] genVertexArray(Transform transform) {
-        Vector3f[] vec = new Vector3f[8];
-        vec[0] = new Vector3f(
-                transform.position.x + (-0.5f * transform.scale.x),
-                transform.position.y + ( 0.5f * transform.scale.y),
-                transform.position.z + ( 0.5f * transform.scale.z));
-        vec[1] = new Vector3f(
-                transform.position.x + (0.5f * transform.scale.x),
-                transform.position.y + (0.5f * transform.scale.y),
-                transform.position.z + (0.5f * transform.scale.z));
-        vec[2] = new Vector3f(
-                transform.position.x + (-0.5f * transform.scale.x),
-                transform.position.y + (-0.5f * transform.scale.y),
-                transform.position.z + ( 0.5f * transform.scale.z));
-        vec[3] = new Vector3f(
-                transform.position.x + ( 0.5f * transform.scale.x),
-                transform.position.y + (-0.5f * transform.scale.y),
-                transform.position.z + ( 0.5f * transform.scale.z));
-        vec[4] = new Vector3f(
-                transform.position.x + (-0.5f * transform.scale.x),
-                transform.position.y + ( 0.5f * transform.scale.y),
-                transform.position.z + (-0.5f * transform.scale.z));
-        vec[5] = new Vector3f(
-                transform.position.x + ( 0.5f * transform.scale.x),
-                transform.position.y + ( 0.5f * transform.scale.y),
-                transform.position.z + (-0.5f * transform.scale.z));
-        vec[6] = new Vector3f(
-                transform.position.x + (-0.5f * transform.scale.x),
-                transform.position.y + (-0.5f * transform.scale.y),
-                transform.position.z + (-0.5f * transform.scale.z));
-        vec[7] = new Vector3f(
-                transform.position.x + ( 0.5f * transform.scale.x),
-                transform.position.y + (-0.5f * transform.scale.y),
-                transform.position.z + (-0.5f * transform.scale.z));
-        return vec;
-    }
-
-    public boolean destroyIfExists(Block block) {
-        for (int i = 0; i < size; i++) {
-            Block b = blocks[i];
-            if (b.equals(block)) {
-                for (int j = i; j < size - 1; j++) {
-                    blocks[j] = blocks[j + 1];
-                    blocks[j].setDirty();
-                }
-                size--;
-                return true;
+        for (Material material : materials) {
+            for (Texture texture : material.getTextures()) {
+                texture.unbind();
             }
         }
-        return false;
+
+        glBindVertexArray(0);
+        shader.detach();
+    }
+
+    public void destroy() {
+        glDeleteBuffers(vboID);
+        glDeleteVertexArrays(vaoID);
+        glDeleteBuffers(vboLsID);
+        glDeleteVertexArrays(vaoLsID);
+    }
+
+    private Vector4f[] genVertexArray(Transform transform) {
+        Vector4f[] vec = new Vector4f[8];
+        Matrix4f transformMatrix = null;
+        boolean isRotated = (transform.rotation != 0.0f);
+        if (isRotated) {
+            transformMatrix = transform.toMatrix();
+        }
+
+        for (int i = 0; i < vec.length; i++) {
+            float xAdd = POS_2D[i][0];
+            float yAdd = POS_2D[i][1];
+            float zAdd = POS_2D[i][2];
+            Vector4f pos = new Vector4f(
+                    transform.position.x + (xAdd * transform.scale.x),
+                    transform.position.y + (yAdd * transform.scale.y),
+                    transform.position.z + (zAdd * transform.scale.z),
+                    1
+            );
+            if (isRotated) {
+                pos = new Vector4f(xAdd, yAdd, zAdd, 1.0f).mul(transformMatrix);
+            }
+            vec[i] = pos;
+        }
+
+        return vec;
     }
 
     public void loadVertexAttributes(int index) {
         Block block = blocks[index];
-        Vector4f color = block.getColor();
-        Vector3f[] vertexArray = genVertexArray(block.getTransform());
+        Vector4f[] vertexArray = genVertexArray(block.transform);
         int offset = index * 36 * STRIDE;
 
         for (int i = 0; i < Renderer.INDICES.length; i++) {
             int j = Renderer.INDICES[i];
-            Vector3f pos = vertexArray[j];
+            Vector4f pos = vertexArray[j];
             Vector2f texCoords = block.getTexCoords(i % 6);
-            int texId = (block.getTexture() == null) ? 0 : textures.indexOf(block.getTexture()) + 1;
             int materialId = (block.getMaterial() == null) ? -1 : materials.indexOf(block.getMaterial());
-            float[] normals       = NORMALS_2D[i / 6];
-            vertices[offset]      = pos.x;
-            vertices[offset + 1]  = pos.y;
-            vertices[offset + 2]  = pos.z;
-            vertices[offset + 3]  = color.x;
-            vertices[offset + 4]  = color.y;
-            vertices[offset + 5]  = color.z;
-            vertices[offset + 6]  = color.w;
-            vertices[offset + 7]  = texCoords.x;
-            vertices[offset + 8]  = texCoords.y;
-            vertices[offset + 9]  = texId;
-            vertices[offset + 10] = materialId;
-            vertices[offset + 11] = normals[0];
-            vertices[offset + 12] = normals[1];
-            vertices[offset + 13] = normals[2];
-            offset += STRIDE;
-        }
-    }
-
-    private void loadVertexAttributesLs(Block block) {
-        Vector4f color = block.getColor();
-        Vector3f[] vertexArray = genVertexArray(block.getTransform());
-        int offset = 0;
-
-        for (int i = 0; i < Renderer.INDICES.length; i++) {
-            int j = Renderer.INDICES[i];
-            Vector3f pos = vertexArray[j];
-            Vector2f texCoords = new Vector2f(0.0f, 0.0f);
-            int texId = 0;
-            int materialId = -1;
-            float[] normals         = NORMALS_2D[i / 6];
-            verticesLs[offset]      = pos.x;
-            verticesLs[offset + 1]  = pos.y;
-            verticesLs[offset + 2]  = pos.z;
-            verticesLs[offset + 3]  = color.x;
-            verticesLs[offset + 4]  = color.y;
-            verticesLs[offset + 5]  = color.z;
-            verticesLs[offset + 6]  = color.w;
-            verticesLs[offset + 7]  = texCoords.x;
-            verticesLs[offset + 8]  = texCoords.y;
-            verticesLs[offset + 9]  = texId;
-            verticesLs[offset + 10] = materialId;
-            verticesLs[offset + 11] = normals[0];
-            verticesLs[offset + 12] = normals[1];
-            verticesLs[offset + 13] = normals[2];
+            float[] normals = NORMALS_2D[i / 6];
+            vertices[offset]     = pos.x;
+            vertices[offset + 1] = pos.y;
+            vertices[offset + 2] = pos.z;
+            vertices[offset + 3] = materialId;
+            vertices[offset + 4] = texCoords.x;
+            vertices[offset + 5] = texCoords.y;
+            vertices[offset + 6] = normals[0];
+            vertices[offset + 7] = normals[1];
+            vertices[offset + 8] = normals[2];
             offset += STRIDE;
         }
     }
@@ -481,20 +385,6 @@ public class Renderer {
         return hasSpace;
     }
 
-    public boolean hasTextureSpace() {
-        return (textures.size() < 7);
-    }
-
-    public boolean hasTexture(Texture texture) {
-        return textures.contains(texture);
-    }
-
-    private void addTexture(Texture texture) {
-        if (texture != null && !hasTexture(texture)) {
-            textures.add(texture);
-        }
-    }
-
     public boolean hasMaterialSpace() {
         return (materials.size() < 8);
     }
@@ -507,5 +397,9 @@ public class Renderer {
         if (material != null && !hasMaterial(material)) {
             materials.add(material);
         }
+    }
+
+    public Block[] getBlocks() {
+        return blocks;
     }
 }

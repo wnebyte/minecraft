@@ -2,10 +2,8 @@ package com.github.wnebyte.minecraft.components;
 
 import java.util.Objects;
 import org.joml.Vector2f;
-import org.joml.Vector4f;
 import com.github.wnebyte.minecraft.core.Component;
 import com.github.wnebyte.minecraft.core.Transform;
-import com.github.wnebyte.minecraft.renderer.Texture;
 import com.github.wnebyte.minecraft.renderer.Material;
 
 // 8 x 8 cube
@@ -23,10 +21,6 @@ public class Block extends Component {
 
     public Transform transform;
 
-    private Vector4f color;
-
-    private Texture texture;
-
     private Material material;
 
     private boolean dirty;
@@ -38,27 +32,13 @@ public class Block extends Component {
             new Vector2f(0, 1)  // TL
     };
 
-    public Block() {
-        this(null);
-    }
-
     public Block(Transform transform) {
         this(transform, null);
     }
 
-    public Block(Transform transform, Texture texture) {
-        this(transform, texture, null);
-    }
-
-    public Block(Transform transform, Texture texture, Material material) {
-        this(transform, texture, material, new Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
-    }
-
-    public Block(Transform transform, Texture texture, Material material, Vector4f color) {
+    public Block(Transform transform, Material material) {
         this.transform = transform;
-        this.texture = texture;
         this.material = material;
-        this.color = color;
         this.dirty = true;
     }
 
@@ -72,35 +52,6 @@ public class Block extends Component {
                 texCoords[2]  // BL
         };
         return uvx[index];
-    }
-
-    public Transform getTransform() {
-        return transform;
-    }
-
-    public void setTransform(Transform transform) {
-        this.transform = transform;
-        setDirty();
-    }
-
-    public Vector4f getColor() {
-        return color;
-    }
-
-    public void setColor(Vector4f color) {
-        if (!this.color.equals(color)) {
-            this.color.set(color);
-            setDirty();
-        }
-    }
-
-    public Texture getTexture() {
-        return texture;
-    }
-
-    public void setTexture(Texture texture) {
-        this.texture = texture;
-        setDirty();
     }
 
     public Material getMaterial() {
@@ -131,7 +82,6 @@ public class Block extends Component {
         if (!(o instanceof Block)) return false;
         Block block = (Block) o;
         return Objects.equals(block.transform, this.transform) &&
-                Objects.equals(block.texture, this.texture) &&
                 Objects.equals(block.material, this.material) &&
                 Objects.equals(block.dirty, this.dirty) &&
                 super.equals(block);
@@ -143,7 +93,6 @@ public class Block extends Component {
         return 2 *
                 result +
                 Objects.hashCode(this.transform) +
-                Objects.hashCode(this.texture) +
                 Objects.hashCode(this.material) +
                 Objects.hashCode(this.dirty) +
                 super.hashCode();

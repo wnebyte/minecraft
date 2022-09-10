@@ -52,7 +52,6 @@ in vec3 fNormal;
 
 uniform sampler2D uTextures[8];
 uniform vec3 uViewPos;
-//uniform Material uMaterial;
 uniform Light uLight;
 uniform Material uMaterials[8];
 
