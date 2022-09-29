@@ -5,14 +5,21 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Collection;
+import com.github.wnebyte.minecraft.fonts.SFont;
 import com.github.wnebyte.minecraft.renderer.Shader;
 import com.github.wnebyte.minecraft.renderer.Texture;
 
 public class Assets {
 
+    public static final String DIR = "C:/users/ralle/dev/java/minecraft/assets";
+
     private static final Map<String, Shader> shaders = new HashMap<>();
 
     private static final Map<String, Texture> textures = new HashMap<>();
+
+    private static final Map<Integer, Texture> texturesById = new HashMap<>();
+
+    private static final Map<String, SFont> fonts = new HashMap<>();
 
     /**
      * Lazily initializes (if necessary) and returns the <code>Shader</code> located at
@@ -38,6 +45,10 @@ public class Assets {
      * the specified <code>path</code>.
      */
     public static Texture getTexture(String path) {
+        return getTexture(path, -1);
+    }
+
+    public static Texture getTexture(String path, int id) {
         File file = new File(path.toLowerCase(Locale.ROOT));
         assert file.exists() :
                 String.format("Error: (Assets) Texture: '%s' does not exist", file.getAbsolutePath());
@@ -46,9 +57,31 @@ public class Assets {
             return textures.get(file.getAbsolutePath());
         } else {
             Texture texture = new Texture(path, true);
-           // texture.init(file.getAbsolutePath());
+            // texture.init(file.getAbsolutePath());
             textures.put(file.getAbsolutePath(), texture);
+            if (id >= 0) {
+                texturesById.put(id, texture);
+            }
             return texture;
+        }
+    }
+
+    public static Texture getTexture(int id) {
+        return texturesById.get(id);
+    }
+
+    public static SFont getFont(String path, int fontSize) {
+        File file = new File(path.toLowerCase(Locale.ROOT));
+        assert file.exists() :
+                String.format("Error: (Assets) Font: '%s' does not exist", file.getAbsolutePath());
+
+        if (fonts.containsKey(file.getAbsolutePath())) {
+            return fonts.get(file.getAbsolutePath());
+        } else {
+            SFont font = new SFont(file.getAbsolutePath(), fontSize);
+            font.generateBitmap();
+            fonts.put(file.getAbsolutePath(), font);
+            return font;
         }
     }
 

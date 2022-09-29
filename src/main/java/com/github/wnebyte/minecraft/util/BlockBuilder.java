@@ -1,9 +1,9 @@
 package com.github.wnebyte.minecraft.util;
 
+import com.github.wnebyte.minecraft.renderer.Texture;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.core.Transform;
-import com.github.wnebyte.minecraft.components.Block;
-import com.github.wnebyte.minecraft.renderer.Material;
+import com.github.wnebyte.minecraft.mycomponents.MyBlock;
 
 public class BlockBuilder {
 
@@ -13,9 +13,9 @@ public class BlockBuilder {
 
     private float rotation = 0.0f;
 
-    private String texturePath = null;
+    private Texture side, top, bottom;
 
-    private Material material = null;
+    private String sidePath, topPath, bottomPath;
 
     public BlockBuilder() {}
 
@@ -34,12 +34,33 @@ public class BlockBuilder {
         return this;
     }
 
-    public BlockBuilder setMaterial(Material material) {
-        this.material = material;
+    public BlockBuilder setSideTexture(Texture side) {
+        this.side = side;
+        this.top = side;
+        this.bottom = side;
         return this;
     }
 
-    public Block build() {
-        return new Block(new Transform(position, scale, rotation), material);
+    public BlockBuilder setTopTexture(Texture top) {
+        this.top = top;
+        return this;
+    }
+
+    public BlockBuilder setBottomTexture(Texture bottom) {
+        this.bottom = bottom;
+        return this;
+    }
+
+    public MyBlock build() {
+        if (sidePath != null) {
+            side = Assets.getTexture(sidePath);
+        }
+        if (topPath != null) {
+            top = Assets.getTexture(topPath);
+        }
+        if (bottomPath != null) {
+            bottom = Assets.getTexture(bottomPath);
+        }
+        return new MyBlock(new Transform(position, scale, rotation), side, top, bottom);
     }
 }

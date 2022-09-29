@@ -1,17 +1,11 @@
 package com.github.wnebyte.minecraft.core;
 
-import java.util.List;
-import java.util.Arrays;
-
-import com.github.wnebyte.minecraft.renderer.*;
-import com.github.wnebyte.minecraft.util.BlockBuilder;
-import com.github.wnebyte.minecraft.util.MaterialBuilder;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.glfw.GLFWErrorCallback;
-import com.github.wnebyte.minecraft.components.Block;
-import com.github.wnebyte.minecraft.util.Assets;
+import com.github.wnebyte.minecraft.renderer.*;
+import com.github.wnebyte.minecraft.mycomponents.MyBlock;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -49,14 +43,21 @@ public class Window {
 
     private float lastFrame = 0.0f;
 
-    private Block lightSource;
+    private MyBlock lightSource;
+
+    private Scene scene;
 
     private Window() {
         this.title = "Window";
         this.camera = new Camera(
                 new Vector3f(0.0f, 0.0f, 3.0f),  // position
                 new Vector3f(0.0f, 0.0f, -1.0f), // front
-                new Vector3f(0.0f, 1.0f, 0.0f)); // up
+                new Vector3f(0.0f, 1.0f, 0.0f),  // up
+                Camera.DEFAULT_YAW,
+                Camera.DEFAULT_PITCH,
+                10f,
+                Camera.DEFAULT_MOUSE_SENSITIVITY,
+                Camera.DEFAULT_ZOOM);
     }
 
     public static Window get() {
@@ -108,8 +109,12 @@ public class Window {
         glfwMakeContextCurrent(glfwWindow);
 
        // glfwSetFramebufferSizeCallback(glfwWindow, this::framebufferSizeCallback);
-        glfwSetCursorPosCallback(glfwWindow, this::mouseCallback);
-        glfwSetScrollCallback(glfwWindow, this::scrollCallback);
+       // glfwSetCursorPosCallback(glfwWindow, this::mouseCallback);
+       // glfwSetScrollCallback(glfwWindow, this::scrollCallback);
+        glfwSetCursorPosCallback(glfwWindow, MouseListener::cursorPosCallback);
+        glfwSetMouseButtonCallback(glfwWindow, MouseListener::mouseButtonCallback);
+        glfwSetScrollCallback(glfwWindow, MouseListener::scrollCallback);
+        glfwSetKeyCallback(glfwWindow, KeyListener::keyCallback);
         glfwSetInputMode(glfwWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
         // Enable v-sync
@@ -134,29 +139,12 @@ public class Window {
        // glEnable(GL_CULL_FACE);
 
         glViewport(0, 0, width, height);
+
+        this.scene = new Scene(camera);
     }
 
     public void loop() {
-        Renderer renderer = new Renderer(camera);
-        Skybox skybox = new Skybox(camera);
-        List<Texture> textures = getTextures();
-        Material material = new MaterialBuilder()
-                .setDiffuseMapPath("c:/users/ralle/dev/java/minecraft/assets/images/container.png")
-                .setSpecularMapPath("c:/users/ralle/dev/java/minecraft/assets/images/container_specular.png")
-                .setShininess(32.0f)
-                .build();
-
-        for (int i = 0; i < 8; i++) {
-            Block block = new BlockBuilder()
-                    .setPosition(new Vector3f(Renderer.POS_2D[i][0] * 5, Renderer.POS_2D[i][1] * 5, Renderer.POS_2D[i][2] * 5))
-                    .setRotation(20.0f * i)
-                    .setMaterial(material)
-                    .build();
-            renderer.add(block);
-        }
-
-        renderer.start();
-        skybox.start();
+        scene.start();
 
         while (!glfwWindowShouldClose(glfwWindow)) {
             float currentFrame = (float)glfwGetTime();
@@ -168,19 +156,19 @@ public class Window {
             // draw scene
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            renderer.render();
+            scene.update(dt);
+            scene.render();
 
             // draw skybox
-            glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
-            skybox.render();
-            glDepthFunc(GL_LESS); // reset depth function
+           // glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
+           // skybox.render();
+           // glDepthFunc(GL_LESS); // reset depth function
 
             glfwSwapBuffers(glfwWindow);
             glfwPollEvents();
         }
 
-        renderer.destroy();
-        skybox.destroy();
+        scene.destroy();
     }
 
     private void processInput(long window) {
@@ -208,44 +196,6 @@ public class Window {
         if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_PRESS) {
             camera.resetZoom();
         }
-        /*
-        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-            float movementSpeed = 2.5f;
-            float velocity = movementSpeed * dt;
-            lightSource.transform.position.z += velocity;
-            lightSource.setDirty();
-        }
-        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-            float movementSpeed = 2.5f;
-            float velocity = movementSpeed * dt;
-            lightSource.transform.position.z -= velocity;
-            lightSource.setDirty();
-        }
-        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-            float movementSpeed = 2.5f;
-            float velocity = movementSpeed * dt;
-            lightSource.transform.position.x += velocity;
-            lightSource.setDirty();
-        }
-        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-            float movementSpeed = 2.5f;
-            float velocity = movementSpeed * dt;
-            lightSource.transform.position.x -= velocity;
-            lightSource.setDirty();
-        }
-        if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS) {
-            float movementSpeed = 2.5f;
-            float velocity = movementSpeed * dt;
-            lightSource.transform.position.y += velocity;
-            lightSource.setDirty();
-        }
-        if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) {
-            float movementSpeed = 2.5f;
-            float velocity = movementSpeed * dt;
-            lightSource.transform.position.y -= velocity;
-            lightSource.setDirty();
-        }
-         */
     }
 
     private void framebufferSizeCallback(long window, int width, int height) {
@@ -274,64 +224,6 @@ public class Window {
         camera.handleMouseScroll((float)yOffset);
     }
 
-    private List<Texture> getTextures() {
-        return Arrays.asList(
-                Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/bricks.png"),
-                Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/chiseled_quartz_block.png"),
-                Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/chiseled_sandstone.png"),
-                Assets.getTexture("C:/users/ralle/dev/java/minecraft/assets/images/chiseled_stone_bricks.png"));
-    }
-
-    /*
-    public void loop() {
-        float beginTime = (float)glfwGetTime();
-        float endTime;
-        float dt = -1.0f;
-
-        Vector3f position = new Vector3f(0.0f, 0.0f, 0.0f);
-        float aspect = (float)(width / height);
-        float fov = 70.0f;
-        float zNear = 0.1f;
-        float zFar = 10_000.0f;
-        MyCamera camera = new MyCamera(position, fov, aspect, zNear, zFar);
-
-        Renderer renderer = new Renderer(100, null);
-        renderer.start();
-        createBlocks(renderer);
-
-        Vector3f center = new Vector3f(0.0f, 0.0f, 0.0f);
-        Vector3f up = new Vector3f(0.0f, 1.0f, 0.0f);
-        float eyeRotation = 45.0f;
-
-        while (!glfwWindowShouldClose(glfwWindow)) {
-            glfwPollEvents();
-            glClearColor(39.0f/255.0f, 40.0f/255.0f, 34.0f/255.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            if (dt >= 0) {
-                if (isKeyPressed(GLFW_KEY_SPACE)) {
-                    eyeRotation += 30.0f * dt;
-                }
-                Vector3f eye =
-                        new Vector3f(
-                                (float)Math.sin(Math.toRadians(eyeRotation)) * 7.0f,
-                                5.0f,
-                                (float)Math.cos(Math.toRadians(eyeRotation)) * 7.0f);
-                camera.lookAt(eye, center, up);
-                renderer.render();
-            }
-
-            glfwSwapBuffers(glfwWindow);
-            KeyListener.endFrame();
-            endTime = (float)glfwGetTime();
-            dt = endTime - beginTime;
-            beginTime = endTime;
-        }
-
-        renderer.destroy();
-    }
-     */
-
     public void destroy() {
         // Free the allocated memory
         glfwFreeCallbacks(glfwWindow);
@@ -342,30 +234,16 @@ public class Window {
         glfwSetErrorCallback(null);
     }
 
-    /*
-    private void createBlocks(Renderer renderer) {
-        List<Texture> textures = getTextures();
-        Random rand = new Random();
-
-        for (int x = 0; x < 10; x++) {
-            for (int z = 0; z < 10; z++) {
-                Block block = new Block(new Transform(
-                        new Vector3f(x - 5, 0, z - 5),
-                        new Vector3f(1.0f, 1.0f, 1.0f),
-                        0.0f),
-                        textures.get(rand.nextInt(textures.size())));
-                renderer.add(block);
-            }
-        }
-    }
-     */
-
     public static int getWidth() {
         return Window.window.width;
     }
 
     public static int getHeight() {
         return Window.window.height;
+    }
+
+    public static Scene getScene() {
+        return Window.window.scene;
     }
 
     public static Resolution getResolution(long monitor) {

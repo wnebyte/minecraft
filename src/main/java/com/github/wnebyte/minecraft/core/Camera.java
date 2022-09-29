@@ -1,5 +1,6 @@
 package com.github.wnebyte.minecraft.core;
 
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Matrix4f;
 
@@ -39,6 +40,10 @@ public class Camera {
     public static final float DEFAULT_Z_NEAR            =  0.1f;
 
     public static final float DEFAULT_Z_FAR             =  100.0f;
+
+    public static final float DEFAULT_PROJECTION_WIDTH = 6;
+
+    public static final float DEFAULT_PROJECTION_HEIGHT = 3;
 
     /*
     ###########################
@@ -201,8 +206,8 @@ public class Camera {
         if (zoom < 1.0f) {
             zoom = 1.0f;
         }
-        if (zoom > 45.0f) {
-            zoom = 45.0f;
+        if (zoom > 90.0f) {
+            zoom = 90.0f;
         }
     }
 
@@ -223,6 +228,14 @@ public class Camera {
         u.normalize(up);
     }
 
+    public Matrix4f getInverseProjection() {
+        return inverseProjection;
+    }
+
+    public Matrix4f getInverseView() {
+        return inverseView;
+    }
+
     public void setZoom(float value) {
         this.zoom = value;
     }
@@ -241,5 +254,21 @@ public class Camera {
 
     public Vector3f getPosition() {
         return position;
+    }
+
+    public void setPosition(Vector3f position) {
+        this.position.set(position);
+    }
+
+    public Vector3f getFront() {
+        return front;
+    }
+
+    public float getZNear() {
+        return zNear;
+    }
+
+    public float getZFar() {
+        return zFar;
     }
 }

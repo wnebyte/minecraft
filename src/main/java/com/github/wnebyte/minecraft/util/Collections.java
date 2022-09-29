@@ -15,4 +15,14 @@ public class Collections {
 
         return array;
     }
+
+    public static <E> int intersection(Collection<E> c1, Collection<E> c2) {
+        int count = 0;
+        for (E element : c1) {
+            if (c2.contains(element)) {
+                count++;
+            }
+        }
+        return count;
+    }
 }

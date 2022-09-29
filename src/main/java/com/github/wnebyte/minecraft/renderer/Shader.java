@@ -30,6 +30,8 @@ public class Shader {
 
     public static final String U_NORMAL_TEXTURE = "uNormalTexture";
 
+    public static final String U_FONT_TEXTURE = "uFontTexture";
+
     public static final String U_VIEW_POS = "uViewPos";
 
     public static final String U_MATERIALS = "uMaterials";
@@ -281,16 +283,6 @@ public class Shader {
         uploadVec3f(varName + ".ambient", dirCaster.getLight().getAmbient());
         uploadVec3f(varName + ".diffuse", dirCaster.getLight().getDiffuse());
         uploadVec3f(varName + ".specular", dirCaster.getLight().getSpecular());
-    }
-
-    public void uploadMaterialArray(String varName, Material[] array) {
-        use();
-        for (int i = 0; i < array.length; i++) {
-            Material material = array[i];
-            uploadVec3f(varName + "[" + i + "].diffuse", material.getDiffuseColor());
-            uploadVec3f(varName + "[" + i + "].specular", material.getSpecularColor());
-            uploadFloat(varName + "[" + i + "].shininess", 0.0f);
-        }
     }
 
     @Override

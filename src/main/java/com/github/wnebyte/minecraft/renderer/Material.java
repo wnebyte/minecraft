@@ -4,9 +4,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import org.joml.Vector3f;
-import org.joml.Vector4f;
-
 public class Material {
 
     /*
@@ -25,66 +22,32 @@ public class Material {
     );
      */
 
-    private static final Vector3f DEFAULT_DIFFUSE_COLOR =
-            new Vector3f(1.0f, 1.0f, 1.0f);
+    private Texture diffuse;
 
-    private static final Vector3f DEFAULT_SPECULAR_COLOR =
-            new Vector3f(1.0f, 1.f, 1.f);
-
-    private Texture diffuseMap;
-
-    private Texture specularMap;
-
-    private Vector3f diffuseColor;
-
-    private Vector3f specularColor;
+    private Texture specular;
 
     private float shininess;
 
-    public Material(Texture diffuseMap, Texture specularMap, float shininess) {
-        this.diffuseMap = diffuseMap;
-        this.specularMap = specularMap;
-        this.diffuseColor = new Vector3f(DEFAULT_DIFFUSE_COLOR);
-        this.specularColor = new Vector3f(DEFAULT_SPECULAR_COLOR);
+    public Material(Texture diffuse, Texture specular, float shininess) {
+        this.diffuse = diffuse;
+        this.specular = specular;
         this.shininess = shininess;
     }
 
-    public Material(Vector3f diffuseColor, Vector3f specularColor, float shininess) {
-        this.diffuseColor = diffuseColor;
-        this.specularColor = specularColor;
-        this.shininess = shininess;
+    public Texture getDiffuse() {
+        return diffuse;
     }
 
-    public Texture getDiffuseMap() {
-        return diffuseMap;
+    public void setDiffuse(Texture diffuse) {
+        this.diffuse = diffuse;
     }
 
-    public void setDiffuseMap(Texture diffuseMap) {
-        this.diffuseMap = diffuseMap;
+    public Texture getSpecular() {
+        return specular;
     }
 
-    public Texture getSpecularMap() {
-        return specularMap;
-    }
-
-    public void setSpecularMap(Texture specularMap) {
-        this.specularMap = specularMap;
-    }
-
-    public Vector3f getDiffuseColor() {
-        return diffuseColor;
-    }
-
-    public void setDiffuseColor(Vector3f diffuseColor) {
-        this.diffuseColor = diffuseColor;
-    }
-
-    public Vector3f getSpecularColor() {
-        return specularColor;
-    }
-
-    public void setSpecularColor(Vector3f specularColor) {
-        this.specularColor = specularColor;
+    public void setSpecular(Texture specular) {
+        this.specular = specular;
     }
 
     public float getShininess() {
@@ -96,7 +59,7 @@ public class Material {
     }
 
     public List<Texture> getTextures() {
-        return Arrays.asList(diffuseMap, specularMap);
+        return Arrays.asList(diffuse, specular);
     }
 
     @Override
@@ -105,10 +68,8 @@ public class Material {
         if (o == this) return true;
         if (!(o instanceof Material)) return false;
         Material material = (Material) o;
-        return Objects.equals(material.diffuseMap, this.diffuseMap) &&
-                Objects.equals(material.specularMap, this.specularMap) &&
-                Objects.equals(material.diffuseColor, this.diffuseColor) &&
-                Objects.equals(material.specularColor, this.specularColor) &&
+        return Objects.equals(material.diffuse, this.diffuse) &&
+                Objects.equals(material.specular, this.specular) &&
                 Objects.equals(material.shininess, this.shininess);
     }
 
@@ -117,10 +78,8 @@ public class Material {
         int result = 85;
         return 2 *
                 result +
-                Objects.hashCode(this.diffuseMap) +
-                Objects.hashCode(this.specularMap) +
-                Objects.hashCode(this.diffuseColor) +
-                Objects.hashCode(this.specularColor) +
+                Objects.hashCode(this.diffuse) +
+                Objects.hashCode(this.specular) +
                 Objects.hashCode(this.shininess);
     }
 }

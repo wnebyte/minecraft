@@ -1,42 +1,28 @@
 package com.github.wnebyte.minecraft.util;
 
-import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.renderer.Material;
 import com.github.wnebyte.minecraft.renderer.Texture;
 
 public class MaterialBuilder {
 
-    private Texture diffuseMap = null;
+    private Texture diffuse = null;
 
-    private Texture specularMap = null;
-
-    private Vector3f diffuseColor = null;
-
-    private Vector3f specularColor = null;
+    private Texture specular = null;
 
     private float shininess = 0.0f;
 
-    private String diffuseMapPath = null;
+    private String diffusePath = null;
 
-    private String specularMapPath = null;
+    private String specularPath = null;
 
-    public MaterialBuilder setDiffuseMap(Texture diffuseMap) {
-        this.diffuseMap = diffuseMap;
+    public MaterialBuilder setDiffuse(Texture diffuse) {
+        this.diffuse = diffuse;
+        this.specular = diffuse;
         return this;
     }
 
-    public MaterialBuilder setSpecularMap(Texture specularMap) {
-        this.specularMap = specularMap;
-        return this;
-    }
-
-    public MaterialBuilder setSpecularColor(Vector3f specularColor) {
-        this.specularColor = specularColor;
-        return this;
-    }
-
-    public MaterialBuilder setDiffuseColor(Vector3f diffuseColor) {
-        this.diffuseColor = diffuseColor;
+    public MaterialBuilder setSpecular(Texture specular) {
+        this.specular = specular;
         return this;
     }
 
@@ -45,31 +31,23 @@ public class MaterialBuilder {
         return this;
     }
 
-    public MaterialBuilder setDiffuseMapPath(String diffuseMapPath) {
-        this.diffuseMapPath = diffuseMapPath;
+    public MaterialBuilder setDiffusePath(String diffusePath) {
+        this.diffusePath = diffusePath;
         return this;
     }
 
-    public MaterialBuilder setSpecularMapPath(String specularMapPath) {
-        this.specularMapPath = specularMapPath;
+    public MaterialBuilder setSpecularPath(String specularPath) {
+        this.specularPath = specularPath;
         return this;
     }
 
     public Material build() {
-        if (diffuseMapPath != null) {
-            diffuseMap = Assets.getTexture(diffuseMapPath);
+        if (diffusePath != null) {
+            setDiffuse(Assets.getTexture(diffusePath));
         }
-        if (specularMapPath != null) {
-            specularMap = Assets.getTexture(specularMapPath);
+        if (specularPath != null) {
+            setSpecular(Assets.getTexture(specularPath));
         }
-        if (diffuseMap != null && specularMap != null) {
-            return new Material(diffuseMap, specularMap, shininess);
-        } else if (diffuseColor != null && specularColor != null) {
-            return new Material(diffuseColor, specularColor, shininess);
-        } else {
-            throw new IllegalArgumentException(
-                    ""
-            );
-        }
+        return new Material(diffuse, specular, shininess);
     }
 }

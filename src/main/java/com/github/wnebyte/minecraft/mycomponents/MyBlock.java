@@ -1,10 +1,12 @@
-package com.github.wnebyte.minecraft.components;
+package com.github.wnebyte.minecraft.mycomponents;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import org.joml.Vector2f;
 import com.github.wnebyte.minecraft.core.Component;
 import com.github.wnebyte.minecraft.core.Transform;
-import com.github.wnebyte.minecraft.renderer.Material;
+import com.github.wnebyte.minecraft.renderer.Texture;
 
 // 8 x 8 cube
 // The 8 vertices will look like this:
@@ -17,13 +19,17 @@ import com.github.wnebyte.minecraft.renderer.Material;
 // | /          |  /      /
 // |/           | /      z
 // v2 --------- v3
-public class Block extends Component {
+public class MyBlock extends Component {
 
     public Transform transform;
 
-    private Material material;
+    private Texture side, top, bottom;
+
+    private List<Texture> textures;
 
     private boolean dirty;
+
+    private boolean isAir;
 
     private Vector2f[] texCoords = new Vector2f[] {
             new Vector2f(1, 1), // TR
@@ -32,15 +38,18 @@ public class Block extends Component {
             new Vector2f(0, 1)  // TL
     };
 
-    public Block(Transform transform) {
-        this(transform, null);
+    public MyBlock(Transform transform, Texture side, Texture top, Texture bottom) {
+        this.transform = transform;
+        this.side = side;
+        this.top = top;
+        this.bottom = bottom;
+        this.dirty = true;
+        this.textures = new ArrayList<>(3);
+        this.textures.add(side);
+        this.textures.add(top);
+        this.textures.add(bottom);
     }
 
-    public Block(Transform transform, Material material) {
-        this.transform = transform;
-        this.material = material;
-        this.dirty = true;
-    }
 
     public Vector2f getTexCoords(int index) {
         Vector2f[] uvx = new Vector2f[] {
@@ -54,13 +63,16 @@ public class Block extends Component {
         return uvx[index];
     }
 
-    public Material getMaterial() {
-        return material;
+    public Texture getSideTexture() {
+        return side;
     }
 
-    public void setMaterial(Material material) {
-        this.material = material;
-        setDirty();
+    public Texture getTopTexture() {
+        return top;
+    }
+
+    public Texture getBottomTexture() {
+        return bottom;
     }
 
     public boolean isDirty() {
@@ -75,14 +87,25 @@ public class Block extends Component {
         this.dirty = false;
     }
 
+    public boolean isAir() {
+        return isAir;
+    }
+
+    public void setIsAir() {
+        this.isAir = true;
+    }
+
+    public List<Texture> getTextures() {
+        return textures;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null) return false;
         if (o == this) return true;
-        if (!(o instanceof Block)) return false;
-        Block block = (Block) o;
+        if (!(o instanceof MyBlock)) return false;
+        MyBlock block = (MyBlock) o;
         return Objects.equals(block.transform, this.transform) &&
-                Objects.equals(block.material, this.material) &&
                 Objects.equals(block.dirty, this.dirty) &&
                 super.equals(block);
     }
@@ -93,7 +116,6 @@ public class Block extends Component {
         return 2 *
                 result +
                 Objects.hashCode(this.transform) +
-                Objects.hashCode(this.material) +
                 Objects.hashCode(this.dirty) +
                 super.hashCode();
     }

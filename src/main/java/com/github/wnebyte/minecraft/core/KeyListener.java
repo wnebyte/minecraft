@@ -1,43 +1,51 @@
 package com.github.wnebyte.minecraft.core;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
+import com.github.wnebyte.minecraft.event.KeyEvent;
+import com.github.wnebyte.minecraft.event.EventHandler;
 import static org.lwjgl.glfw.GLFW.GLFW_PRESS;
 import static org.lwjgl.glfw.GLFW.GLFW_RELEASE;
 
 public class KeyListener {
 
-    private static KeyListener instance;
+    private static final boolean[] keyPressed = new boolean[350];
 
-    private final boolean[] keyPressed = new boolean[350];
+    private static final boolean[] keyBeginPress = new boolean[350];
 
-    private final boolean[] keyBeginPress = new boolean[350];
-
-    public static KeyListener get() {
-        if (instance == null) {
-            instance = new KeyListener();
-        }
-        return instance;
-    }
+    private static final List<EventHandler<KeyEvent>> eventHandlers = new ArrayList<>();
 
     public static void endFrame() {
-        Arrays.fill(get().keyBeginPress, false);
+        Arrays.fill(keyBeginPress, false);
     }
 
     public static void keyCallback(long window, int key, int scanCode, int action, int mods) {
         if (action == GLFW_PRESS) {
-            get().keyPressed[key] = true;
-            get().keyBeginPress[key] = true;
+            keyPressed[key] = true;
+            keyBeginPress[key] = true;
         } else if (action == GLFW_RELEASE) {
-            get().keyPressed[key] = false;
-            get().keyBeginPress[key] = false;
+            keyPressed[key] = false;
+            keyBeginPress[key] = false;
         }
+        handle(new KeyEvent(key, action));
     }
 
     public static boolean isKeyPressed(int keyCode) {
-        return get().keyPressed[keyCode];
+        return keyPressed[keyCode];
     }
 
     public static boolean isKeyBeginPress(int keyCode) {
-        return get().keyBeginPress[keyCode];
+        return keyBeginPress[keyCode];
+    }
+
+    public static void addEventHandler(EventHandler<KeyEvent> eventHandler) {
+        eventHandlers.add(eventHandler);
+    }
+
+    private static void handle(KeyEvent event) {
+        for (EventHandler<KeyEvent> handler : eventHandlers) {
+            handler.handle(event);
+        }
     }
 }

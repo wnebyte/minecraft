@@ -1,11 +1,10 @@
 package com.github.wnebyte.minecraft.renderer;
 
+import com.github.wnebyte.minecraft.mycomponents.MyBlock;
 import org.joml.Matrix4f;
-import org.joml.Vector2f;
 import org.joml.Vector4f;
 import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.core.Transform;
-import com.github.wnebyte.minecraft.components.Block;
 import com.github.wnebyte.minecraft.util.Assets;
 import static org.lwjgl.opengl.GL11.GL_FLOAT;
 import static org.lwjgl.opengl.GL15.*;
@@ -61,7 +60,7 @@ public class LightRenderer {
 
     private float[] vertices;
 
-    private Block[] blocks;
+    private MyBlock[] blocks;
 
     private int size;
 
@@ -73,7 +72,7 @@ public class LightRenderer {
 
     public LightRenderer(int maxBatchSize, Camera camera) {
         this.vertices = new float[36 * STRIDE * maxBatchSize];
-        this.blocks = new Block[maxBatchSize];
+        this.blocks = new MyBlock[maxBatchSize];
         this.maxBatchSize = maxBatchSize;
         this.size = 0;
         this.camera = camera;
@@ -95,7 +94,7 @@ public class LightRenderer {
         glEnableVertexAttribArray(1);
     }
 
-    public void add(Block block) {
+    public void add(MyBlock block) {
         int index = size;
         blocks[index] = block;
         size++;
@@ -105,7 +104,7 @@ public class LightRenderer {
     public boolean rebuffer() {
         boolean rebuffer = false;
         for (int i = 0; i < size; i++) {
-            Block block = blocks[i];
+            MyBlock block = blocks[i];
             if (block.isDirty()) {
                 loadVertexAttributes(i);
                 block.setClean();
@@ -160,7 +159,7 @@ public class LightRenderer {
     }
 
     private void loadVertexAttributes(int index) {
-        Block block = blocks[index];
+        MyBlock block = blocks[index];
         Vector4f[] vertexArray = genVertexArray(block.transform);
         int offset = index * 36 * STRIDE;
 
