@@ -1,14 +1,22 @@
 package com.github.wnebyte.minecraft.componenets;
 
+import java.util.HashMap;
+import org.joml.Vector2i;
+
 public class Map {
 
-    public Chunk[] chunks;
+    public java.util.Map<Vector2i, Chunk> chunks;
 
-    public ChunkT get(int x, int y, int z) {
-        return null;
+    public Map() {
+        this.chunks = new HashMap<>();
+    }
+
+    public Chunk put(Vector2i key, Chunk value) {
+        return chunks.put(key, value);
     }
 
     public Chunk get(int x, int z) {
-        return null;
+        Vector2i key = new Vector2i(x, z);
+        return chunks.get(key);
     }
 }

@@ -1,10 +1,14 @@
 package com.github.wnebyte.minecraft.componenets;
 
-import com.github.wnebyte.minecraft.renderer.VertexBuffer;
+import java.util.Objects;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
 import org.joml.Vector3f;
+import com.github.wnebyte.minecraft.renderer.VertexBuffer;
+import com.github.wnebyte.minecraft.renderer.DrawCommand;
+import com.github.wnebyte.minecraft.renderer.DrawCommandBuffer;
+import com.github.wnebyte.minecraft.util.Pool;
 import com.github.wnebyte.minecraft.util.BlockMap;
 import com.github.wnebyte.minecraft.util.BlockFormat;
 
@@ -41,7 +45,8 @@ public class Chunk {
     }
 
     public static int toIndex(int x, int y, int z) {
-        return (z * SIZE * SIZE) + (y * SIZE) + x;
+        // return (z * SIZE * SIZE) + (y * SIZE) + x;
+        return (z * WIDTH * HEIGHT) + (y * WIDTH) + x;
     }
 
     public static Vector2i toChunkCoords2D(Vector3f pos) {
@@ -64,11 +69,14 @@ public class Chunk {
         return new Vector3f(x, y, z);
     }
 
-    public static Vector3f toPosition(Vector3i chunkCoords) {
-        float x = chunkCoords.x * Chunk.WIDTH;
-        float y = chunkCoords.y * Chunk.HEIGHT;
-        float z = chunkCoords.z * Chunk.DEPTH;
-        return new Vector3f(x, y, z);
+    public static Vector2f[] getUvs(BlockFormat format, Face face) {
+        if (face.id == TOP_FACE.id) {
+            return format.getTopTextureFormat().getUvs();
+        } else if (face.id == BOTTOM_FACE.id) {
+            return format.getBottomTextureFormat().getUvs();
+        } else {
+            return format.getSideTextureFormat().getUvs();
+        }
     }
 
     /*
@@ -79,7 +87,7 @@ public class Chunk {
 
     public static final int WIDTH = 16;
 
-    public static final int HEIGHT = 16;
+    public static final int HEIGHT = 256;
 
     public static final int DEPTH = 16;
 
@@ -166,30 +174,37 @@ public class Chunk {
     private int chunkPosX, chunkPosY, chunkPosZ;
 
     // Relative position of this chunk
-    private int chunkCoordX, chunkCoordY, chunkCoordZ;
+    private int chunkCoordX, chunkCoordZ;
 
     private Map map;
-
-    // Stores vertex data and manages buffering to the GPU
-    public VertexBuffer vertexBuffer;
 
     // References to neighbouring chunks
     private Chunk cXN, cXP, cYN, cYP, cZN, cZP;
 
     private ChunkHelper chunkHelper;
 
-    public Chunk(int x, int y, int z, Map map) {
-        this.chunkPosX = x;
-        this.chunkPosY = y;
-        this.chunkPosZ = z;
-        this.chunkCoordX = x / Chunk.WIDTH;
-        this.chunkCoordY = y / Chunk.HEIGHT;
-        this.chunkCoordZ = z / Chunk.DEPTH;
+    /*
+    ###########################
+    #       CONSTRUCTORS      #
+    ###########################
+    */
+
+    public Chunk(int i, int j, int k, Map map) {
+        this.chunkPosX = i * WIDTH;
+        this.chunkPosY = j * HEIGHT;
+        this.chunkPosZ = k * DEPTH;
+        this.chunkCoordX = i;
+        this.chunkCoordZ = k;
         this.map = map;
         this.data = new Block[WIDTH * HEIGHT * DEPTH];
         this.chunkHelper = new ChunkHelper();
-        this.vertexBuffer = new VertexBuffer();
     }
+
+    /*
+    ###########################
+    #         METHODS         #
+    ###########################
+    */
 
     /**
      * Returns the block located at the specified chunk relative position.
@@ -208,6 +223,43 @@ public class Chunk {
         data[index] = b;
     }
 
+    public void patchNeighbours() {
+        cXN = map.get(chunkCoordX - 1, chunkCoordZ);
+        cXP = map.get(chunkCoordX + 1, chunkCoordZ);
+        cZN = map.get(chunkCoordX, chunkCoordZ - 1);
+        cZP = map.get(chunkCoordX, chunkCoordZ + 1);
+    }
+
+    public void generateTerrain() {
+        float minBiomeHeight = 55.0f;
+        float maxBiomeHeight = 145.0f;
+
+        for (int z = 0; z < DEPTH; z++) {
+            int maxHeight = 50;
+            int stoneHeight = maxHeight - 3;
+
+            for (int x = 0; x < WIDTH; x++) {
+                for (int y = 0; y < HEIGHT; y++) {
+                    if (y == 0) {
+                        setBlock(Block.BEDROCK, x, y, z);
+                    }
+                    else if (y < stoneHeight) {
+                        setBlock(Block.STONE, x, y, z);
+                    }
+                    else if (y < maxHeight) {
+                        setBlock(Block.DIRT, x, y, z);
+                    }
+                    else if (y == maxHeight) {
+                        setBlock(Block.SAND, x, y, z);
+                    }
+                    else {
+                        setBlock(Block.AIR, x, y, z);
+                    }
+                }
+            }
+        }
+    }
+
     // simple 32x32x32 chunk consists of:
     // 196,608 vertices
     // 32,768 quads
@@ -217,87 +269,74 @@ public class Chunk {
     // face culling mesh function generates a chunk with:
     // 36888 vertices
     // 6148 quads
-    public void generateMesh() {
-        /*
-        int newCapacity = vertexBuffer.isEmpty() ? VertexBuffer.DEFAULT_CAPACITY : vertexBuffer.size() + 1024;
-        vertexBuffer.reset(newCapacity);
+    public void generateMesh(DrawCommandBuffer drawCommands, Pool<Vector3i, VertexBuffer> subchunks) {
+        for (int j = 0; j < 16; j++) {
+            generateMesh(drawCommands, subchunks, j);
+        }
+    }
 
-         */
-
+    public void generateMesh(DrawCommandBuffer drawCommands, Pool<Vector3i, VertexBuffer> subchunks, int subchunkLevel) {
+        VertexBuffer buffer = subchunks.get(new Vector3i(chunkCoordX, subchunkLevel, chunkCoordZ));
+        assert (buffer != null) : "buffer is null";
+        buffer.reset();
+        int j = subchunkLevel * 16;
+        int jMax = j + 16;
         int access;
-        // Y-axis: start from the bottom and search up
-        for (int j = 0; j < HEIGHT; j++) {
-            // Z-axis
+
+        for (; j < jMax; j++) {
             for (int k = 0; k < DEPTH; k++) {
-                // X-axis
                 for (int i = 0; i < WIDTH; i++) {
                     access = toIndex(i, j, k);
                     Block b = data[access];
 
-                    if (b == null || b.id == Block.AIR_ID) {
-                        continue;
-                    }
-
-                    createCube(b, i, j, k);
-
-                    // Todo: move outside loop
-                    // Extend the array if it's nearly full
-                    /*
-                    if (vertexBuffer.remaining() < 2048) {
-                        vertexBuffer.extend(2048);
-                    }
-                     */
+                    if (b == null || b.id == Block.AIR_ID) { continue; }
+                    createCube(buffer, b, i, j, k);
                 }
             }
         }
+
+        DrawCommand drawCommand = new DrawCommand();
+        drawCommand.vertexCount = buffer.getNumVertices();
+        drawCommand.first = buffer.first;
+        drawCommand.instanceCount = 1;
+        drawCommands.addCommand(drawCommand, getChunkCoords(), subchunkLevel);
     }
 
-    private void createCube(Block b, int i, int j, int k) {
+    private void createCube(VertexBuffer buffer, Block b, int i, int j, int k) {
         BlockFormat format = BlockMap.getBlockFormat(b.id);
         // Left face (X-) CONCRETE
         if (visibleFaceXN(i-1, j, k)) {
-            appendFace(format, i, j, k, LEFT_FACE);
+            appendFace(buffer, format, i, j, k, LEFT_FACE);
         }
         // Right face (X+) DIRT
         if (visibleFaceXP(i+1, j, k)) {
-            appendFace(format, i, j, k, RIGHT_FACE);
+            appendFace(buffer, format, i, j, k, RIGHT_FACE);
         }
         // Back face (Z-) SNOW
         if (visibleFaceZN(i, j, k-1)) {
-            appendFace(format, i, j, k, BACK_FACE);
+            appendFace(buffer, format, i, j, k, BACK_FACE);
         }
         // Front face (Z+) BLUE
         if (visibleFaceZP(i, j, k+1)) {
-            appendFace(format, i, j, k, FRONT_FACE);
+            appendFace(buffer, format, i, j, k, FRONT_FACE);
         }
         // Bottom face (Y-) LIGHT GRAY
         if (visibleFaceYN(i, j-1, k)) {
-            appendFace(format, i, j, k, BOTTOM_FACE);
+            appendFace(buffer, format, i, j, k, BOTTOM_FACE);
         }
         // Top face (Y+) DARK GRAY
         if (visibleFaceYP(i, j+1, k)) {
-            appendFace(format, i, j, k, TOP_FACE);
+            appendFace(buffer, format, i, j, k, TOP_FACE);
         }
     }
 
-    private void appendFace(BlockFormat format, int i, int j, int k, Face face) {
-        float scale = 1f;
+    private void appendFace(VertexBuffer buffer, BlockFormat format, int i, int j, int k, Face face) {
         Vector2f[] uvs = getUvs(format, face);
-        vertexBuffer.appendQuad(new Vector3f(i + (face.tl[0] * scale), j + (face.tl[1] * scale), k + (face.tl[2] * scale)), // TL(1)
-                                new Vector3f(i + (face.tr[0] * scale), j + (face.tr[1] * scale), k + (face.tr[2] * scale)), // TR(0)
-                                new Vector3f(i + (face.bl[0] * scale), j + (face.bl[1] * scale), k + (face.bl[2] * scale)), // BL(2)
-                                new Vector3f(i + (face.br[0] * scale), j + (face.br[1] * scale), k + (face.br[2] * scale)), // BR(3)
-                                uvs[3], uvs[0], uvs[2], uvs[1]);
-    }
-
-    private Vector2f[] getUvs(BlockFormat format, Face face) {
-        if (face.id == TOP_FACE.id) {
-            return format.getTopTextureFormat().getUvs();
-        } else if (face.id == BOTTOM_FACE.id) {
-            return format.getBottomTextureFormat().getUvs();
-        } else {
-            return format.getSideTextureFormat().getUvs();
-        }
+        buffer.appendQuad(new Vector3f(i + (face.tl[0]), j + (face.tl[1]), k + (face.tl[2])), // TL(1)
+                          new Vector3f(i + (face.tr[0]), j + (face.tr[1]), k + (face.tr[2])), // TR(0)
+                          new Vector3f(i + (face.bl[0]), j + (face.bl[1]), k + (face.bl[2])), // BL(2)
+                          new Vector3f(i + (face.br[0]), j + (face.br[1]), k + (face.br[2])), // BR(3)
+                          uvs[3], uvs[0], uvs[2], uvs[1]);
     }
 
     private boolean visibleFaceXN(int i, int j, int k) {
@@ -583,7 +622,7 @@ public class Chunk {
     }
      */
 
-    public Vector3f getChunkPosition() {
+    public Vector3f getChunkPos() {
         return new Vector3f(chunkPosX, chunkPosY, chunkPosZ);
     }
 
@@ -599,11 +638,31 @@ public class Chunk {
         return chunkPosZ;
     }
 
-    public Vector3i getChunkCoordinate() {
-        return new Vector3i(chunkCoordX, chunkCoordY, chunkCoordZ);
+    public Vector2i getChunkCoords() {
+        return new Vector2i(chunkCoordX, chunkCoordZ);
     }
 
-    public VertexBuffer getVertexBuffer() {
-        return vertexBuffer;
+    @Override
+    public boolean equals(Object o) {
+        if (o == null) return false;
+        if (o == this) return true;
+        if (!(o instanceof Chunk)) return false;
+        Chunk chunk = (Chunk) o;
+        return Objects.equals(chunk.chunkCoordX, this.chunkCoordX) &&
+                Objects.equals(chunk.chunkCoordZ, this.chunkCoordZ);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 15;
+        return 2 *
+                result +
+                Objects.hashCode(this.chunkCoordX) +
+                Objects.hashCode(this.chunkCoordZ);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Chunk[x: %d, z: %d]", this.chunkCoordX, this.chunkCoordZ);
     }
 }

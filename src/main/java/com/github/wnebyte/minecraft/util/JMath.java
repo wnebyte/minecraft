@@ -32,6 +32,14 @@ public class JMath {
         return c;
     }
 
+    public static Vector3f sub(Vector3f a, Vector3f b) {
+        Vector3f c = new Vector3f();
+        c.x = a.x - b.x;
+        c.y = a.y - b.y;
+        c.z = a.z - b.z;
+        return c;
+    }
+
     public static Matrix4f mul(Matrix4f a, Matrix4f b) {
         Matrix4f ma = new Matrix4f(a);
         Matrix4f mb = new Matrix4f(b);

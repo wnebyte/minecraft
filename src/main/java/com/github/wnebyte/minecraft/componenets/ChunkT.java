@@ -41,7 +41,7 @@ public class ChunkT {
             MinY[i] = (byte)CHUNK_SIZE;
 
         chunkHelper = new ChunkHelper();
-        vertexBuffer = new VertexBuffer();
+      //  vertexBuffer = new VertexBuffer();
     }
 
     public void addBlock(int i, int j, int k, Block b) {
@@ -52,25 +52,25 @@ public class ChunkT {
     {
         // Default 4096, else use the lase size + 1024
         int newSize = vertexBuffer.size() == 0 ? 4096 : vertexBuffer.size() + 1024;
-        vertexBuffer.reset(newSize);
+       // vertexBuffer.reset(newSize);
 
         // Negative X side
-        cXN = m.get(chunkPosX - 1, chunkPosY, chunkPosZ);
+       // cXN = m.get(chunkPosX - 1, chunkPosY, chunkPosZ);
 
         // Positive X side
-        cXP = m.get(chunkPosX + 1, chunkPosY, chunkPosZ);
+       // cXP = m.get(chunkPosX + 1, chunkPosY, chunkPosZ);
 
         // Negative Y side
-        cYN = m.get(chunkPosX, chunkPosY - 1, chunkPosZ);
+       // cYN = m.get(chunkPosX, chunkPosY - 1, chunkPosZ);
 
         // Positive Y side
-        cYP = m.get(chunkPosX, chunkPosY + 1, chunkPosZ);
+       // cYP = m.get(chunkPosX, chunkPosY + 1, chunkPosZ);
 
         // Negative Z neighbour
-        cZN = m.get(chunkPosX, chunkPosY, chunkPosZ - 1);
+       // cZN = m.get(chunkPosX, chunkPosY, chunkPosZ - 1);
 
         // Positive Z side
-        cZP = m.get(chunkPosX, chunkPosY, chunkPosZ + 1);
+       // cZP = m.get(chunkPosX, chunkPosY, chunkPosZ + 1);
 
         // Precalculate the map-relative Y position of the chunk in the map
         int chunkY = chunkPosY * CHUNK_SIZE;
@@ -123,8 +123,10 @@ public class ChunkT {
                 }
 
                 // Extend the array if it is nearly full
+                /*
                 if (vertexBuffer.remaining() < 2048)
                     vertexBuffer.extend(2048);
+                 */
             }
         }
     }

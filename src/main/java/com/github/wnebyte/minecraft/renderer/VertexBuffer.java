@@ -1,17 +1,11 @@
 package com.github.wnebyte.minecraft.renderer;
 
-import java.util.Arrays;
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
-import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
-import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
-import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.opengl.GL44.glBufferStorage;
-import static org.lwjgl.opengl.GL44C.GL_MAP_COHERENT_BIT;
-import static org.lwjgl.opengl.GL44C.GL_MAP_PERSISTENT_BIT;
 
 public class VertexBuffer {
 
@@ -42,60 +36,30 @@ public class VertexBuffer {
 
     public static final int BUFFER_CAPACITY = 10_000;
 
-    private int vao;
-
-    private int vbo;
-
-    private float[] data;
-
-    private FloatBuffer buffer;
+    private FloatBuffer data;
 
     private int size;
 
     private boolean dirty = true;
 
-    public VertexBuffer() {
-        this(DEFAULT_CAPACITY);
+    public int first;
+
+    public int drawCommandIndex;
+
+    public Vector2i chunkCoords;
+
+    public short subchunkLevel;
+
+
+    public VertexBuffer(ByteBuffer buffer) {
+        data = buffer.asFloatBuffer();
+        size = 0;
     }
 
-    public VertexBuffer(int capacity) {
-        data = new float[capacity];
-        start();
-    }
-
-    private void start() {
-        vao = glGenVertexArrays();
-        glBindVertexArray(vao);
-
-        vbo = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-        glVertexAttribPointer(0, POS_SIZE, GL_FLOAT, false, STRIDE_BYTES, POS_OFFSET);
-        glEnableVertexAttribArray(0);
-
-        glVertexAttribPointer(1, UV_SIZE, GL_FLOAT, false, STRIDE_BYTES, UV_OFFSET);
-        glEnableVertexAttribArray(1);
-
-        long size = VertexBuffer.BUFFER_CAPACITY * STRIDE_BYTES;
-        int flags = GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT;
-        glBufferStorage(GL_ARRAY_BUFFER, size, flags);
-        buffer = glMapBufferRange(GL_ARRAY_BUFFER, 0, size, flags).asFloatBuffer();
-    }
-
-    public void destroy() {
-        glDeleteVertexArrays(vao);
-        glDeleteBuffers(vbo);
-    }
-
-    public void reset(int capacity) {
-        data = new float[capacity];
+    public void reset() {
+        data.clear();
         size = 0;
         dirty = true;
-    }
-
-    public void extend(int amount) {
-        float[] newData = Arrays.copyOf(data, data.length + amount);
-        data = newData;
     }
 
     public int size() {
@@ -103,11 +67,11 @@ public class VertexBuffer {
     }
 
     public int capacity() {
-        return data.length;
+        return data.capacity();
     }
 
     public int remaining() {
-        return data.length - size;
+        return data.remaining();
     }
 
     public boolean isEmpty() {
@@ -122,122 +86,58 @@ public class VertexBuffer {
         return (size / STRIDE) / 6;
     }
 
-    public void bufferData() {
-        glBindVertexArray(vao);
-
-        if (size > 0 && dirty) {
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
-            glBufferData(GL_ARRAY_BUFFER, data, GL_STATIC_DRAW);
-        }
-
-        dirty = false;
-        glBindVertexArray(0);
+    public Vector2i getChunkCoords() {
+        return chunkCoords;
     }
 
-    public void draw() {
-        glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, size);
+    public int getSubchunkLevel() {
+        return subchunkLevel;
     }
 
     public void appendQuad(Vector3f tl, Vector3f tr, Vector3f bl, Vector3f br,
                        Vector2f uv0, Vector2f uv1, Vector2f uv2, Vector2f uv3) {
         // TR
-        buffer.put(tr.x);
-        buffer.put(tr.y);
-        buffer.put(tr.z);
-        buffer.put(uv1.x);
-        buffer.put(uv1.y);
+        data.put(tr.x);
+        data.put(tr.y);
+        data.put(tr.z);
+        data.put(uv1.x);
+        data.put(uv1.y);
 
         // TL
-        buffer.put(tl.x);
-        buffer.put(tl.y);
-        buffer.put(tl.z);
-        buffer.put(uv0.x);
-        buffer.put(uv0.y);
+        data.put(tl.x);
+        data.put(tl.y);
+        data.put(tl.z);
+        data.put(uv0.x);
+        data.put(uv0.y);
 
         // BL
-        buffer.put(bl.x);
-        buffer.put(bl.y);
-        buffer.put(bl.z);
-        buffer.put(uv2.x);
-        buffer.put(uv2.y);
+        data.put(bl.x);
+        data.put(bl.y);
+        data.put(bl.z);
+        data.put(uv2.x);
+        data.put(uv2.y);
 
         // BR
-        buffer.put(br.x);
-        buffer.put(br.y);
-        buffer.put(br.z);
-        buffer.put(uv3.x);
-        buffer.put(uv3.y);
+        data.put(br.x);
+        data.put(br.y);
+        data.put(br.z);
+        data.put(uv3.x);
+        data.put(uv3.y);
 
         // TR
-        buffer.put(tr.x);
-        buffer.put(tr.y);
-        buffer.put(tr.z);
-        buffer.put(uv1.x);
-        buffer.put(uv1.y);
+        data.put(tr.x);
+        data.put(tr.y);
+        data.put(tr.z);
+        data.put(uv1.x);
+        data.put(uv1.y);
 
         // BL
-        buffer.put(bl.x);
-        buffer.put(bl.y);
-        buffer.put(bl.z);
-        buffer.put(uv2.x);
-        buffer.put(uv2.y);
+        data.put(bl.x);
+        data.put(bl.y);
+        data.put(bl.z);
+        data.put(uv2.x);
+        data.put(uv2.y);
 
         size += STRIDE * 6;
     }
-
-    /*
-    public void appendQuad(Vector3f tl, Vector3f tr, Vector3f bl, Vector3f br,
-                           Vector2f uv0, Vector2f uv1, Vector2f uv2, Vector2f uv3) {
-        // uvs:
-        // TR
-        // BR
-        // BL
-        // TL
-
-        // TR
-        data[size + 0]  = tr.x;
-        data[size + 1]  = tr.y;
-        data[size + 2]  = tr.z;
-        data[size + 3]  = uv1.x;
-        data[size + 4]  = uv1.y;
-
-        // TL
-        data[size + 5]  = tl.x;
-        data[size + 6]  = tl.y;
-        data[size + 7]  = tl.z;
-        data[size + 8]  = uv0.x;
-        data[size + 9]  = uv0.y;
-
-        // BL
-        data[size + 10] = bl.x;
-        data[size + 11] = bl.y;
-        data[size + 12] = bl.z;
-        data[size + 13] = uv2.x;
-        data[size + 14] = uv2.y;
-
-        // BR
-        data[size + 15] = br.x;
-        data[size + 16] = br.y;
-        data[size + 17] = br.z;
-        data[size + 18] = uv3.x;
-        data[size + 19] = uv3.y;
-
-        // TR
-        data[size + 20] = tr.x;
-        data[size + 21] = tr.y;
-        data[size + 22] = tr.z;
-        data[size + 23] = uv1.x;
-        data[size + 24] = uv1.y;
-
-        // BL
-        data[size + 25] = bl.x;
-        data[size + 26] = bl.y;
-        data[size + 27] = bl.z;
-        data[size + 28] = uv2.x;
-        data[size + 29] = uv2.y;
-
-        size += STRIDE * 6;
-    }
-     */
 }

@@ -41,12 +41,11 @@ public class ChunkTest {
         for (int y = 0; y < 32; y++) {
             for (int z = 0; z < 32; z++) {
                 for (int x = 0; x < 32; x++) {
-                    chunk.addBlock(x, y, z, Block.SAND);
+                    chunk.setBlock(Block.SAND, x, y, z);
                 }
             }
         }
-        chunk.generateMesh();
-        System.out.println("nVertices: " + chunk.vertexBuffer.size());
+
     }
 
     @Test
@@ -55,7 +54,7 @@ public class ChunkTest {
             for (int z = 0; z < CHUNK_HEIGHT; z++) {
                 for (int x = 0; x < CHUNK_WIDTH; x++) {
                     int index = toIndex(x, y, z);
-                    int compare = toIndexAlt(x, y, z);
+                    int compare = Chunk.toIndex(x, y, z);
                     Vector3i v = to3D(index);
                     Assert.assertEquals(compare, index);
                     Assert.assertEquals(x, v.x);
