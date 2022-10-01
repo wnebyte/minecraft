@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.ArrayList;
-import com.github.wnebyte.minecraft.componenets.Block;
+import com.github.wnebyte.minecraft.world.Block;
 import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.util.Assets;
 import com.github.wnebyte.minecraft.util.Sets;

@@ -1,4 +1,4 @@
-package com.github.wnebyte.minecraft.componenets;
+package com.github.wnebyte.minecraft.world;
 
 import java.util.Objects;
 import org.joml.Vector2f;
@@ -7,10 +7,11 @@ import org.joml.Vector3i;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.renderer.VertexBuffer;
 import com.github.wnebyte.minecraft.renderer.DrawCommand;
-import com.github.wnebyte.minecraft.renderer.DrawCommandBuffer;
+import com.github.wnebyte.minecraft.util.DrawCommandBuffer;
 import com.github.wnebyte.minecraft.util.Pool;
 import com.github.wnebyte.minecraft.util.BlockMap;
 import com.github.wnebyte.minecraft.util.BlockFormat;
+import com.github.wnebyte.minecraft.util.ChunkHelper;
 
 public class Chunk {
 
@@ -173,10 +174,18 @@ public class Chunk {
     // Global map position of this chunk
     private int chunkPosX, chunkPosY, chunkPosZ;
 
+    private Vector3f chunkPos;
+
     // Relative position of this chunk
     private int chunkCoordX, chunkCoordZ;
 
+    private Vector2i chunkCoords;
+
     private Map map;
+
+    private DrawCommandBuffer drawCommands;
+
+    private Pool<Vector3i, VertexBuffer> subchunks;
 
     // References to neighbouring chunks
     private Chunk cXN, cXP, cYN, cYP, cZN, cZP;
@@ -189,13 +198,18 @@ public class Chunk {
     ###########################
     */
 
-    public Chunk(int i, int j, int k, Map map) {
+    public Chunk(int i, int j, int k,
+                 Map map, DrawCommandBuffer drawCommands, Pool<Vector3i, VertexBuffer> subchunks) {
         this.chunkPosX = i * WIDTH;
         this.chunkPosY = j * HEIGHT;
         this.chunkPosZ = k * DEPTH;
+        this.chunkPos = new Vector3f(chunkPosX, chunkPosY, chunkPosZ);
         this.chunkCoordX = i;
         this.chunkCoordZ = k;
+        this.chunkCoords = new Vector2i(i, k);
         this.map = map;
+        this.drawCommands = drawCommands;
+        this.subchunks = subchunks;
         this.data = new Block[WIDTH * HEIGHT * DEPTH];
         this.chunkHelper = new ChunkHelper();
     }
@@ -221,6 +235,10 @@ public class Chunk {
     public void setBlock(Block b, int i, int j, int k) {
         int index = toIndex(i, j, k);
         data[index] = b;
+    }
+
+    public void setBlock(Block b, int i, int j, int k, boolean remesh) {
+
     }
 
     public void patchNeighbours() {
@@ -260,6 +278,14 @@ public class Chunk {
         }
     }
 
+    public void unload() {
+
+    }
+
+    private void unload(int subchunkLevel) {
+
+    }
+
     // simple 32x32x32 chunk consists of:
     // 196,608 vertices
     // 32,768 quads
@@ -269,13 +295,13 @@ public class Chunk {
     // face culling mesh function generates a chunk with:
     // 36888 vertices
     // 6148 quads
-    public void generateMesh(DrawCommandBuffer drawCommands, Pool<Vector3i, VertexBuffer> subchunks) {
+    public void generateMesh() {
         for (int j = 0; j < 16; j++) {
-            generateMesh(drawCommands, subchunks, j);
+            generateMesh(j);
         }
     }
 
-    public void generateMesh(DrawCommandBuffer drawCommands, Pool<Vector3i, VertexBuffer> subchunks, int subchunkLevel) {
+    public void generateMesh(int subchunkLevel) {
         VertexBuffer buffer = subchunks.get(new Vector3i(chunkCoordX, subchunkLevel, chunkCoordZ));
         assert (buffer != null) : "buffer is null";
         buffer.reset();
@@ -299,7 +325,7 @@ public class Chunk {
         drawCommand.vertexCount = buffer.getNumVertices();
         drawCommand.first = buffer.first;
         drawCommand.instanceCount = 1;
-        drawCommands.addCommand(drawCommand, getChunkCoords(), subchunkLevel);
+        drawCommands.setDrawCommand(buffer.drawCommandIndex, drawCommand, chunkCoords);
     }
 
     private void createCube(VertexBuffer buffer, Block b, int i, int j, int k) {
@@ -623,7 +649,7 @@ public class Chunk {
      */
 
     public Vector3f getChunkPos() {
-        return new Vector3f(chunkPosX, chunkPosY, chunkPosZ);
+        return chunkPos;
     }
 
     public float getChunkPosX() {
@@ -639,7 +665,7 @@ public class Chunk {
     }
 
     public Vector2i getChunkCoords() {
-        return new Vector2i(chunkCoordX, chunkCoordZ);
+        return chunkCoords;
     }
 
     @Override

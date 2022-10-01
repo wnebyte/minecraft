@@ -1,6 +1,9 @@
 package com.github.wnebyte.minecraft.componenets;
 
 import com.github.wnebyte.minecraft.renderer.VertexBuffer;
+import com.github.wnebyte.minecraft.util.ChunkHelper;
+import com.github.wnebyte.minecraft.world.Block;
+import com.github.wnebyte.minecraft.world.Map;
 
 public class ChunkT {
 

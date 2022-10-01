@@ -1,7 +1,5 @@
-import com.github.wnebyte.minecraft.componenets.Block;
-import com.github.wnebyte.minecraft.componenets.Chunk;
-import com.github.wnebyte.minecraft.componenets.ChunkHelper;
-import com.github.wnebyte.minecraft.componenets.Map;
+import com.github.wnebyte.minecraft.world.Block;
+import com.github.wnebyte.minecraft.world.Chunk;
 import org.joml.Vector3i;
 import org.junit.Assert;
 import org.junit.Test;
@@ -33,19 +31,6 @@ public class ChunkTest {
         int y = index / CHUNK_SIZE;
         int x = index % CHUNK_SIZE;
         return new Vector3i(x, y, z);
-    }
-
-    @Test
-    public void test00() {
-        Chunk chunk = new Chunk(0, 0, 0, new Map());
-        for (int y = 0; y < 32; y++) {
-            for (int z = 0; z < 32; z++) {
-                for (int x = 0; x < 32; x++) {
-                    chunk.setBlock(Block.SAND, x, y, z);
-                }
-            }
-        }
-
     }
 
     @Test

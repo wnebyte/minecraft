@@ -1,19 +1,19 @@
 package com.github.wnebyte.minecraft.world;
 
 import java.nio.ByteBuffer;
-
-import com.github.wnebyte.minecraft.util.JMath;
+import java.util.Random;
+import org.joml.Vector2i;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.lwjgl.system.MemoryUtil;
-import com.github.wnebyte.minecraft.core.Scene;
 import com.github.wnebyte.minecraft.core.Camera;
+import com.github.wnebyte.minecraft.core.MouseListener;
 import com.github.wnebyte.minecraft.renderer.*;
-import com.github.wnebyte.minecraft.componenets.Chunk;
-import com.github.wnebyte.minecraft.componenets.Map;
 import com.github.wnebyte.minecraft.util.Assets;
 import com.github.wnebyte.minecraft.util.Pool;
+import com.github.wnebyte.minecraft.util.DrawCommandBuffer;
 import static com.github.wnebyte.minecraft.renderer.VertexBuffer.*;
+import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
 import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
 import static org.lwjgl.opengl.GL13.glActiveTexture;
@@ -28,7 +28,9 @@ import static org.lwjgl.opengl.GL44C.GL_MAP_PERSISTENT_BIT;
 
 public class World {
 
-    public static final int CHUNK_CAPACITY = 2;
+    public static final int CHUNK_CAPACITY = 80;
+
+    public static final int SPAWN_CHUNK_SIZE = 5 * 5;
 
     private int vao;
 
@@ -50,9 +52,9 @@ public class World {
 
     private Map map;
 
-    private Vector3f lastCameraPos;
+    private Random rand;
 
-    private float debounceTime = 0.8f;
+    private float debounceTime = 0.2f;
 
     private float debounce = debounceTime;
 
@@ -63,10 +65,10 @@ public class World {
         this.drawCommands = new DrawCommandBuffer(CHUNK_CAPACITY * 16);
         this.subchunks = new Pool<>(CHUNK_CAPACITY * 16);
         this.map = new Map();
-        this.lastCameraPos = camera.getPosition();
+        this.rand = new Random();
     }
 
-    public void start(Scene scene) {
+    public void start() {
         vao = glGenVertexArrays();
         glBindVertexArray(vao);
 
@@ -108,29 +110,51 @@ public class World {
         glEnableVertexAttribArray(2);
 
         initMap();
+        int x = (int)(Math.sqrt(SPAWN_CHUNK_SIZE) * 16) / 2;
+        int y = 51;
+        int z = x;
+       // camera.setPosition(new Vector3f(x, y, z));
+        camera.setPosition(new Vector3f(0, 0, 0));
     }
 
     private void initMap() {
-        for (int i = 0; i < CHUNK_CAPACITY; i++) {
-            Chunk chunk = new Chunk(i, 0, 0, map);
-            map.put(chunk.getChunkCoords(), chunk);
-            chunk.generateTerrain();
-            chunk.generateMesh(drawCommands, subchunks);
+        long startTime = System.nanoTime();
+        int sqrt = (int)Math.sqrt(SPAWN_CHUNK_SIZE);
+        for (int x = 0; x < sqrt; x++) {
+            for (int z = 0; z < sqrt; z++) {
+                Chunk chunk = new Chunk(x, 0, z, map, drawCommands, subchunks);
+                map.put(chunk.getChunkCoords(), chunk);
+                chunk.generateTerrain();
+                chunk.generateMesh();
+            }
         }
+        double time = (System.nanoTime() - startTime) * 1E-9;
+        System.out.printf("init: %.2fs%n", time);
     }
 
     public void update(float dt) {
         debounce -= dt;
-        Vector3f delta = JMath.sub(camera.getPosition(), lastCameraPos);
-        lastCameraPos = camera.getPosition();
 
-        if (debounce < 0) {
-            System.out.printf("x: %.2f, y: %.2f, z: %.2f", delta.x, delta.y, delta.z);
+        if (MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && debounce < 0) {
+            Vector3f pos = new Vector3f(camera.getPosition());
+            Vector2i chunkPos = Chunk.toChunkCoords2D(new Vector3f(0, 0, 0));
+            Chunk chunk = map.get(chunkPos.x, chunkPos.y);
+            if (chunk != null) {
+                int x = rand.nextInt(Chunk.WIDTH);
+                int y = rand.nextInt(20);
+                int z = 0;
+                int subchunkLevel = y / 16;
+                chunk.setBlock(Block.AIR, x, y, z);
+                chunk.generateMesh(subchunkLevel);
+                System.out.printf("x: %d, y: %d, z: %d%n", x, y, z);
+            }
+
             debounce = debounceTime;
         }
     }
 
     public void render() {
+        glBindVertexArray(vao);
         if (drawCommands.isDirty()) {
             glBindBuffer(GL_DRAW_INDIRECT_BUFFER, ibo);
             glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, drawCommands.data());
@@ -138,9 +162,11 @@ public class World {
             glBindBuffer(GL_ARRAY_BUFFER, cbo);
             glBufferSubData(GL_ARRAY_BUFFER, 0, drawCommands.chunkCoords());
 
+            long vertexCount = 0;
             for (DrawCommand drawCommand : drawCommands) {
-                System.out.println(drawCommand.toJson());
+                vertexCount += drawCommand.vertexCount;
             }
+            System.out.println("vertexCount: " + vertexCount);
 
             drawCommands.clean();
         }
@@ -158,6 +184,7 @@ public class World {
         glMultiDrawArraysIndirect(GL_TRIANGLES, 0, drawCommands.maxNumCommands(), 0);
         texture.unbind();
         shader.detach();
+        glBindVertexArray(0);
     }
 
     public void destroy() {

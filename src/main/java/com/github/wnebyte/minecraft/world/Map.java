@@ -1,4 +1,4 @@
-package com.github.wnebyte.minecraft.componenets;
+package com.github.wnebyte.minecraft.world;
 
 import java.util.HashMap;
 import org.joml.Vector2i;

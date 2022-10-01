@@ -1,6 +1,5 @@
 package com.github.wnebyte.minecraft.core;
 
-import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Matrix4f;
 
@@ -82,6 +81,8 @@ public class Camera {
     private Matrix4f inverseProjection;
 
     private Matrix4f inverseView;
+
+    private Movement lastMovement;
 
     /*
     ###########################
@@ -173,6 +174,7 @@ public class Camera {
                 position.sub(new Vector3f(up).mul(velocity));
                 break;
         }
+        lastMovement = direction;
     }
 
     /**
@@ -270,5 +272,9 @@ public class Camera {
 
     public float getZFar() {
         return zFar;
+    }
+
+    public Movement getLastMovement() {
+        return lastMovement;
     }
 }

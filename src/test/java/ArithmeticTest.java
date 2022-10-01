@@ -113,6 +113,15 @@ public class ArithmeticTest {
         System.out.println(1 << 6);
     }
 
+    @Test
+    public void test01() {
+        long val = (long)10E2;
+        Assert.assertEquals(1000L, val);
+        val = (long)1E2;
+        Assert.assertEquals(100L, val);
+    }
+
+
     private Vector3f toCoordinates(int index) {
         int z = index % BASE_17_WIDTH;
         int x = (index % BASE_17_HEIGHT) / BASE_17_DEPTH;

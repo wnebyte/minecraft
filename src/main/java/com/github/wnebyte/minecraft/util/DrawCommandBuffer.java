@@ -1,7 +1,9 @@
-package com.github.wnebyte.minecraft.renderer;
+package com.github.wnebyte.minecraft.util;
 
 import java.util.Arrays;
 import java.util.Iterator;
+
+import com.github.wnebyte.minecraft.renderer.DrawCommand;
 import org.joml.Vector2i;
 
 public class DrawCommandBuffer implements Iterable<DrawCommand> {
@@ -23,7 +25,7 @@ public class DrawCommandBuffer implements Iterable<DrawCommand> {
         this.numCommands = 0;
     }
 
-    public void addCommand(DrawCommand drawCommand, Vector2i chunkCoords, int subchunkLevel) {
+    public void addCommand(DrawCommand drawCommand, Vector2i chunkCoords) {
         drawCommand.baseInstance = numCommands;
         data[numCommands] = drawCommand;
         chunkCoordsData[numCommands] = chunkCoords;
@@ -31,11 +33,18 @@ public class DrawCommandBuffer implements Iterable<DrawCommand> {
         dirty = true;
     }
 
-    public void setDrawCommand(int index, DrawCommand drawCommand, Vector2i chunkCoords, int subschunkLevel) {
+    public void setDrawCommand(int index, DrawCommand drawCommand, Vector2i chunkCoords) {
+        boolean mod = (data[index] != null);
         drawCommand.baseInstance = index;
         data[index] = drawCommand;
         chunkCoordsData[index] = chunkCoords;
+        if (!mod)
+            numCommands++;
         dirty = true;
+    }
+
+    public void removeDrawCommand(int index) {
+
     }
 
     public int[] data() {
@@ -82,6 +91,6 @@ public class DrawCommandBuffer implements Iterable<DrawCommand> {
 
     @Override
     public Iterator<DrawCommand> iterator() {
-        return Arrays.stream(data).iterator();
+        return Arrays.stream(data, 0, numCommands).iterator();
     }
 }

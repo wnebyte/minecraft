@@ -53,4 +53,25 @@ public class JMath {
         v.z = vec.z;
         return v;
     }
+
+    public static float max(float a, float b, float c) {
+        return Math.max(a, Math.max(b, c));
+    }
+
+    public static float max(Vector3f v) {
+        return max(v.x, v.y, v.z);
+    }
+
+    public static Vector3f abs(Vector3f v) {
+        Vector3f vec = new Vector3f();
+        vec.x = Math.abs(v.x);
+        vec.y = Math.abs(v.y);
+        vec.z = Math.abs(v.z);
+        return vec;
+    }
+
+    public static int clamp(int val, int min, int max) {
+        if (val < min) return min;
+        return Math.min(val, max);
+    }
 }

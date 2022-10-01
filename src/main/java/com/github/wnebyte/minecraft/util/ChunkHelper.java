@@ -1,4 +1,6 @@
-package com.github.wnebyte.minecraft.componenets;
+package com.github.wnebyte.minecraft.util;
+
+import com.github.wnebyte.minecraft.world.Chunk;
 
 import java.util.Arrays;
 
