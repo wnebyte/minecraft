@@ -3,7 +3,7 @@ package com.github.wnebyte.minecraft.renderer;
 import java.util.List;
 import java.util.ArrayList;
 
-import com.github.wnebyte.minecraft.mycomponents.MyBlock;
+import com.github.wnebyte.minecraft.componenets.Cube;
 import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.componenets.Text2D;
 
@@ -19,36 +19,35 @@ public class Renderer {
 
     private List<Text2D> texts;
 
-    private TextRenderBatch textRenderBatch;
+    private TextRenderBatch textRenderer;
 
     private boolean started;
 
-    public Renderer(Camera camera, Frustrum frustrum) {
+    public Renderer(Camera camera) {
         this.camera = camera;
-        this.frustrum = frustrum;
         this.batches = new ArrayList<>(100);
         this.texts = new ArrayList<>(100);
-        this.textRenderBatch = new TextRenderBatch(camera);
+        this.textRenderer = new TextRenderBatch(camera);
     }
 
     public void addText2D(Text2D text2D) {
         if (!started) {
-            textRenderBatch.start();
+            textRenderer.start();
             started = true;
         }
         texts.add(text2D);
     }
 
     public void clearText2D() {
-        textRenderBatch.flush();
+        textRenderer.flush();
         texts.clear();
     }
 
-    public void add(MyBlock block) {
+    public void add(Cube cube) {
         boolean added = false;
         for (Batch batch : batches) {
-            if (batch.hasSpace(block.getTextures())) {
-                batch.add(block);
+            if (batch.hasSpace(cube.getTextures())) {
+                batch.add(cube);
                 added = true;
                 break;
             }
@@ -57,7 +56,7 @@ public class Renderer {
         if (!added) {
             Batch batch = new Batch(MAX_BATCH_SIZE, camera);
             batch.start();
-            batch.add(block);
+            batch.add(cube);
             batches.add(batch);
         }
     }
@@ -70,9 +69,9 @@ public class Renderer {
         if (!texts.isEmpty()) {
             for (int i = 0; i < texts.size(); i++) {
                 Text2D text = texts.get(i);
-                textRenderBatch.addText2D(text);
+                textRenderer.addText2D(text);
             }
-            textRenderBatch.flush();
+            textRenderer.flush();
         }
     }
 
@@ -88,7 +87,7 @@ public class Renderer {
             Batch batch = batches.get(i);
             batch.destroy();
         }
-        textRenderBatch.destroy();
+        textRenderer.destroy();
     }
 
     public int size() {

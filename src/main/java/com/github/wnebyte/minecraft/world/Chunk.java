@@ -21,19 +21,36 @@ public class Chunk {
     ###########################
     */
 
-    static class Face {
+    private static class Face {
 
-        int id;
+        private enum Type {
+            FRONT,
+            RIGHT,
+            BACK,
+            LEFT,
+            TOP,
+            BOTTOM;
+        }
+
+        private final Face.Type type;
 
         private final float[] tl, tr, bl, br, normals;
 
-        private Face(int id, float[] tl, float[] tr, float[] bl, float[] br, float[] normals) {
-            this.id = id;
+        private Face(Face.Type type, float[] tl, float[] tr, float[] bl, float[] br, float[] normals) {
+            this.type = type;
             this.tl = tl;
             this.tr = tr;
             this.bl = bl;
             this.br = br;
             this.normals = normals;
+        }
+
+        private boolean isTop() {
+            return (type == Face.Type.TOP);
+        }
+
+        private boolean isBottom() {
+            return (type == Face.Type.BOTTOM);
         }
     }
 
@@ -46,8 +63,7 @@ public class Chunk {
     }
 
     public static int toIndex(int x, int y, int z) {
-        // return (z * SIZE * SIZE) + (y * SIZE) + x;
-        return (z * WIDTH * HEIGHT) + (y * WIDTH) + x;
+        return (z * Chunk.WIDTH * Chunk.HEIGHT) + (y * Chunk.WIDTH) + x;
     }
 
     public static Vector2i toChunkCoords2D(Vector3f pos) {
@@ -71,12 +87,13 @@ public class Chunk {
     }
 
     public static Vector2f[] getUvs(BlockFormat format, Face face) {
-        if (face.id == TOP_FACE.id) {
-            return format.getTopTextureFormat().getUvs();
-        } else if (face.id == BOTTOM_FACE.id) {
-            return format.getBottomTextureFormat().getUvs();
-        } else {
-            return format.getSideTextureFormat().getUvs();
+        switch (face.type) {
+            case TOP:
+                return format.getTopTextureFormat().getUvs();
+            case BOTTOM:
+                return format.getBottomTextureFormat().getUvs();
+            default:
+                return format.getSideTextureFormat().getUvs();
         }
     }
 
@@ -134,32 +151,32 @@ public class Chunk {
     };
 
     public static final Face FRONT_FACE =
-            new Face(0,
+            new Face(Face.Type.FRONT,
                     VERTICES[INDICES[0][1]], VERTICES[INDICES[0][0]], VERTICES[INDICES[0][2]], VERTICES[INDICES[0][3]],
                     null);
 
     public static final Face RIGHT_FACE =
-            new Face(1,
+            new Face(Face.Type.RIGHT,
                     VERTICES[INDICES[1][1]], VERTICES[INDICES[1][0]], VERTICES[INDICES[1][2]], VERTICES[INDICES[1][3]],
                     null);
 
     public static final Face BACK_FACE =
-            new Face(2,
+            new Face(Face.Type.BACK,
                     VERTICES[INDICES[2][1]], VERTICES[INDICES[2][0]], VERTICES[INDICES[2][2]], VERTICES[INDICES[2][3]],
                     null);
 
     public static final Face LEFT_FACE =
-            new Face(3,
+            new Face(Face.Type.LEFT,
                     VERTICES[INDICES[3][1]], VERTICES[INDICES[3][0]], VERTICES[INDICES[3][2]], VERTICES[INDICES[3][3]],
                     null);
 
     public static final Face TOP_FACE =
-            new Face(4,
+            new Face(Face.Type.TOP,
                     VERTICES[INDICES[4][1]], VERTICES[INDICES[4][0]], VERTICES[INDICES[4][2]], VERTICES[INDICES[4][3]],
                     null);
 
     public static final Face BOTTOM_FACE =
-            new Face(5,
+            new Face(Face.Type.BOTTOM,
                     VERTICES[INDICES[5][1]], VERTICES[INDICES[5][0]], VERTICES[INDICES[5][2]], VERTICES[INDICES[5][3]],
                     null);
 
@@ -237,10 +254,6 @@ public class Chunk {
         data[index] = b;
     }
 
-    public void setBlock(Block b, int i, int j, int k, boolean remesh) {
-
-    }
-
     public void patchNeighbours() {
         cXN = map.get(chunkCoordX - 1, chunkCoordZ);
         cXP = map.get(chunkCoordX + 1, chunkCoordZ);
@@ -252,13 +265,16 @@ public class Chunk {
         float minBiomeHeight = 55.0f;
         float maxBiomeHeight = 145.0f;
 
-        for (int z = 0; z < DEPTH; z++) {
+        for (int z = 0; z < Chunk.DEPTH; z++) {
             int maxHeight = 50;
             int stoneHeight = maxHeight - 3;
 
-            for (int x = 0; x < WIDTH; x++) {
-                for (int y = 0; y < HEIGHT; y++) {
-                    if (y == 0) {
+            for (int x = 0; x < Chunk.WIDTH; x++) {
+                for (int y = 0; y < Chunk.HEIGHT; y++) {
+                    if (x == 0 && y == 0 && (z == 0 || z == 1)) {
+                        setBlock(Block.GLASS, x, y, z);
+                    }
+                    else if (y == 0) {
                         setBlock(Block.BEDROCK, x, y, z);
                     }
                     else if (y < stoneHeight) {
@@ -276,14 +292,6 @@ public class Chunk {
                 }
             }
         }
-    }
-
-    public void unload() {
-
-    }
-
-    private void unload(int subchunkLevel) {
-
     }
 
     // simple 32x32x32 chunk consists of:
@@ -310,12 +318,12 @@ public class Chunk {
         int access;
 
         for (; j < jMax; j++) {
-            for (int k = 0; k < DEPTH; k++) {
-                for (int i = 0; i < WIDTH; i++) {
+            for (int k = 0; k < Chunk.DEPTH; k++) {
+                for (int i = 0; i < Chunk.WIDTH; i++) {
                     access = toIndex(i, j, k);
                     Block b = data[access];
 
-                    if (b == null || b.id == Block.AIR_ID) { continue; }
+                    if (Block.isAir(b)) { continue; }
                     createCube(buffer, b, i, j, k);
                 }
             }
@@ -330,27 +338,27 @@ public class Chunk {
 
     private void createCube(VertexBuffer buffer, Block b, int i, int j, int k) {
         BlockFormat format = BlockMap.getBlockFormat(b.id);
-        // Left face (X-) CONCRETE
+        // Left face (X-)
         if (visibleFaceXN(i-1, j, k)) {
             appendFace(buffer, format, i, j, k, LEFT_FACE);
         }
-        // Right face (X+) DIRT
+        // Right face (X+)
         if (visibleFaceXP(i+1, j, k)) {
             appendFace(buffer, format, i, j, k, RIGHT_FACE);
         }
-        // Back face (Z-) SNOW
+        // Back face (Z-)
         if (visibleFaceZN(i, j, k-1)) {
             appendFace(buffer, format, i, j, k, BACK_FACE);
         }
-        // Front face (Z+) BLUE
+        // Front face (Z+)
         if (visibleFaceZP(i, j, k+1)) {
             appendFace(buffer, format, i, j, k, FRONT_FACE);
         }
-        // Bottom face (Y-) LIGHT GRAY
+        // Bottom face (Y-)
         if (visibleFaceYN(i, j-1, k)) {
             appendFace(buffer, format, i, j, k, BOTTOM_FACE);
         }
-        // Top face (Y+) DARK GRAY
+        // Top face (Y+)
         if (visibleFaceYP(i, j+1, k)) {
             appendFace(buffer, format, i, j, k, TOP_FACE);
         }
@@ -358,11 +366,15 @@ public class Chunk {
 
     private void appendFace(VertexBuffer buffer, BlockFormat format, int i, int j, int k, Face face) {
         Vector2f[] uvs = getUvs(format, face);
-        buffer.appendQuad(new Vector3f(i + (face.tl[0]), j + (face.tl[1]), k + (face.tl[2])), // TL(1)
-                          new Vector3f(i + (face.tr[0]), j + (face.tr[1]), k + (face.tr[2])), // TR(0)
-                          new Vector3f(i + (face.bl[0]), j + (face.bl[1]), k + (face.bl[2])), // BL(2)
-                          new Vector3f(i + (face.br[0]), j + (face.br[1]), k + (face.br[2])), // BR(3)
-                          uvs[3], uvs[0], uvs[2], uvs[1]);
+        Vector3f tl = new Vector3f(i + (face.tl[0]), j + (face.tl[1]), k + (face.tl[2]));
+        Vector3f tr = new Vector3f(i + (face.tr[0]), j + (face.tr[1]), k + (face.tr[2]));
+        Vector3f bl = new Vector3f(i + (face.bl[0]), j + (face.bl[1]), k + (face.bl[2]));
+        Vector3f br = new Vector3f(i + (face.br[0]), j + (face.br[1]), k + (face.br[2]));
+        Vector2f uv0 = uvs[3];
+        Vector2f uv1 = uvs[0];
+        Vector2f uv2 = uvs[2];
+        Vector2f uv3 = uvs[1];
+        buffer.appendQuad(tl, tr, bl, br, uv0, uv1, uv2, uv3);
     }
 
     private boolean visibleFaceXN(int i, int j, int k) {
@@ -371,14 +383,14 @@ public class Chunk {
                 return true;
             }
 
-            int index = toIndex(WIDTH - 1, j, k);
+            int index = toIndex(Chunk.WIDTH - 1, j, k);
             Block b = cXN.data[index];
-            return (b == null || b.id == Block.AIR_ID);
+            return b.isTransparent();
         }
 
         int index = toIndex(i, j, k);
         Block b = data[index];
-        return (b == null || b.id == Block.AIR_ID);
+        return b.isTransparent();
     }
 
     private boolean visibleFaceXP(int i, int j, int k) {
@@ -389,12 +401,12 @@ public class Chunk {
 
             int index = toIndex(0, j, k);
             Block b = cXP.data[index];
-            return (b == null || b.id == Block.AIR_ID);
+            return b.isTransparent();
         }
 
         int index = toIndex(i, j, k);
         Block b = data[index];
-        return (b == null || b.id == Block.AIR_ID);
+        return b.isTransparent();
     }
 
     private boolean visibleFaceYN(int i, int j, int k) {
@@ -403,14 +415,14 @@ public class Chunk {
                 return true;
             }
 
-            int index = toIndex(i, HEIGHT - 1, k);
+            int index = toIndex(i, Chunk.HEIGHT - 1, k);
             Block b = cYN.data[index];
-            return (b == null || b.id == Block.AIR_ID);
+            return b.isTransparent();
         }
 
         int index = toIndex(i, j, k);
         Block b = data[index];
-        return (b == null || b.id == Block.AIR_ID);
+        return b.isTransparent();
     }
 
     private boolean visibleFaceYP(int i, int j, int k) {
@@ -421,12 +433,12 @@ public class Chunk {
 
             int index = toIndex(i, 0, k);
             Block b = cYN.data[index];
-            return (b == null || b.id == Block.AIR_ID);
+            return b.isTransparent();
         }
 
         int index = toIndex(i, j, k);
         Block b = data[index];
-        return (b == null || b.id == Block.AIR_ID);
+        return b.isTransparent();
     }
 
     private boolean visibleFaceZN(int i, int j, int k) {
@@ -435,14 +447,14 @@ public class Chunk {
                 return true;
             }
 
-            int index = toIndex(i, j, DEPTH - 1);
+            int index = toIndex(i, j, Chunk.DEPTH - 1);
             Block b = cYN.data[index];
-            return (b == null || b.id == Block.AIR_ID);
+            return b.isTransparent();
         }
 
         int index = toIndex(i, j, k);
         Block b = data[index];
-        return (b == null || b.id == Block.AIR_ID);
+        return b.isTransparent();
     }
 
     private boolean visibleFaceZP(int i, int j, int k) {
@@ -453,12 +465,12 @@ public class Chunk {
 
             int index = toIndex(i, j, 0);
             Block b = cYN.data[index];
-            return (b == null || b.id == Block.AIR_ID);
+            return b.isTransparent();
         }
 
         int index = toIndex(i, j, k);
         Block b = data[index];
-        return (b == null || b.id == Block.AIR_ID);
+        return b.isTransparent();
     }
 
     private boolean differentBlock(int access, Block compare) {
@@ -666,6 +678,14 @@ public class Chunk {
 
     public Vector2i getChunkCoords() {
         return chunkCoords;
+    }
+
+    public int getChunkCoordX() {
+        return chunkCoordX;
+    }
+
+    public int getChunkCoordZ() {
+        return chunkCoordZ;
     }
 
     @Override

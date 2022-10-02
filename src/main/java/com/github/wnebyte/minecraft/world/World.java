@@ -2,18 +2,16 @@ package com.github.wnebyte.minecraft.world;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
-import org.joml.Vector2i;
+
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.lwjgl.system.MemoryUtil;
 import com.github.wnebyte.minecraft.core.Camera;
-import com.github.wnebyte.minecraft.core.MouseListener;
 import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.util.Assets;
 import com.github.wnebyte.minecraft.util.Pool;
 import com.github.wnebyte.minecraft.util.DrawCommandBuffer;
 import static com.github.wnebyte.minecraft.renderer.VertexBuffer.*;
-import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
 import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
 import static org.lwjgl.opengl.GL13.glActiveTexture;
@@ -28,7 +26,7 @@ import static org.lwjgl.opengl.GL44C.GL_MAP_PERSISTENT_BIT;
 
 public class World {
 
-    public static final int CHUNK_CAPACITY = 80;
+    public static final int CHUNK_CAPACITY = 50;
 
     public static final int SPAWN_CHUNK_SIZE = 5 * 5;
 
@@ -47,6 +45,8 @@ public class World {
     private Texture texture;
 
     private DrawCommandBuffer drawCommands;
+
+    private DrawCommandBuffer blendableDrawCommands;
 
     private Pool<Vector3i, VertexBuffer> subchunks;
 
@@ -82,7 +82,7 @@ public class World {
         glEnableVertexAttribArray(1);
 
         int numBuffers = subchunks.size();
-        int size = numBuffers * (BUFFER_CAPACITY * STRIDE_BYTES);
+        int size = numBuffers * (CAPACITY * STRIDE_BYTES);
         int length = size / numBuffers;
         int flags = GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT;
         glBufferStorage(GL_ARRAY_BUFFER, size, flags);
@@ -92,18 +92,18 @@ public class World {
         for (int offset = 0, i = 0; offset <= size - length && i < subchunks.size(); offset += length, i++) {
             ByteBuffer slice = MemoryUtil.memByteBuffer(base + offset, length);
             VertexBuffer subchunk = new VertexBuffer(slice);
-            subchunk.first = (i * BUFFER_CAPACITY);
+            subchunk.first = (i * CAPACITY);
             subchunk.drawCommandIndex = i;
             subchunks.add(subchunk);
         }
 
         ibo = glGenBuffers();
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, ibo);
-        glBufferData(GL_DRAW_INDIRECT_BUFFER, (long)drawCommands.maxNumCommands() * DrawCommand.SIZE_BYTES, GL_DYNAMIC_DRAW);
+        glBufferData(GL_DRAW_INDIRECT_BUFFER, (long)drawCommands.capacity() * DrawCommand.SIZE_BYTES, GL_DYNAMIC_DRAW);
 
         cbo = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, cbo);
-        glBufferData(GL_ARRAY_BUFFER, (long)drawCommands.maxNumCommands() * (2 * Integer.BYTES), GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, (long)drawCommands.capacity() * (2 * Integer.BYTES), GL_DYNAMIC_DRAW);
         
         glVertexAttribIPointer(2, 2, GL_INT, 2 * Integer.BYTES, 0);
         glVertexAttribDivisor(2, 1);
@@ -113,8 +113,15 @@ public class World {
         int x = (int)(Math.sqrt(SPAWN_CHUNK_SIZE) * 16) / 2;
         int y = 51;
         int z = x;
-       // camera.setPosition(new Vector3f(x, y, z));
-        camera.setPosition(new Vector3f(0, 0, 0));
+        camera.setPosition(new Vector3f(x, y, z));
+       // camera.setPosition(new Vector3f(0, 0, 0));
+    }
+
+    private void initMapTest() {
+        Chunk chunk = new Chunk(0, 0, 0, map, drawCommands, subchunks);
+        map.put(chunk.getChunkCoords(), chunk);
+        chunk.generateTerrain();
+        chunk.generateMesh();
     }
 
     private void initMap() {
@@ -129,12 +136,13 @@ public class World {
             }
         }
         double time = (System.nanoTime() - startTime) * 1E-9;
-        System.out.printf("init: %.2fs%n", time);
+        System.out.printf("init map: %.2fs%n", time);
     }
 
     public void update(float dt) {
         debounce -= dt;
 
+        /*
         if (MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && debounce < 0) {
             Vector3f pos = new Vector3f(camera.getPosition());
             Vector2i chunkPos = Chunk.toChunkCoords2D(new Vector3f(0, 0, 0));
@@ -151,6 +159,7 @@ public class World {
 
             debounce = debounceTime;
         }
+         */
     }
 
     public void render() {
@@ -163,10 +172,16 @@ public class World {
             glBufferSubData(GL_ARRAY_BUFFER, 0, drawCommands.chunkCoords());
 
             long vertexCount = 0;
+            long first = 0;
             for (DrawCommand drawCommand : drawCommands) {
+                System.out.println(drawCommand.toJson());
                 vertexCount += drawCommand.vertexCount;
+                first = drawCommand.first + CAPACITY;
             }
-            System.out.println("vertexCount: " + vertexCount);
+            double vMem = (vertexCount * STRIDE_BYTES) * 1E-6;
+            System.out.printf("total vertexCount:     %.0fMB%n", vMem);
+            double mem = (first * STRIDE_BYTES) * 1E-6;
+            System.out.printf("total memory buffered: %.0fMB%n", mem);
 
             drawCommands.clean();
         }
@@ -181,7 +196,7 @@ public class World {
         // GL_DRAW_INDIRECT_BUFFER or a pointer to an array struct that holds draw parameters
         // param drawCount the number of elements in the array addresses by indirect
         // param stride is the distance, in bytes, between the elements of the indirect array
-        glMultiDrawArraysIndirect(GL_TRIANGLES, 0, drawCommands.maxNumCommands(), 0);
+        glMultiDrawArraysIndirect(GL_TRIANGLES, 0, drawCommands.size(), 0);
         texture.unbind();
         shader.detach();
         glBindVertexArray(0);

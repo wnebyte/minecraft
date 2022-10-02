@@ -4,8 +4,7 @@ import org.joml.Vector3f;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.glfw.GLFWErrorCallback;
-import com.github.wnebyte.minecraft.renderer.*;
-import com.github.wnebyte.minecraft.mycomponents.MyBlock;
+import com.github.wnebyte.minecraft.componenets.Cube;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -43,7 +42,7 @@ public class Window {
 
     private float lastFrame = 0.0f;
 
-    private MyBlock lightSource;
+    private Cube lightSource;
 
     private Scene scene;
 

@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
 
-import com.github.wnebyte.minecraft.mycomponents.MyBlock;
+import com.github.wnebyte.minecraft.componenets.Cube;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -169,7 +169,7 @@ public class Batch {
 
     public float[] vertices;
 
-    private MyBlock[] blocks;
+    private Cube[] blocks;
 
     private int size;
 
@@ -212,7 +212,7 @@ public class Batch {
 
     public Batch(int maxBatchSize, Camera camera) {
         this.vertices = new float[36 * STRIDE * maxBatchSize];
-        this.blocks = new MyBlock[maxBatchSize];
+        this.blocks = new Cube[maxBatchSize];
         this.size = 0;
         this.hasSpace = true;
         this.textures = new ArrayList<>(16);
@@ -289,7 +289,7 @@ public class Batch {
         glDeleteVertexArrays(vaoLsID);
     }
 
-    public void add(MyBlock block) {
+    public void add(Cube block) {
         int index = size;
         blocks[index] = block;
         size++;
@@ -300,9 +300,9 @@ public class Batch {
         }
     }
 
-    public boolean destroy(MyBlock block) {
+    public boolean destroy(Cube block) {
         for (int i = 0; i < size; i++) {
-            MyBlock b = blocks[i];
+            Cube b = blocks[i];
             if (b.equals(block)) {
                 for (int j = i; j < size - 1; j++) {
                     blocks[j] = blocks[j + 1];
@@ -318,7 +318,7 @@ public class Batch {
     private boolean shouldRebuffer() {
         boolean rebuffer = false;
         for (int i = 0; i < size; i++) {
-            MyBlock block = blocks[i];
+            Cube block = blocks[i];
             if (block.isDirty()) {
                 loadVertexAttributes(i);
                 block.setClean();
@@ -357,7 +357,7 @@ public class Batch {
 
     /*
     public void loadVertexAttributes(int index) {
-        MyBlock block = blocks[index];
+        Cube block = blocks[index];
         Vector4f[] vertexArray = genVertexArray(block.transform);
         int offset = index * 36 * STRIDE;
 
@@ -418,7 +418,7 @@ public class Batch {
     );
 
     public void loadVertexAttributes(int index) {
-        MyBlock block = blocks[index];
+        Cube block = blocks[index];
         Vector4f[] vertexArray = genVertexArray(block.transform);
         int offset = index * 36 * STRIDE;
 
@@ -472,7 +472,7 @@ public class Batch {
         return (hasSpace && new HashSet<Texture>(textures).size() + space <= 8);
     }
 
-    public void addTextures(MyBlock block) {
+    public void addTextures(Cube block) {
         for (Texture texture : block.getTextures()) {
             if (!hasTexture(texture)) {
                 textures.add(texture);
@@ -480,7 +480,7 @@ public class Batch {
         }
     }
 
-    public MyBlock[] getBlocks() {
+    public Cube[] getBlocks() {
         return blocks;
     }
 }

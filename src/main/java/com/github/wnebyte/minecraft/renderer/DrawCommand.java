@@ -1,12 +1,18 @@
 package com.github.wnebyte.minecraft.renderer;
 
+import java.util.Objects;
+import java.util.Comparator;
 import com.github.wnebyte.minecraft.util.Settings;
 
-public class DrawCommand {
+public class DrawCommand implements Comparable<DrawCommand> {
 
     public static final int SIZE = 4;
 
     public static final int SIZE_BYTES = SIZE * Integer.BYTES;
+
+    public static final Comparator<DrawCommand> COMPARATOR_ASC = DrawCommand::compareTo;
+
+    public static final Comparator<DrawCommand> COMPARATOR_DESC = COMPARATOR_ASC.reversed();
 
     public DrawCommand() {
         this(0, 0, 0, 0);
@@ -27,13 +33,43 @@ public class DrawCommand {
 
     public int baseInstance;
 
+    public transient int distance;
+
+    @Override
+    public int compareTo(DrawCommand o) {
+        return Integer.compare(this.distance, o.distance);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null) return false;
+        if (o == this) return true;
+        if (!(o instanceof DrawCommand)) return false;
+        DrawCommand drawCommand = (DrawCommand) o;
+        return Objects.equals(drawCommand.vertexCount, this.vertexCount) &&
+                Objects.equals(drawCommand.instanceCount, this.instanceCount) &&
+                Objects.equals(drawCommand.first, this.first) &&
+                Objects.equals(drawCommand.baseInstance, this.baseInstance);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 43;
+        return result +
+                Objects.hashCode(this.vertexCount) +
+                Objects.hashCode(this.instanceCount) +
+                Objects.hashCode(this.first) +
+                Objects.hashCode(this.baseInstance);
+    }
+
     @Override
     public String toString() {
         return String.format("DrawCommand[vertexCount: %d, instanceCount: %d, first: %d, baseInstance: %d]",
-                vertexCount, instanceCount, first, baseInstance);
+                this.vertexCount, this.instanceCount, this.first, this.baseInstance);
     }
 
     public String toJson() {
         return Settings.GSON.toJson(this);
     }
+
 }

@@ -57,14 +57,25 @@ public class BlockMap {
             JsonObject jsonObject = e.getAsJsonObject();
             int id = jsonObject.get("id").getAsInt();
             String name = jsonObject.get("name").getAsString();
+            boolean isSolid = jsonObject.get("isSolid").getAsBoolean();
+            boolean isTransparent = jsonObject.get("isTransparent").getAsBoolean();
+            boolean isBlendable = jsonObject.get("isBlendable").getAsBoolean();
             String side = jsonObject.get("side").getAsString();
             String top = jsonObject.get("top").getAsString();
             String bottom = jsonObject.get("bottom").getAsString();
             TextureFormat sideTextureFormat = textureFormats.get(side);
             TextureFormat topTextureFormat = textureFormats.get(top);
             TextureFormat bottomTextureForamt = textureFormats.get(bottom);
-            BlockFormat blockFormat = new BlockFormat(id, name,
-                    sideTextureFormat, topTextureFormat, bottomTextureForamt);
+            BlockFormat blockFormat = new BlockFormat.Builder()
+                    .setId(id)
+                    .setName(name)
+                    .setSideTextureFormat(sideTextureFormat)
+                    .setTopTextureFormat(topTextureFormat)
+                    .setBottomTextureFormat(bottomTextureForamt)
+                    .setIsSolid(isSolid)
+                    .setIsTransparent(isTransparent)
+                    .setIsBlendable(isBlendable)
+                    .build();
             blockFormats.put(id, blockFormat);
             nameToId.put(name, id);
         }

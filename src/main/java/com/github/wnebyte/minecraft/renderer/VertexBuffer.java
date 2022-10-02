@@ -20,82 +20,49 @@ public class VertexBuffer {
 
     public static final int UV_SIZE = 2;
 
-    public static final int TEX_ID_SIZE = 1;
-
     public static final int POS_OFFSET = 0;
 
     public static final int UV_OFFSET = POS_OFFSET + (POS_SIZE * Float.BYTES);
-
-    public static final int TEX_ID_OFFSET = UV_OFFSET + (UV_SIZE * Float.BYTES);
 
     public static final int STRIDE = POS_SIZE + UV_SIZE;
 
     public static final int STRIDE_BYTES = STRIDE * Float.BYTES;
 
-    public static final int DEFAULT_CAPACITY = 4096;
-
-    public static final int BUFFER_CAPACITY = 10_000;
+    public static final int CAPACITY = 10_000;
 
     private FloatBuffer data;
 
     private int size;
 
-    private boolean dirty = true;
+    private boolean dirty;
 
     public int first;
 
     public int drawCommandIndex;
 
+    public boolean isBlendable;
+
     public Vector2i chunkCoords;
 
     public short subchunkLevel;
 
-
     public VertexBuffer(ByteBuffer buffer) {
         data = buffer.asFloatBuffer();
-        size = 0;
-    }
-
-    public void reset() {
-        data.clear();
         size = 0;
         dirty = true;
     }
 
-    public int size() {
-        return size;
-    }
+    /*
+    TL     TR
+    # ----- #
 
-    public int capacity() {
-        return data.capacity();
-    }
-
-    public int remaining() {
-        return data.remaining();
-    }
-
-    public boolean isEmpty() {
-        return (size == 0);
-    }
-
-    public int getNumVertices() {
-        return size / STRIDE;
-    }
-
-    public int getNumQuads() {
-        return (size / STRIDE) / 6;
-    }
-
-    public Vector2i getChunkCoords() {
-        return chunkCoords;
-    }
-
-    public int getSubchunkLevel() {
-        return subchunkLevel;
-    }
-
+    # ----- #
+    BL      BR
+     */
+    // TR - TL - BL (Counter-closewise, i.e. Front-facing)
+    // BR - TR - BL (Counter-clockwise, i.e. Front-facing)
     public void appendQuad(Vector3f tl, Vector3f tr, Vector3f bl, Vector3f br,
-                       Vector2f uv0, Vector2f uv1, Vector2f uv2, Vector2f uv3) {
+                           Vector2f uv0, Vector2f uv1, Vector2f uv2, Vector2f uv3) {
         // TR
         data.put(tr.x);
         data.put(tr.y);
@@ -139,5 +106,43 @@ public class VertexBuffer {
         data.put(uv2.y);
 
         size += STRIDE * 6;
+    }
+
+    public void reset() {
+        data.clear();
+        size = 0;
+        dirty = true;
+    }
+
+    public int size() {
+        return size;
+    }
+
+    public int capacity() {
+        return data.capacity();
+    }
+
+    public int remaining() {
+        return data.remaining();
+    }
+
+    public boolean isEmpty() {
+        return (size == 0);
+    }
+
+    public int getNumVertices() {
+        return size / STRIDE;
+    }
+
+    public int getNumQuads() {
+        return (size / STRIDE) / 6;
+    }
+
+    public Vector2i getChunkCoords() {
+        return chunkCoords;
+    }
+
+    public int getSubchunkLevel() {
+        return subchunkLevel;
     }
 }

@@ -1,9 +1,9 @@
 package com.github.wnebyte.minecraft.util;
 
+import com.github.wnebyte.minecraft.componenets.Cube;
 import com.github.wnebyte.minecraft.renderer.Texture;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.core.Transform;
-import com.github.wnebyte.minecraft.mycomponents.MyBlock;
 
 public class BlockBuilder {
 
@@ -51,7 +51,7 @@ public class BlockBuilder {
         return this;
     }
 
-    public MyBlock build() {
+    public Cube build() {
         if (sidePath != null) {
             side = Assets.getTexture(sidePath);
         }
@@ -61,6 +61,6 @@ public class BlockBuilder {
         if (bottomPath != null) {
             bottom = Assets.getTexture(bottomPath);
         }
-        return new MyBlock(new Transform(position, scale, rotation), side, top, bottom);
+        return new Cube(new Transform(position, scale, rotation), side, top, bottom);
     }
 }

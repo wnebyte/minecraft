@@ -1,4 +1,4 @@
-package com.github.wnebyte.minecraft.mycomponents;
+package com.github.wnebyte.minecraft.componenets;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +19,7 @@ import com.github.wnebyte.minecraft.renderer.Texture;
 // | /          |  /      /
 // |/           | /      z
 // v2 --------- v3
-public class MyBlock extends Component {
+public class Cube extends Component {
 
     public Transform transform;
 
@@ -38,7 +38,7 @@ public class MyBlock extends Component {
             new Vector2f(0, 1)  // TL
     };
 
-    public MyBlock(Transform transform, Texture side, Texture top, Texture bottom) {
+    public Cube(Transform transform, Texture side, Texture top, Texture bottom) {
         this.transform = transform;
         this.side = side;
         this.top = top;
@@ -103,8 +103,8 @@ public class MyBlock extends Component {
     public boolean equals(Object o) {
         if (o == null) return false;
         if (o == this) return true;
-        if (!(o instanceof MyBlock)) return false;
-        MyBlock block = (MyBlock) o;
+        if (!(o instanceof Cube)) return false;
+        Cube block = (Cube) o;
         return Objects.equals(block.transform, this.transform) &&
                 Objects.equals(block.dirty, this.dirty) &&
                 super.equals(block);

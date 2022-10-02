@@ -1,7 +1,7 @@
 package com.github.wnebyte.minecraft.core;
 
 import java.util.Random;
-
+import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.world.Chunk;
 import com.github.wnebyte.minecraft.world.World;
 import com.github.wnebyte.minecraft.componenets.*;
@@ -9,7 +9,6 @@ import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.util.Assets;
 import com.github.wnebyte.minecraft.util.BlockMap;
 import com.github.wnebyte.minecraft.util.TexturePacker;
-import org.joml.Vector3f;
 
 public class Scene {
 
@@ -34,7 +33,7 @@ public class Scene {
     public Scene(Camera camera) {
         this.camera = camera;
         this.frustrum = new Frustrum();
-        this.renderer = new Renderer(camera, frustrum);
+        this.renderer = new Renderer(camera);
         this.rand = new Random();
         this.world = new World(camera);
     }

@@ -5,7 +5,9 @@
     "side": "none",
     "top": "none",
     "bottom": "none",
-    "solid": false
+    "isSolid": false,
+    "isTransparent": true,
+    "isBlendable": false
   },
   {
     "id": 2,
@@ -13,7 +15,9 @@
     "side": "grass_block_side",
     "top": "grass_block_top",
     "bottom": "dirt",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 3,
@@ -21,7 +25,9 @@
     "side": "sand",
     "top": "sand",
     "bottom": "sand",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 4,
@@ -29,7 +35,9 @@
     "side": "dirt",
     "top": "dirt",
     "bottom": "dirt",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 5,
@@ -37,7 +45,9 @@
     "side": "green_concrete_powder",
     "top": "green_concrete_powder",
     "bottom": "green_concrete_powder",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 6,
@@ -45,7 +55,9 @@
     "side": "stone",
     "top": "stone",
     "bottom": "stone",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 7,
@@ -53,7 +65,9 @@
     "side": "bedrock",
     "top": "bedrock",
     "bottom": "bedrock",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 8,
@@ -61,7 +75,9 @@
     "side": "oak_log",
     "top": "oak_log_top",
     "bottom": "oak_log_top",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 9,
@@ -69,7 +85,9 @@
     "side": "oak_leaves",
     "top": "oak_leaves",
     "bottom": "oak_leaves",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": true,
+    "isBlendable": true
   },
   {
     "id": 10,
@@ -77,7 +95,9 @@
     "side": "oak_planks",
     "top": "oak_planks",
     "bottom": "oak_planks",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 11,
@@ -85,7 +105,9 @@
     "side": "glowstone",
     "top": "glowstone",
     "bottom": "glowstone",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 12,
@@ -93,7 +115,9 @@
     "side": "cobblestone",
     "top": "cobblestone",
     "bottom": "cobblestone",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 13,
@@ -101,7 +125,9 @@
     "side": "spruce_log",
     "top": "spruce_log",
     "bottom": "spruce_log",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 14,
@@ -109,7 +135,9 @@
     "side": "spruce_planks",
     "top": "spruce_planks",
     "bottom": "spruce_planks",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 15,
@@ -117,7 +145,9 @@
     "side": "glass",
     "top": "glass",
     "bottom": "glass",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": true,
+    "isBlendable": true
   },
   {
     "id": 16,
@@ -125,7 +155,9 @@
     "side": "sea_lantern",
     "top": "sea_lantern",
     "bottom": "sea_lantern",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 17,
@@ -133,7 +165,9 @@
     "side": "birch_log",
     "top": "birch_log_top",
     "bottom": "birch_log_top",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 18,
@@ -141,7 +175,9 @@
     "side": "blue_stained_glass",
     "top": "blue_stained_glass",
     "bottom": "blue_stained_glass",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": true,
+    "isBlendable": true
   },
   {
     "id": 19,
@@ -149,7 +185,9 @@
     "side": "water",
     "top": "water",
     "bottom": "water",
-    "solid": false
+    "isSolid": false,
+    "isTransparent": true,
+    "isBlendable": true
   },
   {
     "id": 20,
@@ -157,7 +195,9 @@
     "side": "birch_planks",
     "top": "birch_planks",
     "bottom": "birch_planks",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 21,
@@ -165,7 +205,9 @@
     "side": "diamond_block",
     "top": "diamond_block",
     "bottom": "diamond_block",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 22,
@@ -173,7 +215,9 @@
     "side": "obsidian",
     "top": "obsidian",
     "bottom": "obsidian",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 23,
@@ -181,7 +225,9 @@
     "side": "crying_obsidian",
     "top": "crying_obsidian",
     "bottom": "crying_obsidian",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 24,
@@ -189,7 +235,9 @@
     "side": "dark_oak_log",
     "top": "dark_oak_log_top",
     "bottom": "dark_oak_log_top",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 25,
@@ -197,7 +245,9 @@
     "side": "dark_oak_planks",
     "top": "dark_oak_planks",
     "bottom": "dark_oak_planks",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 26,
@@ -205,7 +255,9 @@
     "side": "jungle_log",
     "top": "jungle_log_top",
     "bottom": "jungle_log_top",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 27,
@@ -213,7 +265,9 @@
     "side": "jungle_planks",
     "top": "jungle_planks",
     "bottom": "jungle_planks",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 28,
@@ -221,7 +275,9 @@
     "side": "acacia_log",
     "top": "acacia_log_top",
     "bottom": "acacia_log_top",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   },
   {
     "id": 29,
@@ -229,6 +285,8 @@
     "side": "acacia_planks",
     "top": "acacia_planks",
     "bottom": "acacia_planks",
-    "solid": true
+    "isSolid": true,
+    "isTransparent": false,
+    "isBlendable": false
   }
 ]

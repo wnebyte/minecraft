@@ -138,9 +138,9 @@ public class MultiDraw {
         for (int x = 0; x < 8; x++) {
             for (int y = 0; y < 8; y++) {
                 for (int z = 0; z < 8; z++) {
-                    Block block = new Block(1, x * 1.2f, y * 1.2f, z * 1.2f);
-                    data[x][y][z] = block;
-                    tmp.add(block);
+                   // Block block = new Block(1, x * 1.2f, y * 1.2f, z * 1.2f);
+                   // data[x][y][z] = block;
+                   // tmp.add(block);
                 }
             }
         }
@@ -243,9 +243,9 @@ public class MultiDraw {
                 continue;
             }
              */
-            vertices[offset + 0] = block.x + (verts[0] * 1.0f);
-            vertices[offset + 1] = block.y + (verts[1] * 1.0f);
-            vertices[offset + 2] = block.z + (verts[2] * 1.0f);
+           // vertices[offset + 0] = block.x + (verts[0] * 1.0f);
+           // vertices[offset + 1] = block.y + (verts[1] * 1.0f);
+           // vertices[offset + 2] = block.z + (verts[2] * 1.0f);
             vertices[offset + 3] = uv[0];
             vertices[offset + 4] = uv[1];
             offset += STRIDE;

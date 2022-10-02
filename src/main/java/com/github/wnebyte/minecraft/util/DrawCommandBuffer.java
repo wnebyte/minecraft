@@ -2,34 +2,33 @@ package com.github.wnebyte.minecraft.util;
 
 import java.util.Arrays;
 import java.util.Iterator;
-
-import com.github.wnebyte.minecraft.renderer.DrawCommand;
 import org.joml.Vector2i;
+import com.github.wnebyte.minecraft.renderer.DrawCommand;
 
 public class DrawCommandBuffer implements Iterable<DrawCommand> {
 
-    private DrawCommand[] data;
+    private final DrawCommand[] data;
 
-    private int maxNumCommands;
+    private final Vector2i[] chunkCoordsData;
 
-    private int numCommands;
+    private final int capacity;
 
-    private Vector2i[] chunkCoordsData;
+    private int size;
 
     private boolean dirty = true;
 
-    public DrawCommandBuffer(int maxNumCommands) {
-        this.maxNumCommands = maxNumCommands;
-        this.data = new DrawCommand[maxNumCommands];
-        this.chunkCoordsData = new Vector2i[maxNumCommands];
-        this.numCommands = 0;
+    public DrawCommandBuffer(int capacity) {
+        this.capacity = capacity;
+        this.data = new DrawCommand[capacity];
+        this.chunkCoordsData = new Vector2i[capacity];
+        this.size = 0;
     }
 
     public void addCommand(DrawCommand drawCommand, Vector2i chunkCoords) {
-        drawCommand.baseInstance = numCommands;
-        data[numCommands] = drawCommand;
-        chunkCoordsData[numCommands] = chunkCoords;
-        numCommands++;
+        drawCommand.baseInstance = size;
+        data[size] = drawCommand;
+        chunkCoordsData[size] = chunkCoords;
+        size++;
         dirty = true;
     }
 
@@ -39,18 +38,22 @@ public class DrawCommandBuffer implements Iterable<DrawCommand> {
         data[index] = drawCommand;
         chunkCoordsData[index] = chunkCoords;
         if (!mod)
-            numCommands++;
+            size++;
         dirty = true;
     }
 
-    public void removeDrawCommand(int index) {
+    public void sort() {
+        sort(false);
+    }
 
+    public void sort(boolean asc) {
+        Arrays.sort(data, asc ? DrawCommand.COMPARATOR_ASC : DrawCommand.COMPARATOR_DESC);
     }
 
     public int[] data() {
         int index = 0;
-        int[] drawCommands = new int[DrawCommand.SIZE * numCommands];
-        for (int i = 0; i < numCommands; i++) {
+        int[] drawCommands = new int[DrawCommand.SIZE * size];
+        for (int i = 0; i < size; i++) {
             DrawCommand drawCommand = data[i];
             drawCommands[index + 0] = drawCommand.vertexCount;
             drawCommands[index + 1] = drawCommand.instanceCount;
@@ -63,8 +66,8 @@ public class DrawCommandBuffer implements Iterable<DrawCommand> {
 
     public int[] chunkCoords() {
         int index = 0;
-        int[] data = new int[2 * numCommands];
-        for (int i = 0; i < numCommands; i++) {
+        int[] data = new int[2 * size];
+        for (int i = 0; i < size; i++) {
             Vector2i chunkCoords = chunkCoordsData[i];
             data[index + 0] = chunkCoords.x;
             data[index + 1] = chunkCoords.y;
@@ -73,12 +76,12 @@ public class DrawCommandBuffer implements Iterable<DrawCommand> {
         return data;
     }
 
-    public int numCommands() {
-        return numCommands;
+    public int size() {
+        return size;
     }
 
-    public int maxNumCommands() {
-        return maxNumCommands;
+    public int capacity() {
+        return capacity;
     }
 
     public boolean isDirty() {
@@ -91,6 +94,6 @@ public class DrawCommandBuffer implements Iterable<DrawCommand> {
 
     @Override
     public Iterator<DrawCommand> iterator() {
-        return Arrays.stream(data, 0, numCommands).iterator();
+        return Arrays.stream(data, 0, size).iterator();
     }
 }

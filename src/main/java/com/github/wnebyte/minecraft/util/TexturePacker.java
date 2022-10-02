@@ -57,7 +57,7 @@ public class TexturePacker {
             buffer.put(pixel.b);
             buffer.put(pixel.a);
         }
-        buffer.position(0);
+        buffer.rewind();
         return buffer;
     }
 

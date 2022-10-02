@@ -28,4 +28,6 @@ uniform sampler2D uTexture;
 void main()
 {
     color = texture(uTexture, uv);
+    if (color.w < 0.3)
+        discard;
 }
