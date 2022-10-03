@@ -86,14 +86,14 @@ public class Chunk {
         return new Vector3f(x, y, z);
     }
 
-    public static Vector2f[] getUvs(BlockFormat format, Face face) {
+    public static int getUvIndex(BlockFormat blockFormat, Face face) {
         switch (face.type) {
             case TOP:
-                return format.getTopTextureFormat().getUvs();
+                return blockFormat.getTopTextureFormat().getId();
             case BOTTOM:
-                return format.getBottomTextureFormat().getUvs();
+                return blockFormat.getBottomTextureFormat().getId();
             default:
-                return format.getSideTextureFormat().getUvs();
+                return blockFormat.getSideTextureFormat().getId();
         }
     }
 
@@ -340,32 +340,39 @@ public class Chunk {
         BlockFormat format = BlockMap.getBlockFormat(b.id);
         // Left face (X-)
         if (visibleFaceXN(i-1, j, k)) {
-            appendFace(buffer, format, i, j, k, LEFT_FACE);
+            append(i, j, k, buffer, format, LEFT_FACE);
         }
         // Right face (X+)
         if (visibleFaceXP(i+1, j, k)) {
-            appendFace(buffer, format, i, j, k, RIGHT_FACE);
+            append(i, j, k, buffer, format, RIGHT_FACE);
         }
         // Back face (Z-)
         if (visibleFaceZN(i, j, k-1)) {
-            appendFace(buffer, format, i, j, k, BACK_FACE);
+            append(i, j, k, buffer, format, BACK_FACE);
         }
         // Front face (Z+)
         if (visibleFaceZP(i, j, k+1)) {
-            appendFace(buffer, format, i, j, k, FRONT_FACE);
+            append(i, j, k, buffer, format, FRONT_FACE);
         }
         // Bottom face (Y-)
         if (visibleFaceYN(i, j-1, k)) {
-            appendFace(buffer, format, i, j, k, BOTTOM_FACE);
+            append(i, j, k, buffer, format, BOTTOM_FACE);
         }
         // Top face (Y+)
         if (visibleFaceYP(i, j+1, k)) {
-            appendFace(buffer, format, i, j, k, TOP_FACE);
+            append(i, j, k, buffer, format, TOP_FACE);
         }
     }
 
+    private void append(int i, int j, int k, VertexBuffer buffer, BlockFormat blockFormat, Face face) {
+        int position = toIndex(i, j, k);
+        int uv = getUvIndex(blockFormat, face);
+        buffer.append(position, uv, (byte)face.type.ordinal());
+    }
+
+    /*
     private void appendFace(VertexBuffer buffer, BlockFormat format, int i, int j, int k, Face face) {
-        Vector2f[] uvs = getUvs(format, face);
+        Vector2f[] uvs = getUvIndex(format, face);
         Vector3f tl = new Vector3f(i + (face.tl[0]), j + (face.tl[1]), k + (face.tl[2]));
         Vector3f tr = new Vector3f(i + (face.tr[0]), j + (face.tr[1]), k + (face.tr[2]));
         Vector3f bl = new Vector3f(i + (face.bl[0]), j + (face.bl[1]), k + (face.bl[2]));
@@ -376,6 +383,7 @@ public class Chunk {
         Vector2f uv3 = uvs[1];
         buffer.appendQuad(tl, tr, bl, br, uv0, uv1, uv2, uv3);
     }
+     */
 
     private boolean visibleFaceXN(int i, int j, int k) {
         if (i < 0) {

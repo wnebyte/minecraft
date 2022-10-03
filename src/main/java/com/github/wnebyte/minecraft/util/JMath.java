@@ -2,6 +2,7 @@ package com.github.wnebyte.minecraft.util;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector3i;
 import org.joml.Vector4f;
 
 public class JMath {
@@ -54,6 +55,14 @@ public class JMath {
         return v;
     }
 
+    public static Vector3f toVector3f(Vector3i vec) {
+        Vector3f v = new Vector3f();
+        v.x = vec.x;
+        v.y = vec.y;
+        v.z = vec.z;
+        return v;
+    }
+
     public static float max(float a, float b, float c) {
         return Math.max(a, Math.max(b, c));
     }
@@ -73,5 +82,9 @@ public class JMath {
     public static int clamp(int val, int min, int max) {
         if (val < min) return min;
         return Math.min(val, max);
+    }
+
+    public static int compare(Vector3f a, Vector3f b) {
+        return 0;
     }
 }

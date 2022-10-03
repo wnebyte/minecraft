@@ -177,9 +177,13 @@ public class TexturePacker {
         int i = 0;
         for (Location location : locations) {
             Vector2f[] uvs = {
+                    // TR
                     new Vector2f((location.x + location.width) / pngOutputWidth, location.y / pngOutputHeight),
+                    // BR
                     new Vector2f((location.x + location.width) / pngOutputWidth, (location.y + location.height) / pngOutputHeight),
+                    // BL
                     new Vector2f(location.x / pngOutputWidth, (location.y + location.height) / pngOutputHeight),
+                    // TL
                     new Vector2f(location.x / pngOutputWidth, location.y / pngOutputHeight)
             };
             textureFormats[i] = new TextureFormat(i, location.name, uvs);

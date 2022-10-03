@@ -47,6 +47,7 @@ public class Scene {
         BlockMap.load(
                 Assets.DIR + "/config/textureFormat.json",
                 Assets.DIR + "/config/blockFormat.json");
+        BlockMap.bufferTexCoords();
         texture = Assets.getTexture(Assets.DIR + "/images/generated/packedTextures.png");
     }
 

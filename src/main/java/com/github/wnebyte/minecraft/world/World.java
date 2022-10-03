@@ -2,7 +2,6 @@ package com.github.wnebyte.minecraft.world;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
-
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.lwjgl.system.MemoryUtil;
@@ -10,6 +9,7 @@ import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.util.Assets;
 import com.github.wnebyte.minecraft.util.Pool;
+import com.github.wnebyte.minecraft.util.BlockMap;
 import com.github.wnebyte.minecraft.util.DrawCommandBuffer;
 import static com.github.wnebyte.minecraft.renderer.VertexBuffer.*;
 import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
@@ -17,6 +17,7 @@ import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
 import static org.lwjgl.opengl.GL13.glActiveTexture;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL30.*;
+import static org.lwjgl.opengl.GL31.GL_TEXTURE_BUFFER;
 import static org.lwjgl.opengl.GL33.glVertexAttribDivisor;
 import static org.lwjgl.opengl.GL40.GL_DRAW_INDIRECT_BUFFER;
 import static org.lwjgl.opengl.GL43.glMultiDrawArraysIndirect;
@@ -75,11 +76,8 @@ public class World {
         vbo = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-        glVertexAttribPointer(0, POS_SIZE, GL_FLOAT, false, STRIDE_BYTES, POS_OFFSET);
+        glVertexAttribIPointer(0, DATA_SIZE, GL_UNSIGNED_INT, STRIDE_BYTES, DATA_OFFSET);
         glEnableVertexAttribArray(0);
-
-        glVertexAttribPointer(1, UV_SIZE, GL_FLOAT, false, STRIDE_BYTES, UV_OFFSET);
-        glEnableVertexAttribArray(1);
 
         int numBuffers = subchunks.size();
         int size = numBuffers * (CAPACITY * STRIDE_BYTES);
@@ -105,9 +103,9 @@ public class World {
         glBindBuffer(GL_ARRAY_BUFFER, cbo);
         glBufferData(GL_ARRAY_BUFFER, (long)drawCommands.capacity() * (2 * Integer.BYTES), GL_DYNAMIC_DRAW);
         
-        glVertexAttribIPointer(2, 2, GL_INT, 2 * Integer.BYTES, 0);
-        glVertexAttribDivisor(2, 1);
-        glEnableVertexAttribArray(2);
+        glVertexAttribIPointer(1, 2, GL_INT, 2 * Integer.BYTES, 0);
+        glVertexAttribDivisor(1, 1);
+        glEnableVertexAttribArray(1);
 
         initMap();
         int x = (int)(Math.sqrt(SPAWN_CHUNK_SIZE) * 16) / 2;
@@ -191,6 +189,9 @@ public class World {
         glActiveTexture(GL_TEXTURE0);
         texture.bind();
         shader.uploadTexture(Shader.U_TEXTURE, 0);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_BUFFER, BlockMap.getTexCoordsTextureId());
+        shader.uploadTexture(Shader.U_TEX_COORDS_TEXTURE, 1);
         // param mode specifies what kind of primitive to render
         // param indirect is either an offset, in bytes, into the buffer bound to
         // GL_DRAW_INDIRECT_BUFFER or a pointer to an array struct that holds draw parameters

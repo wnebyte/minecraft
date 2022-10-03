@@ -22,6 +22,8 @@ public class Shader {
 
     public static final String U_TEXTURE = "uTexture";
 
+    public static final String U_TEX_COORDS_TEXTURE = "uTexCoordsTexture";
+
     public static final String U_TEXTURES = "uTextures";
 
     public static final String U_INVERSE_PROJECTION = "uInverseProjection";

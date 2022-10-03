@@ -1,10 +1,17 @@
 package com.github.wnebyte.minecraft.util;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Collections;
 import com.google.gson.*;
+import org.joml.Vector2f;
+
+import static org.lwjgl.opengl.GL15.*;
+import static org.lwjgl.opengl.GL30C.GL_R32F;
+import static org.lwjgl.opengl.GL31C.GL_TEXTURE_BUFFER;
+import static org.lwjgl.opengl.GL31C.glTexBuffer;
 
 public class BlockMap {
 
@@ -13,6 +20,10 @@ public class BlockMap {
     private static final Map<String, TextureFormat> textureFormats = new HashMap<>();
 
     private static final Map<String, Integer> nameToId = new HashMap<>();
+
+    private static int texCoordsTextureId;
+
+    private static int texCoordsBufferId;
 
     public static TextureFormat getTextureFormat(String name) {
         if (textureFormats.containsKey(name)) {
@@ -79,6 +90,49 @@ public class BlockMap {
             blockFormats.put(id, blockFormat);
             nameToId.put(name, id);
         }
+    }
+
+    public static void bufferTexCoords() {
+        int numTextures = textureFormats.size();
+        float[] data = new float[8 * numTextures];
+
+        for (Map.Entry<String, TextureFormat> entry : textureFormats.entrySet()) {
+            TextureFormat textureFormat = entry.getValue();
+            Vector2f[] uvs = textureFormat.getUvs();
+            int index = textureFormat.getId() * 8;
+            assert ((index + 7) < (8 * numTextures)) : "Invalid texture location";
+            // TR
+            data[index + 0] = uvs[0].x;
+            data[index + 1] = uvs[0].y;
+            // BR
+            data[index + 2] = uvs[1].x;
+            data[index + 3] = uvs[1].y;
+            // BL
+            data[index + 4] = uvs[2].x;
+            data[index + 5] = uvs[2].y;
+            // TL
+            data[index + 6] = uvs[3].x;
+            data[index + 7] = uvs[3].y;
+        }
+
+        texCoordsBufferId = glGenBuffers();
+        glBindBuffer(GL_TEXTURE_BUFFER, texCoordsBufferId);
+        glBufferData(GL_TEXTURE_BUFFER, data, GL_STATIC_DRAW);
+
+        texCoordsTextureId = glGenTextures();
+        glBindTexture(GL_TEXTURE_BUFFER, texCoordsTextureId);
+        glTexBuffer(GL_TEXTURE_BUFFER, GL_R32F, texCoordsBufferId);
+
+        glBindBuffer(GL_TEXTURE_BUFFER, 0);
+        glBindTexture(GL_TEXTURE_BUFFER, 0);
+    }
+
+    public static int getTexCoordsTextureId() {
+        return texCoordsTextureId;
+    }
+
+    public static int getTexCoordsBufferId() {
+        return texCoordsBufferId;
     }
 
     public static Collection<BlockFormat> getAllBlockFormats() {
