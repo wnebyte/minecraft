@@ -1,4 +1,5 @@
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -121,6 +122,24 @@ public class ArithmeticTest {
         Assert.assertEquals(100L, val);
     }
 
+    // 0, 1, 2, 3, 4, 5, 6, 7
+    // 0, 0, 1, 1, 2, 2, 3, 3
+    @Test
+    public void test02() {
+        int size = 10;
+        for (int i = 0; i < size; i++) {
+            int index = i / 2;
+            System.out.println(index);
+        }
+    }
+
+    @Test
+    public void test03() {
+        Vector4f zeroFillerVec = new Vector4f(0.0f);
+        Vector4f oneFillerVec = new Vector4f(1.0f);
+        System.out.printf("x: %.0f, y: %.0f, z: %.0f, w: %.0f%n", zeroFillerVec.x, zeroFillerVec.y, zeroFillerVec.z, zeroFillerVec.w);
+        System.out.printf("x: %.0f, y: %.0f, z: %.0f, w: %.0f%n", oneFillerVec.x, oneFillerVec.y, oneFillerVec.z, oneFillerVec.w);
+    }
 
     private Vector3f toCoordinates(int index) {
         int z = index % BASE_17_WIDTH;

@@ -15,16 +15,27 @@ public class DrawCommandBuffer implements Iterable<DrawCommand> {
 
     private int size;
 
-    private boolean dirty = true;
+    private boolean dirty;
 
     public DrawCommandBuffer(int capacity) {
         this.capacity = capacity;
         this.data = new DrawCommand[capacity];
         this.chunkCoordsData = new Vector2i[capacity];
         this.size = 0;
+        this.dirty = true;
+    }
+
+    public void putCommand(DrawCommand drawCommand, Vector2i chunkCoords) {
+        int index = Arrays.binarySearch(data, 0, size, drawCommand, DrawCommand.COMPARATOR);
+        if (index > 0) {
+            setDrawCommand(index, drawCommand, chunkCoords);
+        } else {
+            addCommand(drawCommand, chunkCoords);
+        }
     }
 
     public void addCommand(DrawCommand drawCommand, Vector2i chunkCoords) {
+        if (size == capacity) return;
         drawCommand.baseInstance = size;
         data[size] = drawCommand;
         chunkCoordsData[size] = chunkCoords;
@@ -33,13 +44,22 @@ public class DrawCommandBuffer implements Iterable<DrawCommand> {
     }
 
     public void setDrawCommand(int index, DrawCommand drawCommand, Vector2i chunkCoords) {
-        boolean mod = (data[index] != null);
+        if (index < 0 || index >= capacity)
+            return;
+        boolean contains = (data[index] != null);
         drawCommand.baseInstance = index;
         data[index] = drawCommand;
         chunkCoordsData[index] = chunkCoords;
-        if (!mod)
-            size++;
+        if (!contains) size++;
         dirty = true;
+    }
+
+    public DrawCommand get(int index) {
+        return data[index];
+    }
+
+    public Vector2i getChunkCoord(int index) {
+        return chunkCoordsData[index];
     }
 
     public void sort() {
@@ -47,7 +67,7 @@ public class DrawCommandBuffer implements Iterable<DrawCommand> {
     }
 
     public void sort(boolean asc) {
-        Arrays.sort(data, asc ? DrawCommand.COMPARATOR_ASC : DrawCommand.COMPARATOR_DESC);
+
     }
 
     public int[] data() {
@@ -90,6 +110,10 @@ public class DrawCommandBuffer implements Iterable<DrawCommand> {
 
     public void clean() {
         dirty = false;
+    }
+
+    public void setDirty() {
+        dirty = true;
     }
 
     @Override

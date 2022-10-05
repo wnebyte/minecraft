@@ -1,17 +1,12 @@
 package com.github.wnebyte.minecraft.world;
 
 import java.util.Objects;
-import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.renderer.VertexBuffer;
 import com.github.wnebyte.minecraft.renderer.DrawCommand;
-import com.github.wnebyte.minecraft.util.DrawCommandBuffer;
-import com.github.wnebyte.minecraft.util.Pool;
-import com.github.wnebyte.minecraft.util.BlockMap;
-import com.github.wnebyte.minecraft.util.BlockFormat;
-import com.github.wnebyte.minecraft.util.ChunkHelper;
+import com.github.wnebyte.minecraft.util.*;
 
 public class Chunk {
 
@@ -21,44 +16,20 @@ public class Chunk {
     ###########################
     */
 
-    private static class Face {
-
-        private enum Type {
-            FRONT,
-            RIGHT,
-            BACK,
-            LEFT,
-            TOP,
-            BOTTOM;
-        }
-
-        private final Face.Type type;
-
-        private final float[] tl, tr, bl, br, normals;
-
-        private Face(Face.Type type, float[] tl, float[] tr, float[] bl, float[] br, float[] normals) {
-            this.type = type;
-            this.tl = tl;
-            this.tr = tr;
-            this.bl = bl;
-            this.br = br;
-            this.normals = normals;
-        }
-
-        private boolean isTop() {
-            return (type == Face.Type.TOP);
-        }
-
-        private boolean isBottom() {
-            return (type == Face.Type.BOTTOM);
-        }
+    private enum FaceType {
+        FRONT,
+        RIGHT,
+        BACK,
+        LEFT,
+        TOP,
+        BOTTOM;
     }
 
     public static Vector3i toIndex3D(int index) {
-        int z = index / (SIZE * SIZE);
-        index -= (z * SIZE * SIZE);
-        int y = index / SIZE;
-        int x = index % SIZE;
+        int z = index / (Chunk.WIDTH * Chunk.HEIGHT);
+        index -= (z * Chunk.WIDTH * Chunk.HEIGHT);
+        int y = index / Chunk.WIDTH;
+        int x = index % Chunk.WIDTH;
         return new Vector3i(x, y, z);
     }
 
@@ -86,8 +57,16 @@ public class Chunk {
         return new Vector3f(x, y, z);
     }
 
-    public static int getUvIndex(BlockFormat blockFormat, Face face) {
-        switch (face.type) {
+    public static Vector3f index2World(int index, Vector2i chunkCoords) {
+        Vector3f index3D = JMath.toVector3f(Chunk.toIndex3D(index));
+        return new Vector3f(
+                index3D.x + (chunkCoords.x * Chunk.WIDTH),
+                index3D.y,
+                index3D.z + (chunkCoords.y * Chunk.DEPTH));
+    }
+
+    public static int getUvIndex(BlockFormat blockFormat, FaceType face) {
+        switch (face) {
             case TOP:
                 return blockFormat.getTopTextureFormat().getId();
             case BOTTOM:
@@ -109,9 +88,6 @@ public class Chunk {
 
     public static final int DEPTH = 16;
 
-    public static final int SIZE = 16;
-
-    // The 8 vertices will look like this:
     //   v4 ----------- v5
     //   /|            /|      Axis orientation
     //  / |           / |
@@ -121,64 +97,6 @@ public class Chunk {
     // | /          |  /      /
     // |/           | /      z
     // v2 --------- v3
-    public static final float[][] VERTICES = {
-            { -0.5f,  0.5f,  0.5f  },
-            {  0.5f,  0.5f,  0.5f  },
-            { -0.5f, -0.5f,  0.5f  },
-            {  0.5f, -0.5f,  0.5f  },
-            { -0.5f,  0.5f, -0.5f  },
-            {  0.5f,  0.5f, -0.5f  },
-            { -0.5f, -0.5f, -0.5f  },
-            {  0.5f, -0.5f, -0.5f  }
-    };
-
-    public static final int[][] INDICES = {
-            { 1, 0, 2, 3, 1, 2 }, // Front face  (0)
-            { 5, 1, 3, 7, 5, 3 }, // Right face  (1)
-            { 7, 6, 4, 5, 7, 4 }, // Back face   (2)
-            { 0, 4, 6, 2, 0, 6 }, // Left face   (3)
-            { 5, 4, 0, 1, 5, 0 }, // Top face    (4)
-            { 3, 2, 6, 7, 3, 6 }  // Bottom face (5)
-    };
-
-    public static final float[][] NORMALS = {
-            {  0,  0,  1  },
-            {  1,  0,  0  },
-            {  0,  0, -1  },
-            { -1,  0,  0  },
-            {  0,  1,  0  },
-            {  0, -1,  0  }
-    };
-
-    public static final Face FRONT_FACE =
-            new Face(Face.Type.FRONT,
-                    VERTICES[INDICES[0][1]], VERTICES[INDICES[0][0]], VERTICES[INDICES[0][2]], VERTICES[INDICES[0][3]],
-                    null);
-
-    public static final Face RIGHT_FACE =
-            new Face(Face.Type.RIGHT,
-                    VERTICES[INDICES[1][1]], VERTICES[INDICES[1][0]], VERTICES[INDICES[1][2]], VERTICES[INDICES[1][3]],
-                    null);
-
-    public static final Face BACK_FACE =
-            new Face(Face.Type.BACK,
-                    VERTICES[INDICES[2][1]], VERTICES[INDICES[2][0]], VERTICES[INDICES[2][2]], VERTICES[INDICES[2][3]],
-                    null);
-
-    public static final Face LEFT_FACE =
-            new Face(Face.Type.LEFT,
-                    VERTICES[INDICES[3][1]], VERTICES[INDICES[3][0]], VERTICES[INDICES[3][2]], VERTICES[INDICES[3][3]],
-                    null);
-
-    public static final Face TOP_FACE =
-            new Face(Face.Type.TOP,
-                    VERTICES[INDICES[4][1]], VERTICES[INDICES[4][0]], VERTICES[INDICES[4][2]], VERTICES[INDICES[4][3]],
-                    null);
-
-    public static final Face BOTTOM_FACE =
-            new Face(Face.Type.BOTTOM,
-                    VERTICES[INDICES[5][1]], VERTICES[INDICES[5][0]], VERTICES[INDICES[5][2]], VERTICES[INDICES[5][3]],
-                    null);
 
     /*
     ###########################
@@ -202,12 +120,12 @@ public class Chunk {
 
     private DrawCommandBuffer drawCommands;
 
-    private Pool<Vector3i, VertexBuffer> subchunks;
+    private DrawCommandBuffer transparentDrawCommands;
+
+    private Pool<Key, Subchunk> subchunks;
 
     // References to neighbouring chunks
     private Chunk cXN, cXP, cYN, cYP, cZN, cZP;
-
-    private ChunkHelper chunkHelper;
 
     /*
     ###########################
@@ -216,7 +134,7 @@ public class Chunk {
     */
 
     public Chunk(int i, int j, int k,
-                 Map map, DrawCommandBuffer drawCommands, Pool<Vector3i, VertexBuffer> subchunks) {
+                 Map map, DrawCommandBuffer drawCommands, DrawCommandBuffer transparentDrawCommands, Pool<Key, Subchunk> subchunks) {
         this.chunkPosX = i * WIDTH;
         this.chunkPosY = j * HEIGHT;
         this.chunkPosZ = k * DEPTH;
@@ -226,9 +144,9 @@ public class Chunk {
         this.chunkCoords = new Vector2i(i, k);
         this.map = map;
         this.drawCommands = drawCommands;
+        this.transparentDrawCommands = transparentDrawCommands;
         this.subchunks = subchunks;
         this.data = new Block[WIDTH * HEIGHT * DEPTH];
-        this.chunkHelper = new ChunkHelper();
     }
 
     /*
@@ -271,10 +189,7 @@ public class Chunk {
 
             for (int x = 0; x < Chunk.WIDTH; x++) {
                 for (int y = 0; y < Chunk.HEIGHT; y++) {
-                    if (x == 0 && y == 0 && (z == 0 || z == 1)) {
-                        setBlock(Block.GLASS, x, y, z);
-                    }
-                    else if (y == 0) {
+                    if (y == 0) {
                         setBlock(Block.BEDROCK, x, y, z);
                     }
                     else if (y < stoneHeight) {
@@ -292,17 +207,11 @@ public class Chunk {
                 }
             }
         }
+
+        setBlock(Block.BLUE_STAINED_GLASS, 10, 51, 4);
+        setBlock(Block.BLUE_STAINED_GLASS, 10, 51, 6);
     }
 
-    // simple 32x32x32 chunk consists of:
-    // 196,608 vertices
-    // 32,768 quads
-    // greedy mesh function generates a chunk with:
-    // 13,056 vertices
-    // 2176 quads
-    // face culling mesh function generates a chunk with:
-    // 36888 vertices
-    // 6148 quads
     public void generateMesh() {
         for (int j = 0; j < 16; j++) {
             generateMesh(j);
@@ -310,9 +219,16 @@ public class Chunk {
     }
 
     public void generateMesh(int subchunkLevel) {
-        VertexBuffer buffer = subchunks.get(new Vector3i(chunkCoordX, subchunkLevel, chunkCoordZ));
-        assert (buffer != null) : "buffer is null";
-        buffer.reset();
+        Vector3i v = new Vector3i(chunkCoordX, subchunkLevel, chunkCoordZ);
+        Subchunk opaque = subchunks.get(new Key(v, false));
+        Subchunk transparent = subchunks.get(new Key(v, true));
+        assert (opaque != null && transparent != null) : "buffer is null";
+        opaque.isBlendable = false;
+        transparent.isBlendable = true;
+        opaque.chunkCoords = chunkCoords;
+        transparent.chunkCoords = chunkCoords;
+        opaque.data.reset();
+        transparent.data.reset();
         int j = subchunkLevel * 16;
         int jMax = j + 16;
         int access;
@@ -324,66 +240,60 @@ public class Chunk {
                     Block b = data[access];
 
                     if (Block.isAir(b)) { continue; }
-                    createCube(buffer, b, i, j, k);
+                    createCube(b.isBlendable() ? transparent.data : opaque.data, b, i, j, k, access);
                 }
             }
         }
 
-        DrawCommand drawCommand = new DrawCommand();
-        drawCommand.vertexCount = buffer.getNumVertices();
-        drawCommand.first = buffer.first;
-        drawCommand.instanceCount = 1;
-        drawCommands.setDrawCommand(buffer.drawCommandIndex, drawCommand, chunkCoords);
+        if (opaque.data.size() > 0) {
+            DrawCommand drawCommand = new DrawCommand();
+            drawCommand.vertexCount = opaque.data.getNumVertices();
+            drawCommand.first = opaque.first;
+            drawCommand.instanceCount = 1;
+            drawCommands.putCommand(drawCommand, chunkCoords);
+        }
+
+        if (transparent.data.size() > 0) {
+            DrawCommand drawCommand = new DrawCommand();
+            drawCommand.vertexCount = transparent.data.getNumVertices();
+            drawCommand.first = transparent.first;
+            drawCommand.instanceCount = 1;
+            transparentDrawCommands.putCommand(drawCommand, chunkCoords);
+        }
     }
 
-    private void createCube(VertexBuffer buffer, Block b, int i, int j, int k) {
-        BlockFormat format = BlockMap.getBlockFormat(b.id);
+    private void createCube(VertexBuffer buffer, Block b, int i, int j, int k, int access) {
+        BlockFormat blockFormat = BlockMap.getBlockFormat(b.id);
         // Left face (X-)
         if (visibleFaceXN(i-1, j, k)) {
-            append(i, j, k, buffer, format, LEFT_FACE);
+            appendFace(buffer, blockFormat, access, FaceType.LEFT);
         }
         // Right face (X+)
         if (visibleFaceXP(i+1, j, k)) {
-            append(i, j, k, buffer, format, RIGHT_FACE);
+            appendFace(buffer, blockFormat, access, FaceType.RIGHT);
         }
         // Back face (Z-)
         if (visibleFaceZN(i, j, k-1)) {
-            append(i, j, k, buffer, format, BACK_FACE);
+            appendFace(buffer, blockFormat, access, FaceType.BACK);
         }
         // Front face (Z+)
         if (visibleFaceZP(i, j, k+1)) {
-            append(i, j, k, buffer, format, FRONT_FACE);
+            appendFace(buffer, blockFormat, access, FaceType.FRONT);
         }
         // Bottom face (Y-)
         if (visibleFaceYN(i, j-1, k)) {
-            append(i, j, k, buffer, format, BOTTOM_FACE);
+            appendFace(buffer, blockFormat, access, FaceType.BOTTOM);
         }
         // Top face (Y+)
         if (visibleFaceYP(i, j+1, k)) {
-            append(i, j, k, buffer, format, TOP_FACE);
+            appendFace(buffer, blockFormat, access, FaceType.TOP);
         }
     }
 
-    private void append(int i, int j, int k, VertexBuffer buffer, BlockFormat blockFormat, Face face) {
-        int position = toIndex(i, j, k);
+    private void appendFace(VertexBuffer buffer, BlockFormat blockFormat, int access, FaceType face) {
         int uv = getUvIndex(blockFormat, face);
-        buffer.append(position, uv, (byte)face.type.ordinal());
+        buffer.append(access, uv, (byte)face.ordinal());
     }
-
-    /*
-    private void appendFace(VertexBuffer buffer, BlockFormat format, int i, int j, int k, Face face) {
-        Vector2f[] uvs = getUvIndex(format, face);
-        Vector3f tl = new Vector3f(i + (face.tl[0]), j + (face.tl[1]), k + (face.tl[2]));
-        Vector3f tr = new Vector3f(i + (face.tr[0]), j + (face.tr[1]), k + (face.tr[2]));
-        Vector3f bl = new Vector3f(i + (face.bl[0]), j + (face.bl[1]), k + (face.bl[2]));
-        Vector3f br = new Vector3f(i + (face.br[0]), j + (face.br[1]), k + (face.br[2]));
-        Vector2f uv0 = uvs[3];
-        Vector2f uv1 = uvs[0];
-        Vector2f uv2 = uvs[2];
-        Vector2f uv3 = uvs[1];
-        buffer.appendQuad(tl, tr, bl, br, uv0, uv1, uv2, uv3);
-    }
-     */
 
     private boolean visibleFaceXN(int i, int j, int k) {
         if (i < 0) {
@@ -485,188 +395,6 @@ public class Chunk {
         Block b = data[access];
         return b.id != compare.id;
     }
-
-    /*
-    private void createRun(Block b, int i, int j, int k, int access) {
-        // Precalculate variables
-        int i1 = j + 1;
-        int j1 = j + 1;
-        int k1 = (k + 1) << 12;
-        int jS = j1 << 6;
-        int jS1 = j1 << 6;
-
-        int chunkAccess;
-        int length = 0;
-
-        // Left (X-)
-        if (!chunkHelper.visitedXN[access] && visibleFaceXN(i-1, j, k)) {
-            // Search upward to determine run length
-            for (int q = j; q < CHUNK_HEIGHT; q++) {
-                chunkAccess = toIndex(i, q, k);
-
-                // If we reach a different block or an empty block, end the run
-                if (differentBlock(chunkAccess, b))
-                    break;
-
-                // Store that we have visisted this block
-                chunkHelper.visitedXN[chunkAccess] = true;
-
-                length++;
-            }
-
-            if (length > 0) {
-                vertexBuffer.appendQuad(new Vector3i(i, length + j, k + 1), // TL
-                                        new Vector3i(i, length + j,    k),     // TR
-                                        new Vector3i(i,  j,            k + 1), // BL
-                                        new Vector3i(i,  j,               k),     // BR
-                                        b.id);
-
-               // vertexBuffer.appendQuadX(i, jS, length, k1, k);
-            }
-        }
-
-        length = 0;
-        // Right (X+)
-        if (!chunkHelper.visitedXP[access] && visibleFaceXP(i+1, j, k)) {
-            // Search upward to determine run length
-            for (int q = j; q < CHUNK_HEIGHT; q++) {
-                // Pre-calculate the array lookup as it's used twice
-                chunkAccess = toIndex(i, q, k);
-
-                // If we reach a different block or an empty block, end the run
-                if (differentBlock(chunkAccess, b))
-                    break;
-
-                // Store that we have visisted this block
-                chunkHelper.visitedXP[chunkAccess] = true;
-
-                length++;
-            }
-
-            if (length > 0) {
-                vertexBuffer.appendQuad(new Vector3i(i + 1, length + j,    k),     // TL
-                                        new Vector3i(i + 1, length + j, k + 1), // TR
-                                        new Vector3i(i + 1,    j,             k),     // BL
-                                        new Vector3i(i + 1,    j,          k + 1), // BR
-                                        b.id);
-
-               // vertexBuffer.appendQuadX(i1, jS, length, k, k1);
-            }
-        }
-
-        length = 0;
-        // Back (Z-)
-        if (!chunkHelper.visitedZN[access] && visibleFaceZN(i, j, k-1)) {
-            // Search upward to determine run length
-            for (int q = j; q < CHUNK_HEIGHT; q++) {
-                // Pre-calculate the array lookup as it's used twice
-                chunkAccess = toIndex(i, q, k);
-
-                // If we reach a different block or an empty block, end the run
-                if (differentBlock(chunkAccess, b))
-                    break;
-
-                // Store that we have visisted this block
-                chunkHelper.visitedZN[chunkAccess] = true;
-
-                length++;
-            }
-
-            if (length > 0) {
-                vertexBuffer.appendQuad(new Vector3i(i + 1, length + j,  k), // TL
-                                        new Vector3i(i,        length + j,  k), // TR
-                                        new Vector3i(i + 1,  j,             k), // BL
-                                        new Vector3i(i,         j,             k), // BR
-                                        b.id);
-               // vertexBuffer.appendQuadZ(i1, i, jS, length, k);
-            }
-        }
-
-        length = 0;
-        // Front (Z+)
-        if (!chunkHelper.visitedZP[access] && visibleFaceZP(i, j, k+1)) {
-            // Search upward to determine run length
-            for (int q = j; q < CHUNK_HEIGHT; q++) {
-                // Pre-calculate the array lookup as it's used twice
-                chunkAccess = toIndex(i, q, k);
-
-                // If we reach a different block or an empty block, end the run
-                if (differentBlock(chunkAccess, b))
-                    break;
-
-                // Store that we have visisted this block
-                chunkHelper.visitedZP[chunkAccess] = true;
-
-                length++;
-            }
-
-            if (length > 0) {
-                vertexBuffer.appendQuad(new Vector3i(i,        length + j, k + 1), // TL
-                                        new Vector3i(i + 1, length + j ,k + 1), // TR
-                                        new Vector3i(i,         j,            k + 1), // BL
-                                        new Vector3i(i + 1,  j,            k + 1), // BR
-                                        b.id);
-
-               // vertexBuffer.appendQuadZ(i, i1, jS, length, k1);
-            }
-        }
-
-        length = 0;
-        // Bottom (Y-)
-        if (!chunkHelper.visitedYN[access] && visibleFaceYN(i, j-1, k)) {
-            // Search upward to determine run length
-            for (int q = j; q < CHUNK_HEIGHT; q++) {
-                // Pre-calculate the array lookup as it's used twice
-                chunkAccess = toIndex(i, q, k);
-
-                // If we reach a different block or an empty block, end the run
-                if (differentBlock(chunkAccess, b))
-                    break;
-
-                // Store that we have visisted this block
-                chunkHelper.visitedYN[chunkAccess] = true;
-
-                length++;
-            }
-
-            if (length > 0) {
-                vertexBuffer.appendQuad(new Vector3i(i,       j, k + 1), // TL
-                                        new Vector3i(i,       j,    k),     // TR
-                                        new Vector3i(length,  j, k + 1), // BL
-                                        new Vector3i(length,  j,    k),     // BR
-                                        b.id);
-               // vertexBuffer.appendQuadY(i, length, jS, k1, k);
-            }
-        }
-
-        length = 0;
-        // Top (Y+)
-        if (!chunkHelper.visitedYP[access] && visibleFaceYP(i, j+1, k)) {
-            // Search upward to determine run length
-            for (int q = j; q < CHUNK_HEIGHT; q++) {
-                chunkAccess = toIndex(i, q, k);
-
-                // If we reach a different block or an empty block, end the run
-                if (differentBlock(chunkAccess, b))
-                    break;
-
-                // Store that we have visisted this block
-                chunkHelper.visitedYP[chunkAccess] = true;
-
-                length++;
-            }
-
-            if (length > 0) {
-                vertexBuffer.appendQuad(new Vector3i(i,       j+1,    k),     // TL
-                                        new Vector3i(i,       j+1, k + 1), // TR
-                                        new Vector3i(length,  j+1,    k),     // BL
-                                        new Vector3i(length,  j+1, k + 1), // BR
-                                        b.id);
-               // vertexBuffer.appendQuadY(i, length, jS1, k, k1);
-            }
-        }
-    }
-     */
 
     public Vector3f getChunkPos() {
         return chunkPos;

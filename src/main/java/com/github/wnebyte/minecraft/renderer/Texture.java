@@ -88,6 +88,18 @@ public class Texture {
         buffer.clear();
     }
 
+    public Texture(int width, int height) {
+        this.width = width;
+        this.height = height;
+        this.path = "Generated";
+        this.id = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, id);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height,
+                0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+    }
+
     public void bind() {
         glBindTexture(GL_TEXTURE_2D, id);
     }

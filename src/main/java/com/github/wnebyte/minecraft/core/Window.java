@@ -106,10 +106,7 @@ public class Window {
 
         // Make OpenGL context current
         glfwMakeContextCurrent(glfwWindow);
-
        // glfwSetFramebufferSizeCallback(glfwWindow, this::framebufferSizeCallback);
-       // glfwSetCursorPosCallback(glfwWindow, this::mouseCallback);
-       // glfwSetScrollCallback(glfwWindow, this::scrollCallback);
         glfwSetCursorPosCallback(glfwWindow, MouseListener::cursorPosCallback);
         glfwSetMouseButtonCallback(glfwWindow, MouseListener::mouseButtonCallback);
         glfwSetScrollCallback(glfwWindow, MouseListener::scrollCallback);
@@ -134,7 +131,7 @@ public class Window {
         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
          */
 
-        glEnable(GL_DEPTH_TEST);
+       // glEnable(GL_DEPTH_TEST);
        // glEnable(GL_CULL_FACE);
 
         glViewport(0, 0, width, height);
@@ -153,8 +150,8 @@ public class Window {
             processInput(glfwWindow);
 
             // draw scene
-            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+           // glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+           // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             scene.update(dt);
             scene.render();
 

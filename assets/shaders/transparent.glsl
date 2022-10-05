@@ -148,7 +148,8 @@ in vec2 uv;
 in Face face;
 flat in uint vertex;
 
-out vec4 color;
+layout (location=0) out vec4 accum;
+layout (location=1) out float reveal;
 
 uniform sampler2D uTexture;
 
@@ -179,5 +180,21 @@ void getNormal(in Face face, out vec3 normal)
 
 void main()
 {
-    color = texture(uTexture, uv);
+    // sample texture
+    vec4 color = texture(uTexture, uv);
+
+    /*
+    if (color.a < 3) {
+        discard;
+    }
+    */
+
+    // weight function
+    float weight = clamp(pow(min(1.0, color.a * 10.0) + 0.01, 3.0) * 1e8 * pow(1.0 - gl_FragCoord.z * 0.9, 3.0), 1e-2, 3e3);
+
+    // store pixel color accumulation
+    accum = vec4(color.rgb * color.a, color.a) * weight;
+
+    // store pixel revealage threshold
+    reveal = color.a;
 }

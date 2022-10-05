@@ -129,12 +129,13 @@ public class BufferSort {
      * @throws IllegalArgumentException  if {@code fromIndex > toIndex}
      * @throws IndexOutOfBoundsException if {@code fromIndex < 0 or toIndex > b.capacity()}
      */
-    public static void insertionSort(IntBuffer b, int fromIndex, int toIndex) {
+    public static void insertionSort(IntBuffer b, int fromIndex, int toIndex, Comparator<Integer> c) {
         rangeCheck(b.capacity(), fromIndex, toIndex);
 
         for (int i = fromIndex + 1; i < toIndex; i++) {
             int x = b.get(i);
             int j = i - 1;
+
             for (int xj; j >= fromIndex && (xj = b.get(j)) > x; j--)
                 b.put(j + 1, xj);
             b.put(j + 1, x);
@@ -154,7 +155,7 @@ public class BufferSort {
      * </tr>
      * <tr>
      * <td>{@code [0 - 100)}</td>
-     * <td>{@link BufferSort#insertionSort(IntBuffer, int, int) insertionSort}</td>
+     * <td>{@link BufferSort#insertionSort(IntBuffer, int, int, Comparator) insertionSort}</td>
      * </tr>
      * <tr>
      * <td>{@code [100 - 10^7)}</td>
@@ -178,11 +179,26 @@ public class BufferSort {
         final int length = toIndex - fromIndex;
 
         if (length < SMALL_RANGE)
-            insertionSort(b, fromIndex, toIndex);
+            insertionSort(b, fromIndex, toIndex, c);
         else if (length < LARGE_RANGE)
             heapSort(b, fromIndex, toIndex, c);
         else
             radixSort(b, fromIndex, toIndex);
+    }
+
+    public static void mySort(IntBuffer b, Comparator<Integer> c) {
+        boolean swap;
+        do {
+            swap = false;
+            for (int i = 6; i < b.capacity(); i += 6) {
+                int j = b.get(i);
+                int k = b.get(i - 6);
+                if (c.compare(j, k) < 0) {
+                    swap(b, i, i - 6);
+                    swap = true;
+                }
+            }
+        } while (swap);
     }
 
     public static boolean rangeCheck(int capacity, int fromIndex, int toIndex) {

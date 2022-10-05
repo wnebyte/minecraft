@@ -10,9 +10,7 @@ public class DrawCommand implements Comparable<DrawCommand> {
 
     public static final int SIZE_BYTES = SIZE * Integer.BYTES;
 
-    public static final Comparator<DrawCommand> COMPARATOR_ASC = DrawCommand::compareTo;
-
-    public static final Comparator<DrawCommand> COMPARATOR_DESC = COMPARATOR_ASC.reversed();
+    public static final Comparator<DrawCommand> COMPARATOR = DrawCommand::compareTo;
 
     public DrawCommand() {
         this(0, 0, 0, 0);
@@ -33,11 +31,9 @@ public class DrawCommand implements Comparable<DrawCommand> {
 
     public int baseInstance;
 
-    public transient int distance;
-
     @Override
     public int compareTo(DrawCommand o) {
-        return Integer.compare(this.distance, o.distance);
+        return Integer.compare(this.first, o.first);
     }
 
     @Override
