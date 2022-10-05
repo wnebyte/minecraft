@@ -41,17 +41,17 @@ public class Block {
 
     public final byte id;
 
-    private boolean isSolid;
+    private final boolean solid;
 
-    private boolean isTransparent;
+    private final boolean transparent;
 
-    private boolean isBlendable;
+    private final boolean blendable;
 
-    public Block(int id, boolean isSolid, boolean isTransparent, boolean isBlendable) {
+    public Block(int id, boolean solid, boolean transparent, boolean blendable) {
         this.id = (byte)id;
-        this.isSolid = isSolid;
-        this.isTransparent = isTransparent;
-        this.isBlendable = isBlendable;
+        this.solid = solid;
+        this.transparent = transparent;
+        this.blendable = blendable;
     }
 
     public byte getId() {
@@ -59,15 +59,15 @@ public class Block {
     }
 
     public boolean isSolid() {
-        return isSolid;
+        return solid;
     }
 
     public boolean isTransparent() {
-        return isTransparent;
+        return transparent;
     }
 
     public boolean isBlendable() {
-        return isBlendable;
+        return blendable;
     }
 
     @Override
@@ -85,5 +85,11 @@ public class Block {
         return 2 *
                 result +
                 Objects.hashCode(this.id);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Block[id: %d, solid: %b, transparent: %b, blendable: %b]",
+                id, solid, transparent, blendable);
     }
 }

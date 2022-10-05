@@ -33,7 +33,7 @@ public class MouseListener {
         lastX = (float)xPos;
         lastY = (float)yPos;
 
-        Camera camera = Window.getScene().getCamera();
+        Camera camera = Application.getScene().getCamera();
         camera.handleMouseMovement(xOffset, yOffset, true);
     }
 
@@ -55,7 +55,7 @@ public class MouseListener {
     public static void scrollCallback(long window, double xOffset, double yOffset) {
         scrollX = xOffset;
         scrollY = yOffset;
-        Camera camera = Window.getScene().getCamera();
+        Camera camera = Application.getScene().getCamera();
         camera.handleMouseScroll((float)yOffset);
     }
 

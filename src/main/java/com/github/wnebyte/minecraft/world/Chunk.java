@@ -223,8 +223,6 @@ public class Chunk {
         Subchunk opaque = subchunks.get(new Key(v, false));
         Subchunk transparent = subchunks.get(new Key(v, true));
         assert (opaque != null && transparent != null) : "buffer is null";
-        opaque.isBlendable = false;
-        transparent.isBlendable = true;
         opaque.chunkCoords = chunkCoords;
         transparent.chunkCoords = chunkCoords;
         opaque.data.reset();

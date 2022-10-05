@@ -1,11 +1,11 @@
 package com.github.wnebyte.minecraft;
 
-import com.github.wnebyte.minecraft.core.Window;
+import com.github.wnebyte.minecraft.core.Application;
 
 public class Main {
 
     public static void main(String[] args) {
-        Window window = Window.get();
-        window.run();
+        Application app = Application.newInstance();
+        app.run();
     }
 }

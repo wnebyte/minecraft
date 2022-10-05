@@ -1,10 +1,9 @@
 package com.github.wnebyte.minecraft.core;
 
-import org.joml.Vector3f;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.glfw.GLFWErrorCallback;
-import com.github.wnebyte.minecraft.componenets.Cube;
+
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -22,6 +21,18 @@ public class Window {
         }
     }
 
+    public static Window newInstance(String title) {
+        if (Window.window == null) {
+            Window.window = new Window(title);
+            Window.window.init();
+            return Window.window;
+        } else {
+            throw new IllegalStateException(
+                    "Window has already been initialized"
+            );
+        }
+    }
+
     private static Window window;
 
     private long glfwWindow;
@@ -30,46 +41,10 @@ public class Window {
 
     private int width, height;
 
-    private float lastX = 0.0f;
-
-    private float lastY = 0.0f;
-
-    private boolean firstMouse = true;
-
-    private Camera camera;
-
-    private float dt = 0.0f;
-
-    private float lastFrame = 0.0f;
-
-    private Cube lightSource;
-
     private Scene scene;
 
-    private Window() {
-        this.title = "Window";
-        this.camera = new Camera(
-                new Vector3f(0.0f, 0.0f, 3.0f),  // position
-                new Vector3f(0.0f, 0.0f, -1.0f), // front
-                new Vector3f(0.0f, 1.0f, 0.0f),  // up
-                Camera.DEFAULT_YAW,
-                Camera.DEFAULT_PITCH,
-                10f,
-                Camera.DEFAULT_MOUSE_SENSITIVITY,
-                Camera.DEFAULT_ZOOM);
-    }
-
-    public static Window get() {
-        if (Window.window == null) {
-            Window.window = new Window();
-        }
-        return Window.window;
-    }
-
-    public void run() {
-        init();
-        loop();
-        destroy();
+    private Window(String title) {
+        this.title = title;
     }
 
     public void init() {
@@ -126,70 +101,48 @@ public class Window {
         // bindings available for use.
         GL.createCapabilities();
 
-        /*
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-         */
-
-       // glEnable(GL_DEPTH_TEST);
-       // glEnable(GL_CULL_FACE);
-
         glViewport(0, 0, width, height);
-
-        this.scene = new Scene(camera);
     }
 
-    public void loop() {
-        scene.start();
-
-        while (!glfwWindowShouldClose(glfwWindow)) {
-            float currentFrame = (float)glfwGetTime();
-            dt = currentFrame - lastFrame;
-            lastFrame = currentFrame;
-
-            processInput(glfwWindow);
-
-            // draw scene
-           // glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-           // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            scene.update(dt);
-            scene.render();
-
-            // draw skybox
-           // glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
-           // skybox.render();
-           // glDepthFunc(GL_LESS); // reset depth function
-
-            glfwSwapBuffers(glfwWindow);
-            glfwPollEvents();
-        }
-
-        scene.destroy();
+    public boolean shouldClose() {
+        return glfwWindowShouldClose(glfwWindow);
     }
 
-    private void processInput(long window) {
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-            glfwSetWindowShouldClose(window, true);
+    public void swapBuffers() {
+        glfwSwapBuffers(glfwWindow);
+    }
+
+    public void pollEvents() {
+        glfwPollEvents();
+    }
+
+    public void setViewport() {
+        glViewport(0, 0, width, height);
+    }
+
+    public void processInput(Camera camera, float dt) {
+        if (glfwGetKey(glfwWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+            glfwSetWindowShouldClose(glfwWindow, true);
         }
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        if (glfwGetKey(glfwWindow, GLFW_KEY_W) == GLFW_PRESS) {
             camera.handleKeyboard(Camera.Movement.FORWARD, dt);
         }
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        if (glfwGetKey(glfwWindow, GLFW_KEY_S) == GLFW_PRESS) {
             camera.handleKeyboard(Camera.Movement.BACKWARD, dt);
         }
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        if (glfwGetKey(glfwWindow, GLFW_KEY_A) == GLFW_PRESS) {
             camera.handleKeyboard(Camera.Movement.LEFT, dt);
         }
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        if (glfwGetKey(glfwWindow, GLFW_KEY_D) == GLFW_PRESS) {
             camera.handleKeyboard(Camera.Movement.RIGHT, dt);
         }
-        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+        if (glfwGetKey(glfwWindow, GLFW_KEY_SPACE) == GLFW_PRESS) {
             camera.handleKeyboard(Camera.Movement.UP, dt);
         }
-        if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+        if (glfwGetKey(glfwWindow, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
             camera.handleKeyboard(Camera.Movement.DOWN, dt);
         }
-        if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_PRESS) {
+        if (glfwGetKey(glfwWindow, GLFW_KEY_COMMA) == GLFW_PRESS) {
             camera.resetZoom();
         }
     }
@@ -200,46 +153,25 @@ public class Window {
         glViewport(0, 0, width, height);
     }
 
-    private void mouseCallback(long window, double xPos, double yPos) {
-        if (firstMouse) {
-            lastX = (float)xPos;
-            lastY = (float)yPos;
-            firstMouse = false;
-        }
-
-        float xOffset = (float)xPos - lastX;
-        float yOffset = lastY - (float)yPos; // reversed since y-coordinates go from bottom to top
-
-        lastX = (float)xPos;
-        lastY = (float)yPos;
-
-        camera.handleMouseMovement(xOffset, yOffset, true);
-    }
-
-    private void scrollCallback(long window, double xOffset, double yOffset) {
-        camera.handleMouseScroll((float)yOffset);
-    }
-
     public void destroy() {
         // Free the allocated memory
         glfwFreeCallbacks(glfwWindow);
         glfwDestroyWindow(glfwWindow);
-
         // Terminate GLFW and free the error callback
         glfwTerminate();
         glfwSetErrorCallback(null);
     }
 
-    public static int getWidth() {
-        return Window.window.width;
+    public int getWidth() {
+        return width;
     }
 
-    public static int getHeight() {
-        return Window.window.height;
+    public int getHeight() {
+        return height;
     }
 
-    public static Scene getScene() {
-        return Window.window.scene;
+    public Scene getScene() {
+        return scene;
     }
 
     public static Resolution getResolution(long monitor) {

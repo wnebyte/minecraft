@@ -137,7 +137,7 @@ public class Camera {
         projectionMatrix.identity();
         projectionMatrix.perspective(
                 (float)Math.toRadians(zoom),
-                (float)Window.getWidth() / (float)Window.getHeight(), zNear, zFar);
+                (float)Application.getWindow().getWidth() / (float)Application.getWindow().getHeight(), zNear, zFar);
         projectionMatrix.invert(inverseProjection);
         return projectionMatrix;
     }
