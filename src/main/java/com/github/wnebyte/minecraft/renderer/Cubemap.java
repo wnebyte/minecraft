@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Arrays;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+
+import com.github.wnebyte.minecraft.util.Assets;
 import org.lwjgl.BufferUtils;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE;
@@ -14,31 +16,32 @@ import static org.lwjgl.stb.STBImage.*;
 
 public class Cubemap {
 
-    public static int DAY = 0;
-
-    public static int NIGHT = 1;
+    public enum Type {
+        DAY,
+        NIGHT;
+    }
 
     private static final List<String> FACES_DAY = Arrays.asList(
-            "c:/users/ralle/dev/java/minecraft/assets/images/sky/dayRight.png",
-            "c:/users/ralle/dev/java/minecraft/assets/images/sky/dayLeft.png",
-            "c:/users/ralle/dev/java/minecraft/assets/images/sky/dayTop.png",
-            "c:/users/ralle/dev/java/minecraft/assets/images/sky/dayBottom.png",
-            "c:/users/ralle/dev/java/minecraft/assets/images/sky/dayBack.png",
-            "c:/users/ralle/dev/java/minecraft/assets/images/sky/dayFront.png"
+            Assets.DIR + "/images/sky/dayRight.png",
+            Assets.DIR + "/images/sky/dayLeft.png",
+            Assets.DIR + "/images/sky/dayTop.png",
+            Assets.DIR + "/images/sky/dayBottom.png",
+            Assets.DIR + "/images/sky/dayBack.png",
+            Assets.DIR + "/images/sky/dayFront.png"
     );
 
     private static final List<String> FACES_NIGHT = Arrays.asList(
-            "c:/users/ralle/dev/java/minecraft/assets/images/sky/nightRight.png",
-            "c:/users/ralle/dev/java/minecraft/assets/images/sky/nightLeft.png",
-            "c:/users/ralle/dev/java/minecraft/assets/images/sky/nightTop.png",
-            "c:/users/ralle/dev/java/minecraft/assets/images/sky/nightBottom.png",
-            "c:/users/ralle/dev/java/minecraft/assets/images/sky/nightBack.png",
-            "c:/users/ralle/dev/java/minecraft/assets/images/sky/nightFront.png"
+            Assets.DIR + "/images/sky/nightRight.png",
+            Assets.DIR + "/images/sky/nightLeft.png",
+            Assets.DIR + "/images/sky/nightTop.png",
+            Assets.DIR + "/images/sky/nightBottom.png",
+            Assets.DIR + "/images/sky/nightBack.png",
+            Assets.DIR + "/images/sky/nightFront.png"
     );
 
     private int id;
 
-    public Cubemap(int type) {
+    public Cubemap(Type type) {
         this.id = glGenTextures();
         glBindTexture(GL_TEXTURE_CUBE_MAP, id);
 
@@ -48,7 +51,7 @@ public class Cubemap {
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-        List<String> textures = (type == NIGHT) ? FACES_NIGHT : FACES_DAY;
+        List<String> textures = (type == Type.NIGHT) ? FACES_NIGHT : FACES_DAY;
         for (int i = 0; i < textures.size(); i++) {
             String path = textures.get(i);
             IntBuffer width = BufferUtils.createIntBuffer(1);

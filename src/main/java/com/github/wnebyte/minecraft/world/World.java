@@ -67,6 +67,8 @@ public class World {
 
     private float debounce = debounceTime;
 
+    private Skybox skybox;
+
     public World(Camera camera) {
         this.camera = camera;
         this.shader = Assets.getShader(Assets.DIR + "/shaders/opaque.glsl");
@@ -78,6 +80,7 @@ public class World {
         this.subchunks = new Pool<>(2 * CHUNK_CAPACITY * 16);
         this.map = new Map();
         this.rand = new Random();
+        this.skybox = new Skybox(camera);
     }
 
     public void start() {
@@ -122,6 +125,9 @@ public class World {
         glVertexAttribDivisor(1, 1);
         glEnableVertexAttribArray(1);
 
+        // start skybox
+        skybox.start();
+
         populateMap();
         int x = (int)(Math.sqrt(SPAWN_CHUNK_SIZE) * 16) / 2;
         int y = 51;
@@ -149,8 +155,11 @@ public class World {
     }
 
     public void render() {
-        glBindVertexArray(vao);
+        // render skybox
+        skybox.render();
 
+        // render chunks
+        glBindVertexArray(vao);
         // Render pass 1:
         // set opqaue render states
         glEnable(GL_CULL_FACE);
@@ -158,9 +167,6 @@ public class World {
         glDepthFunc(GL_LESS);
         glDepthMask(true);
         glDisable(GL_BLEND);
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // draw opaque geometry
         glBindBuffer(GL_ARRAY_BUFFER, cbo);
@@ -241,5 +247,6 @@ public class World {
         glDeleteBuffers(ibo);
         glDeleteBuffers(cbo);
         glDeleteBuffers(bibo);
+        skybox.destroy();
     }
 }

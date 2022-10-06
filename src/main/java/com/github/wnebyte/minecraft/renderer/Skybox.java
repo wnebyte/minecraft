@@ -20,12 +20,12 @@ public class Skybox {
 
     private static final int STRIDE_BYTES = STRIDE * Float.BYTES;
 
-    private final float[] vertices = {
+    private final float[] VERTICES = {
             -1.0f,  1.0f, -1.0f,
             -1.0f, -1.0f, -1.0f,
-            1.0f, -1.0f, -1.0f,
-            1.0f, -1.0f, -1.0f,
-            1.0f,  1.0f, -1.0f,
+             1.0f, -1.0f, -1.0f,
+             1.0f, -1.0f, -1.0f,
+             1.0f,  1.0f, -1.0f,
             -1.0f,  1.0f, -1.0f,
 
             -1.0f, -1.0f,  1.0f,
@@ -35,38 +35,38 @@ public class Skybox {
             -1.0f,  1.0f,  1.0f,
             -1.0f, -1.0f,  1.0f,
 
-            1.0f, -1.0f, -1.0f,
-            1.0f, -1.0f,  1.0f,
-            1.0f,  1.0f,  1.0f,
-            1.0f,  1.0f,  1.0f,
-            1.0f,  1.0f, -1.0f,
-            1.0f, -1.0f, -1.0f,
+             1.0f, -1.0f, -1.0f,
+             1.0f, -1.0f,  1.0f,
+             1.0f,  1.0f,  1.0f,
+             1.0f,  1.0f,  1.0f,
+             1.0f,  1.0f, -1.0f,
+             1.0f, -1.0f, -1.0f,
 
             -1.0f, -1.0f,  1.0f,
             -1.0f,  1.0f,  1.0f,
-            1.0f,  1.0f,  1.0f,
-            1.0f,  1.0f,  1.0f,
-            1.0f, -1.0f,  1.0f,
+             1.0f,  1.0f,  1.0f,
+             1.0f,  1.0f,  1.0f,
+             1.0f, -1.0f,  1.0f,
             -1.0f, -1.0f,  1.0f,
 
             -1.0f,  1.0f, -1.0f,
-            1.0f,  1.0f, -1.0f,
-            1.0f,  1.0f,  1.0f,
-            1.0f,  1.0f,  1.0f,
+             1.0f,  1.0f, -1.0f,
+             1.0f,  1.0f,  1.0f,
+             1.0f,  1.0f,  1.0f,
             -1.0f,  1.0f,  1.0f,
             -1.0f,  1.0f, -1.0f,
 
             -1.0f, -1.0f, -1.0f,
             -1.0f, -1.0f,  1.0f,
-            1.0f, -1.0f, -1.0f,
-            1.0f, -1.0f, -1.0f,
+             1.0f, -1.0f, -1.0f,
+             1.0f, -1.0f, -1.0f,
             -1.0f, -1.0f,  1.0f,
-            1.0f, -1.0f,  1.0f
+             1.0f, -1.0f,  1.0f
     };
 
-    int vaoID;
+    private int vaoID;
 
-    int vboID;
+    private int vboID;
 
     private Shader shader;
 
@@ -75,9 +75,13 @@ public class Skybox {
     private Camera camera;
 
     public Skybox(Camera camera) {
+        this(camera, new Cubemap(Cubemap.Type.DAY));
+    }
+
+    public Skybox(Camera camera, Cubemap cubemap) {
         this.camera = camera;
-        this.shader = Assets.getShader("c:/users/ralle/dev/java/minecraft/assets/shaders/cubemap.glsl");
-        this.cubemap = new Cubemap(Cubemap.DAY);
+        this.shader = Assets.getShader(Assets.DIR + "/shaders/cubemap.glsl");
+        this.cubemap = cubemap;
     }
 
     public void start() {
@@ -86,31 +90,36 @@ public class Skybox {
 
         vboID = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, vboID);
-        glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, VERTICES, GL_STATIC_DRAW);
 
         glVertexAttribPointer(0, POS_SIZE, GL_FLOAT, false, STRIDE_BYTES, POS_OFFSET);
         glEnableVertexAttribArray(0);
     }
 
     public void render() {
+        glDepthMask(false);
         shader.use();
         shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
         shader.uploadMatrix4f(Shader.U_VIEW, new Matrix4f(new Matrix3f(camera.getViewMatrix())));
-
         glActiveTexture(GL_TEXTURE0);
         cubemap.bind();
         shader.uploadInt("skybox", 0);
 
         glBindVertexArray(vaoID);
         glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
 
         cubemap.unbind();
-        glBindVertexArray(0);
         shader.detach();
+        glDepthMask(true);
     }
 
     public void destroy() {
         glDeleteBuffers(vboID);
         glDeleteVertexArrays(vaoID);
+    }
+
+    public void setCubemap(Cubemap cubemap) {
+        this.cubemap = cubemap;
     }
 }

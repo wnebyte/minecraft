@@ -2,10 +2,7 @@ package com.github.wnebyte.minecraft.core;
 
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.world.World;
-import com.github.wnebyte.minecraft.renderer.Shader;
-import com.github.wnebyte.minecraft.renderer.Texture;
-import com.github.wnebyte.minecraft.renderer.Framebuffer;
-import com.github.wnebyte.minecraft.renderer.ScreenRenderer;
+import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.util.Assets;
 import static org.lwjgl.glfw.GLFW.glfwGetTime;
 import static org.lwjgl.opengl.GL11.*;
@@ -111,7 +108,6 @@ public class Application {
             dt = currentFrame - lastFrame;
             lastFrame = currentFrame;
 
-            window.processInput(camera, dt);
             framebuffer.bind();
             int[] bufs = { GL_COLOR_ATTACHMENT0, GL_NONE, GL_NONE };
             glDrawBuffers(bufs);
@@ -139,16 +135,17 @@ public class Application {
             ScreenRenderer.render();
             shader.detach();
 
-            // draw skybox
-            // glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
-            // skybox.render();
-            // glDepthFunc(GL_LESS); // reset depth function
-
             window.swapBuffers();
             window.pollEvents();
+            window.processInput(camera, dt);
         }
 
         scene.destroy();
+        window.destroy();
+    }
+
+    public static Framebuffer getFramebuffer() {
+        return Application.app.framebuffer;
     }
 
     public static Window getWindow() {
@@ -159,7 +156,7 @@ public class Application {
         return Application.app.scene;
     }
 
-    public static Framebuffer getFramebuffer() {
-        return Application.app.framebuffer;
+    public float dt() {
+        return dt;
     }
 }
