@@ -160,8 +160,6 @@ public class World {
         glDisable(GL_BLEND);
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-        // bind opaque framebuffer
-        Application.getFramebuffer().bind();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // draw opaque geometry
@@ -187,14 +185,14 @@ public class World {
         glDisable(GL_CULL_FACE);
         glDepthMask(false);
         glEnable(GL_BLEND);
-        glBlendFunci(0, GL_ONE, GL_ONE); // accumulation blend target
-        glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR); // revealage blend target
+        glBlendFunci(1, GL_ONE, GL_ONE); // accumulation blend target
+        glBlendFunci(2, GL_ZERO, GL_ONE_MINUS_SRC_COLOR); // revealage blend target
         glBlendEquation(GL_FUNC_ADD);
 
-        // bind transparent framebuffer
-        Application.getTransparentFramebuffer().bind();
-        glClearBufferfv(GL_COLOR, 0, ZERO_FILLER_VEC);
-        glClearBufferfv(GL_COLOR, 1, ONE_FILLER_VEC);
+        int[] bufs = { GL_NONE, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+        glDrawBuffers(bufs);
+        glClearBufferfv(GL_COLOR, 1, ZERO_FILLER_VEC);
+        glClearBufferfv(GL_COLOR, 2, ONE_FILLER_VEC);
 
         // draw transparent geometry
         glBindBuffer(GL_ARRAY_BUFFER, cbo);
@@ -220,17 +218,18 @@ public class World {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        // bind opaque framebuffer
-        Application.getFramebuffer().bind();
+        bufs = new int[]{ GL_COLOR_ATTACHMENT0, GL_NONE, GL_NONE };
+        glDrawBuffers(bufs);
 
         // draw screen quad
+        Framebuffer framebuffer = Application.getFramebuffer();
         compositeShader.use();
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, Application.getTransparentFramebuffer().getColorAttachment(0).getId());
-        compositeShader.uploadTexture("accum", 0);
+        glBindTexture(GL_TEXTURE_2D, framebuffer.getColorAttachment(1).getId());
+        compositeShader.uploadTexture(Shader.ACCUM, 0);
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, Application.getTransparentFramebuffer().getColorAttachment(1).getId());
-        compositeShader.uploadTexture("reveal", 1);
+        glBindTexture(GL_TEXTURE_2D, framebuffer.getColorAttachment(2).getId());
+        compositeShader.uploadTexture(Shader.REVEAL, 1);
         ScreenRenderer.render();
         compositeShader.detach();
     }

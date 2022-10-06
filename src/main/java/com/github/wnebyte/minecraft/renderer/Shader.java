@@ -26,6 +26,12 @@ public class Shader {
 
     public static final String U_TEXTURES = "uTextures";
 
+    public static final String ACCUM = "accum";
+
+    public static final String REVEAL = "reveal";
+
+    public static final String SCREEN = "screen";
+
     public static final String U_INVERSE_PROJECTION = "uInverseProjection";
 
     public static final String U_INVERSE_VIEW = "uInverseView";

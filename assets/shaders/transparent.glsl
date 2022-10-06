@@ -148,8 +148,8 @@ in vec2 uv;
 in Face face;
 flat in uint vertex;
 
-layout (location=0) out vec4 accum;
-layout (location=1) out float reveal;
+layout (location=1) out vec4 accum;
+layout (location=2) out float reveal;
 
 uniform sampler2D uTexture;
 

@@ -1,11 +1,12 @@
 package com.github.wnebyte.minecraft.core;
 
-import com.github.wnebyte.minecraft.util.Assets;
 import org.joml.Vector3f;
+import com.github.wnebyte.minecraft.world.World;
 import com.github.wnebyte.minecraft.renderer.Shader;
 import com.github.wnebyte.minecraft.renderer.Texture;
 import com.github.wnebyte.minecraft.renderer.Framebuffer;
 import com.github.wnebyte.minecraft.renderer.ScreenRenderer;
+import com.github.wnebyte.minecraft.util.Assets;
 import static org.lwjgl.glfw.GLFW.glfwGetTime;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.*;
@@ -28,8 +29,6 @@ public class Application {
     private Window window;
 
     private Framebuffer framebuffer;
-
-    private Framebuffer transFramebuffer;
 
     private Scene scene;
 
@@ -57,7 +56,7 @@ public class Application {
         window = Window.newInstance("Title");
         ScreenRenderer.start();
         framebuffer = new Framebuffer(new Framebuffer.Specification.Builder()
-                // opaque texture
+                // opaque
                 .addColorAttachment(new Texture(new Texture.Specification.Builder()
                         .setTarget(GL_TEXTURE_2D)
                         .setSize(window.getWidth(), window.getHeight())
@@ -67,15 +66,6 @@ public class Application {
                         .addParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR)
                         .addParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR)
                         .build()))
-                .setDepthAttachment(new Texture(new Texture.Specification.Builder()
-                        .setTarget(GL_TEXTURE_2D)
-                        .setSize(window.getWidth(), window.getHeight())
-                        .setInternalFormat(GL_DEPTH_COMPONENT)
-                        .setFormat(GL_DEPTH_COMPONENT)
-                        .setType(GL_FLOAT)
-                        .build()))
-                .build());
-        transFramebuffer = new Framebuffer(new Framebuffer.Specification.Builder()
                 // accum
                 .addColorAttachment(new Texture(new Texture.Specification.Builder()
                         .setTarget(GL_TEXTURE_2D)
@@ -96,12 +86,14 @@ public class Application {
                         .addParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR)
                         .addParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR)
                         .build()))
-                .setDepthAttachment(framebuffer.getDepthAttachment())
+                .setDepthAttachment(new Texture(new Texture.Specification.Builder()
+                        .setTarget(GL_TEXTURE_2D)
+                        .setSize(window.getWidth(), window.getHeight())
+                        .setInternalFormat(GL_DEPTH_COMPONENT)
+                        .setFormat(GL_DEPTH_COMPONENT)
+                        .setType(GL_FLOAT)
+                        .build()))
                 .build());
-        transFramebuffer.bind();
-        int[] bufs = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-        glDrawBuffers(bufs);
-        transFramebuffer.unbind();
         scene = new Scene(camera);
     }
 
@@ -120,6 +112,11 @@ public class Application {
             lastFrame = currentFrame;
 
             window.processInput(camera, dt);
+            framebuffer.bind();
+            int[] bufs = { GL_COLOR_ATTACHMENT0, GL_NONE, GL_NONE };
+            glDrawBuffers(bufs);
+            glClearBufferfv(GL_COLOR, 0, World.ZERO_FILLER_VEC);
+            glClearBufferfv(GL_DEPTH, 0, World.ONE_FILLER_VEC);
             scene.update(dt);
             scene.render();
 
@@ -130,7 +127,7 @@ public class Application {
             glDisable(GL_BLEND);
 
             // bind backbuffer
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            framebuffer.unbind();
             glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
@@ -138,7 +135,7 @@ public class Application {
             shader.use();
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, framebuffer.getColorAttachment(0).getId());
-            shader.uploadTexture("screen", 0);
+            shader.uploadTexture(Shader.SCREEN, 0);
             ScreenRenderer.render();
             shader.detach();
 
@@ -164,9 +161,5 @@ public class Application {
 
     public static Framebuffer getFramebuffer() {
         return Application.app.framebuffer;
-    }
-
-    public static Framebuffer getTransparentFramebuffer() {
-        return Application.app.transFramebuffer;
     }
 }
