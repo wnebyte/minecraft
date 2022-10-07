@@ -1,9 +1,8 @@
 package com.github.wnebyte.minecraft.util;
 
-import com.github.wnebyte.minecraft.componenets.Cube;
+import com.github.wnebyte.minecraft.componenets.BoxRenderer;
 import com.github.wnebyte.minecraft.renderer.Texture;
 import org.joml.Vector3f;
-import com.github.wnebyte.minecraft.core.Transform;
 
 public class BlockBuilder {
 
@@ -51,7 +50,7 @@ public class BlockBuilder {
         return this;
     }
 
-    public Cube build() {
+    public BoxRenderer build() {
         if (sidePath != null) {
             side = Assets.getTexture(sidePath);
         }
@@ -61,6 +60,7 @@ public class BlockBuilder {
         if (bottomPath != null) {
             bottom = Assets.getTexture(bottomPath);
         }
-        return new Cube(new Transform(position, scale, rotation), side, top, bottom);
+        //return new BoxRenderer(new Transform(position, scale, rotation), side, top, bottom);
+        return null;
     }
 }

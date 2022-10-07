@@ -4,27 +4,21 @@ import java.util.Objects;
 
 public abstract class Component {
 
-    public void init(int maxId) {
-        ID_COUNTER = maxId;
-    }
-
     private static int ID_COUNTER = 0;
 
     public transient GameObject gameObject;
 
-    private int id = -1;
+    private int id;
+
+    public Component() {
+        id = ID_COUNTER++;
+    }
 
     public void start() {}
 
-    public void update() {}
+    public void update(float dt) {}
 
     public void destroy() {}
-
-    public void generateId() {
-        if (id == -1) {
-            id = ID_COUNTER++;
-        }
-    }
 
     public int getId() {
         return id;

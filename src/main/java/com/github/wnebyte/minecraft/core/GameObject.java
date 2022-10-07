@@ -6,15 +6,11 @@ import java.util.ArrayList;
 
 public class GameObject {
 
-    public void init(int maxId) {
-        ID_COUNTER = maxId;
-    }
-
     private static int ID_COUNTER = 0;
 
     public Transform transform;
 
-    private int id = -1;
+    private int id;
 
     private String name;
 
@@ -22,15 +18,28 @@ public class GameObject {
 
     public GameObject(String name) {
         this.name = name;
-        if (id == -1) {
-            id = ID_COUNTER++;
-        }
+        this.id = ID_COUNTER++;
         this.components = new ArrayList<>();
     }
 
-    public void generateId() {
-        if (id == -1) {
-            id = ID_COUNTER++;
+    public void start() {
+        for (int i = 0; i < components.size(); i++) {
+            Component c = components.get(i);
+            c.start();
+        }
+    }
+
+    public void update(float dt) {
+        for (int i = 0; i < components.size(); i++) {
+            Component c = components.get(i);
+            c.update(dt);
+        }
+    }
+
+    public void destroy() {
+        for (int i = 0; i < components.size(); i++) {
+            Component c = components.get(i);
+            c.destroy();
         }
     }
 

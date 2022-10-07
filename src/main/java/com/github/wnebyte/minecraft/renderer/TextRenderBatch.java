@@ -43,21 +43,11 @@ public class TextRenderBatch {
             1, 2, 3
     };
 
-    /*
-    private float[] vertices = {
-            // x, y,          r, g, b              uv.x  uv.y
-            0.5f,  0.5f,     1.0f, 0.2f, 0.11f,    1.0f, 0.0f,
-            0.5f, -0.5f,     1.0f, 0.2f, 0.11f,    1.0f, 1.0f,
-            -0.5f, -0.5f,    1.0f, 0.2f, 0.11f,    0.0f, 1.0f,
-            -0.5f,  0.5f,    1.0f, 0.2f, 0.11f,    0.0f, 0.0f
-    };
-     */
-
     private float[] vertices;
 
-    private int vaoID;
+    private int vao;
 
-    private int vboID;
+    private int vbo;
 
     private int size;
 
@@ -77,12 +67,12 @@ public class TextRenderBatch {
 
     public void start() {
         // Generate and bind a Vertex Array Object
-        vaoID = glGenVertexArrays();
-        glBindVertexArray(vaoID);
+        vao = glGenVertexArrays();
+        glBindVertexArray(vao);
 
         // Allocate space for vertices
-        vboID = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, vboID);
+        vbo = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, Float.BYTES * STRIDE * BATCH_SIZE, GL_DYNAMIC_DRAW);
 
         // Create and upload the indices buffer
@@ -104,7 +94,7 @@ public class TextRenderBatch {
 
     public void flush() {
         // clear the buffer on the GPU, then upload the CPU contents, then draw
-        glBindBuffer(GL_ARRAY_BUFFER, vboID);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
         // Allocate some memory on the GPU
         glBufferData(GL_ARRAY_BUFFER, Float.BYTES * STRIDE * BATCH_SIZE, GL_DYNAMIC_DRAW);
         // Upload vertex data to the GPU
@@ -118,7 +108,7 @@ public class TextRenderBatch {
         shader.uploadTexture(Shader.U_FONT_TEXTURE, 0);
         shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
 
-        glBindVertexArray(vaoID);
+        glBindVertexArray(vao);
         glDrawElements(GL_TRIANGLES, size * 6, GL_UNSIGNED_INT, 0);
 
         // Reset batch for use on the next draw call
@@ -129,8 +119,8 @@ public class TextRenderBatch {
     }
 
     public void destroy() {
-        glDeleteBuffers(vboID);
-        glDeleteVertexArrays(vaoID);
+        glDeleteBuffers(vbo);
+        glDeleteVertexArrays(vao);
     }
 
     public void addText2D(Text2D text2D) {
@@ -161,7 +151,7 @@ public class TextRenderBatch {
         // char info
         int width = info.getWidth();
         int height = info.getHeight();
-        Vector2f[] texCoords = info.getTexCoords();
+        Vector2f[] uvs = info.getTexCoords();
 
         // position
         float x0 = x;
@@ -175,10 +165,10 @@ public class TextRenderBatch {
         float b = (float)((rgb >> 0)  & 0xFF) / 255.0f;
 
         // tex coords
-        float ux0 = texCoords[0].x;
-        float uy0 = texCoords[0].y;
-        float ux1 = texCoords[1].x;
-        float uy1 = texCoords[1].y;
+        float ux0 = uvs[0].x;
+        float uy0 = uvs[0].y;
+        float ux1 = uvs[1].x;
+        float uy1 = uvs[1].y;
 
         // load vertex properties
         int index = size * STRIDE;

@@ -1,7 +1,6 @@
 package com.github.wnebyte.minecraft.core;
 
 import org.joml.Vector3f;
-import com.github.wnebyte.minecraft.world.World;
 import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.util.Assets;
 import static org.lwjgl.glfw.GLFW.glfwGetTime;
@@ -20,6 +19,10 @@ public class Application {
             );
         }
     }
+
+    public static final float[] ZERO_FILLER_VEC = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+    public static final float[] ONE_FILLER_VEC  = { 1.0f, 1.0f, 1.0f, 1.0f };
 
     private static Application app;
 
@@ -46,7 +49,14 @@ public class Application {
                 Camera.DEFAULT_PITCH,
                 10f,
                 Camera.DEFAULT_MOUSE_SENSITIVITY,
-                Camera.DEFAULT_ZOOM);
+                Camera.DEFAULT_ZOOM,
+                Camera.DEFAULT_Z_NEAR,
+                10_000f);
+    }
+
+    public void run() {
+        init();
+        loop();
     }
 
     private void init() {
@@ -94,11 +104,6 @@ public class Application {
         scene = new Scene(camera);
     }
 
-    public void run() {
-        init();
-        loop();
-    }
-
     private void loop() {
         scene.start();
         shader = Assets.getShader(Assets.DIR + "/shaders/screen.glsl");
@@ -111,8 +116,8 @@ public class Application {
             framebuffer.bind();
             int[] bufs = { GL_COLOR_ATTACHMENT0, GL_NONE, GL_NONE };
             glDrawBuffers(bufs);
-            glClearBufferfv(GL_COLOR, 0, World.ZERO_FILLER_VEC);
-            glClearBufferfv(GL_DEPTH, 0, World.ONE_FILLER_VEC);
+            glClearBufferfv(GL_COLOR, 0, ZERO_FILLER_VEC);
+            glClearBufferfv(GL_DEPTH, 0, ONE_FILLER_VEC);
             scene.update(dt);
             scene.render();
 
@@ -156,7 +161,7 @@ public class Application {
         return Application.app.scene;
     }
 
-    public float dt() {
-        return dt;
+    public static float dt() {
+        return Application.app.dt;
     }
 }

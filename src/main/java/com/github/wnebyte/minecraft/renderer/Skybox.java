@@ -68,20 +68,25 @@ public class Skybox {
 
     private int vboID;
 
-    private Shader shader;
-
-    private Cubemap cubemap;
-
     private Camera camera;
 
+    private Shader shader;
+
+    private Cubemap dayCubemap;
+
+    private Cubemap nightCubemap;
+
+    private float blend;
+
     public Skybox(Camera camera) {
-        this(camera, new Cubemap(Cubemap.Type.DAY));
+        this(camera, new Cubemap(Cubemap.Type.DAY), new Cubemap(Cubemap.Type.NIGHT));
     }
 
-    public Skybox(Camera camera, Cubemap cubemap) {
+    public Skybox(Camera camera, Cubemap dayCubemap, Cubemap nightCubemap) {
         this.camera = camera;
         this.shader = Assets.getShader(Assets.DIR + "/shaders/cubemap.glsl");
-        this.cubemap = cubemap;
+        this.dayCubemap = dayCubemap;
+        this.nightCubemap = nightCubemap;
     }
 
     public void start() {
@@ -102,14 +107,19 @@ public class Skybox {
         shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
         shader.uploadMatrix4f(Shader.U_VIEW, new Matrix4f(new Matrix3f(camera.getViewMatrix())));
         glActiveTexture(GL_TEXTURE0);
-        cubemap.bind();
-        shader.uploadInt("skybox", 0);
+        dayCubemap.bind();
+        shader.uploadInt(Shader.U_DAY_CUBEMAP, 0);
+        glActiveTexture(GL_TEXTURE1);
+        nightCubemap.bind();
+        shader.uploadInt(Shader.U_NIGHT_CUBEMAP, 1);
+        shader.uploadFloat(Shader.U_BLEND, blend);
 
         glBindVertexArray(vaoID);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
 
-        cubemap.unbind();
+        dayCubemap.unbind();
+        nightCubemap.unbind();
         shader.detach();
         glDepthMask(true);
     }
@@ -119,7 +129,7 @@ public class Skybox {
         glDeleteVertexArrays(vaoID);
     }
 
-    public void setCubemap(Cubemap cubemap) {
-        this.cubemap = cubemap;
+    public void setBlend(float value) {
+        this.blend = value;
     }
 }

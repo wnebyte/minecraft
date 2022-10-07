@@ -6,6 +6,10 @@ import org.joml.Matrix4f;
 
 public class Transform extends Component {
 
+    public static Transform copy(Transform transform) {
+        return new Transform(new Vector3f(transform.position), new Vector3f(transform.scale), transform.rotation);
+    }
+
     /*
     ###########################
     #       STATIC FIELDS     #
@@ -56,17 +60,14 @@ public class Transform extends Component {
     ###########################
     */
 
-    public Transform copy() {
-        return new Transform(new Vector3f(position), new Vector3f(scale), rotation);
-    }
 
-    public void copyInto(Transform transform) {
+    public void copyTo(Transform transform) {
         transform.position.set(this.position);
         transform.scale.set(this.scale);
         transform.rotation = this.rotation;
     }
 
-    public Matrix4f toMatrix() {
+    public Matrix4f toMat4f() {
         Matrix4f transformMatrix = new Matrix4f().identity();
         transformMatrix.translate(position.x, position.y, position.z);
         transformMatrix.rotate((float)Math.toRadians(rotation), 0, 0, 1);

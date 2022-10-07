@@ -8,6 +8,10 @@ public class Map {
     public java.util.Map<Vector2i, Chunk> chunks;
 
     public Map() {
+        this(10);
+    }
+
+    public Map(int initialCapacity) {
         this.chunks = new HashMap<>();
     }
 

@@ -24,6 +24,18 @@ public class JMath {
         return c;
     }
 
+    public static void addX(Vector3f v, float val) {
+        v.x += val;
+    }
+
+    public static void addY(Vector3f v, float val) {
+        v.y += val;
+    }
+
+    public static void addZ(Vector3f v, float val) {
+        v.z += val;
+    }
+
     public static Vector4f sub(Vector4f a, Vector4f b) {
         Vector4f c = new Vector4f();
         c.x = a.x - b.x;
@@ -39,6 +51,18 @@ public class JMath {
         c.y = a.y - b.y;
         c.z = a.z - b.z;
         return c;
+    }
+
+    public static void subX(Vector3f v, float val) {
+        v.x -= val;
+    }
+
+    public static void subY(Vector3f v, float val) {
+        v.y -= val;
+    }
+
+    public static void subZ(Vector3f v, float val) {
+        v.z -= val;
     }
 
     public static Matrix4f mul(Matrix4f a, Matrix4f b) {
@@ -80,6 +104,11 @@ public class JMath {
     }
 
     public static int clamp(int val, int min, int max) {
+        if (val < min) return min;
+        return Math.min(val, max);
+    }
+
+    public static float clamp(float val, float min, float max) {
         if (val < min) return min;
         return Math.min(val, max);
     }

@@ -32,6 +32,12 @@ public class Shader {
 
     public static final String SCREEN = "screen";
 
+    public static final String U_DAY_CUBEMAP = "uDayCubemap";
+
+    public static final String U_NIGHT_CUBEMAP = "uNightCubemap";
+
+    public static final String U_BLEND = "uBlend";
+
     public static final String U_INVERSE_PROJECTION = "uInverseProjection";
 
     public static final String U_INVERSE_VIEW = "uInverseView";

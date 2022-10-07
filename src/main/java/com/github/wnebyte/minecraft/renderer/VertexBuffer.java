@@ -2,6 +2,7 @@ package com.github.wnebyte.minecraft.renderer;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import com.github.wnebyte.minecraft.util.DebugStats;
 
 public class VertexBuffer {
 
@@ -42,6 +43,7 @@ public class VertexBuffer {
 
     public void reset() {
         data.clear();
+        DebugStats.vertexMemUsed -= (long)STRIDE_BYTES * size;
         size = 0;
     }
 
@@ -60,6 +62,7 @@ public class VertexBuffer {
         data.put(shared | 0);
         data.put(shared | 2);
         size += STRIDE * 6;
+        DebugStats.vertexMemUsed += (long)STRIDE_BYTES * 6;
     }
 
     public int size() {
