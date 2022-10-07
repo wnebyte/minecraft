@@ -3,6 +3,7 @@ package com.github.wnebyte.minecraft.renderer;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import com.github.wnebyte.minecraft.util.DebugStats;
+import com.github.wnebyte.minecraft.world.Chunk;
 
 public class VertexBuffer {
 
@@ -53,7 +54,11 @@ public class VertexBuffer {
     // vertex index   - 3 bits
     // TR, TL, BL, BR, TR, BL
     public void append(int position, int uv, byte face) {
-        assert (size <= capacity() - 6) : "VertexBuffer Overflow";
+        // Todo: FRONT, LEFT, and RIGHT facing textures are upside-down
+        assert (size <= capacity() - 6) : String.format("Error: (VertexBuffer) Overflow: %d", size);
+        if (face == Chunk.FaceType.FRONT.ordinal()) {
+            uv = 289;
+        }
         int shared = compress(position, uv, face);
         data.put(shared | 0);
         data.put(shared | 3);

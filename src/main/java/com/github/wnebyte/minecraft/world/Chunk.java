@@ -1,6 +1,8 @@
 package com.github.wnebyte.minecraft.world;
 
 import java.util.Objects;
+import java.util.Random;
+
 import org.joml.Vector2i;
 import org.joml.Vector3i;
 import org.joml.Vector3f;
@@ -16,7 +18,7 @@ public class Chunk {
     ###########################
     */
 
-    private enum FaceType {
+    public enum FaceType {
         FRONT,
         RIGHT,
         BACK,
@@ -50,7 +52,7 @@ public class Chunk {
         return new Vector3i(x, y, z);
     }
 
-    public static Vector3f toPosition(Vector2i chunkCoords){
+    public static Vector3f toWorld(Vector2i chunkCoords){
         float x = chunkCoords.x * Chunk.WIDTH;
         float y = 0;
         float z = chunkCoords.y * Chunk.DEPTH;
@@ -125,7 +127,9 @@ public class Chunk {
     private Pool<Key, Subchunk> subchunks;
 
     // References to neighbouring chunks
-    private Chunk cXN, cXP, cYN, cYP, cZN, cZP;
+    private Chunk cXN, cXP, cZN, cZP, cYN, cYP;
+
+    private Random rand;
 
     /*
     ###########################
@@ -134,7 +138,8 @@ public class Chunk {
     */
 
     public Chunk(int i, int j, int k,
-                 Map map, DrawCommandBuffer drawCommands, DrawCommandBuffer transparentDrawCommands, Pool<Key, Subchunk> subchunks) {
+                 Map map, DrawCommandBuffer drawCommands, DrawCommandBuffer transparentDrawCommands,
+                 Pool<Key, Subchunk> subchunks) {
         this.chunkPosX = i * WIDTH;
         this.chunkPosY = j * HEIGHT;
         this.chunkPosZ = k * DEPTH;
@@ -146,6 +151,7 @@ public class Chunk {
         this.drawCommands = drawCommands;
         this.transparentDrawCommands = transparentDrawCommands;
         this.subchunks = subchunks;
+        this.rand = new Random();
         this.data = new Block[WIDTH * HEIGHT * DEPTH];
     }
 
@@ -172,17 +178,20 @@ public class Chunk {
         data[index] = b;
     }
 
-    public void patchNeighbours() {
+    public void updateNeighbourRefs() {
         cXN = map.get(chunkCoordX - 1, chunkCoordZ);
         cXP = map.get(chunkCoordX + 1, chunkCoordZ);
         cZN = map.get(chunkCoordX, chunkCoordZ - 1);
         cZP = map.get(chunkCoordX, chunkCoordZ + 1);
     }
 
-    public void generateTerrain() {
-        float minBiomeHeight = 55.0f;
-        float maxBiomeHeight = 145.0f;
+    private final float minBiomeHeight = 55.0f;
 
+    private final float maxBiomeHeight = 145.0f;
+
+    private final int oceanLevel = 85;
+
+    public void generateTerrain() {
         for (int z = 0; z < Chunk.DEPTH; z++) {
             int maxHeight = 50;
             int stoneHeight = maxHeight - 3;
@@ -199,7 +208,7 @@ public class Chunk {
                         setBlock(Block.DIRT, x, y, z);
                     }
                     else if (y == maxHeight) {
-                        setBlock(Block.SAND, x, y, z);
+                        setBlock(Block.GRASS, x, y, z);
                     }
                     else {
                         setBlock(Block.AIR, x, y, z);
@@ -207,9 +216,14 @@ public class Chunk {
                 }
             }
         }
+    }
 
-        setBlock(Block.BLUE_STAINED_GLASS, 10, 51, 4);
-        setBlock(Block.BLUE_STAINED_GLASS, 10, 51, 6);
+    public void generateDecorations() {
+        for (int z = 0; z < Chunk.DEPTH; z++) {
+            for (int x = 0; x < Chunk.WIDTH; x++) {
+
+            }
+        }
     }
 
     public void generateMesh() {
@@ -263,27 +277,27 @@ public class Chunk {
     private void createCube(VertexBuffer buffer, Block b, int i, int j, int k, int access) {
         BlockFormat blockFormat = BlockMap.getBlockFormat(b.id);
         // Left face (X-)
-        if (visibleFaceXN(i-1, j, k)) {
+        if (visibleFaceXN(b, i-1, j, k)) {
             appendFace(buffer, blockFormat, access, FaceType.LEFT);
         }
         // Right face (X+)
-        if (visibleFaceXP(i+1, j, k)) {
+        if (visibleFaceXP(b, i+1, j, k)) {
             appendFace(buffer, blockFormat, access, FaceType.RIGHT);
         }
         // Back face (Z-)
-        if (visibleFaceZN(i, j, k-1)) {
+        if (visibleFaceZN(b, i, j, k-1)) {
             appendFace(buffer, blockFormat, access, FaceType.BACK);
         }
         // Front face (Z+)
-        if (visibleFaceZP(i, j, k+1)) {
+        if (visibleFaceZP(b, i, j, k+1)) {
             appendFace(buffer, blockFormat, access, FaceType.FRONT);
         }
         // Bottom face (Y-)
-        if (visibleFaceYN(i, j-1, k)) {
+        if (visibleFaceYN(b, i, j-1, k)) {
             appendFace(buffer, blockFormat, access, FaceType.BOTTOM);
         }
         // Top face (Y+)
-        if (visibleFaceYP(i, j+1, k)) {
+        if (visibleFaceYP(b, i, j+1, k)) {
             appendFace(buffer, blockFormat, access, FaceType.TOP);
         }
     }
@@ -293,105 +307,109 @@ public class Chunk {
         buffer.append(access, uv, (byte)face.ordinal());
     }
 
-    private boolean visibleFaceXN(int i, int j, int k) {
+    private boolean visibleFaceXN(Block b, int i, int j, int k) {
         if (i < 0) {
             if (cXN == null) {
                 return true;
+            } else {
+                int index = toIndex(Chunk.WIDTH - 1, j, k);
+                Block n = cXN.data[index];
+                return compare(b, n);
             }
-
-            int index = toIndex(Chunk.WIDTH - 1, j, k);
-            Block b = cXN.data[index];
-            return b.isTransparent();
         }
-
         int index = toIndex(i, j, k);
-        Block b = data[index];
-        return b.isTransparent();
+        Block n = data[index];
+        return compare(b, n);
     }
 
-    private boolean visibleFaceXP(int i, int j, int k) {
-        if (i >= WIDTH) {
+    private boolean visibleFaceXP(Block b, int i, int j, int k) {
+        if (i >= Chunk.WIDTH) {
             if (cXP == null) {
                 return true;
+            } else {
+                int index = toIndex(0, j, k);
+                Block n = cXP.data[index];
+                return compare(b, n);
             }
-
-            int index = toIndex(0, j, k);
-            Block b = cXP.data[index];
-            return b.isTransparent();
         }
-
         int index = toIndex(i, j, k);
-        Block b = data[index];
-        return b.isTransparent();
+        Block n = data[index];
+        return compare(b, n);
     }
 
-    private boolean visibleFaceYN(int i, int j, int k) {
+    private boolean visibleFaceYN(Block b, int i, int j, int k) {
         if (j < 0) {
             if (cYN == null) {
                 return true;
+            } else {
+                int index = toIndex(i, Chunk.HEIGHT - 1, k);
+                Block n = cYN.data[index];
+                return compare(b, n);
             }
-
-            int index = toIndex(i, Chunk.HEIGHT - 1, k);
-            Block b = cYN.data[index];
-            return b.isTransparent();
         }
-
         int index = toIndex(i, j, k);
-        Block b = data[index];
-        return b.isTransparent();
+        Block n = data[index];
+        return compare(b, n);
     }
 
-    private boolean visibleFaceYP(int i, int j, int k) {
-        if (j >= HEIGHT) {
+    private boolean visibleFaceYP(Block b, int i, int j, int k) {
+        if (j >= Chunk.HEIGHT) {
             if (cYP == null) {
                 return true;
+            } else {
+                int index = toIndex(i, 0, k);
+                Block n = cYP.data[index];
+                return compare(b, n);
             }
-
-            int index = toIndex(i, 0, k);
-            Block b = cYN.data[index];
-            return b.isTransparent();
         }
-
         int index = toIndex(i, j, k);
-        Block b = data[index];
-        return b.isTransparent();
+        Block n = data[index];
+        return compare(b, n);
     }
 
-    private boolean visibleFaceZN(int i, int j, int k) {
+    private boolean visibleFaceZN(Block b, int i, int j, int k) {
         if (k < 0) {
             if (cZN == null) {
                 return true;
+            } else {
+                int index = toIndex(i, j, Chunk.DEPTH - 1);
+                Block n = cZN.data[index];
+                return compare(b, n);
             }
-
-            int index = toIndex(i, j, Chunk.DEPTH - 1);
-            Block b = cYN.data[index];
-            return b.isTransparent();
         }
-
         int index = toIndex(i, j, k);
-        Block b = data[index];
-        return b.isTransparent();
+        Block n = data[index];
+        return compare(b, n);
     }
 
-    private boolean visibleFaceZP(int i, int j, int k) {
-        if (k >= DEPTH) {
+    private boolean visibleFaceZP(Block b, int i, int j, int k) {
+        if (k >= Chunk.DEPTH) {
             if (cZP == null) {
                 return true;
+            } else {
+                int index = toIndex(i, j, 0);
+                Block n = cZP.data[index];
+                return compare(b, n);
             }
-
-            int index = toIndex(i, j, 0);
-            Block b = cYN.data[index];
-            return b.isTransparent();
         }
-
         int index = toIndex(i, j, k);
-        Block b = data[index];
-        return b.isTransparent();
+        Block n = data[index];
+        return compare(b, n);
     }
 
     private boolean differentBlock(int access, Block compare) {
         Block b = data[access];
         return b.id != compare.id;
+    }
+
+    private boolean compare(Block b, Block neighbour) {
+        if (Block.isAir(neighbour)) {
+            return true;
+        }
+        if (b.isSolid() && neighbour.isTransparent()) {
+            return true;
+        }
+        return false;
     }
 
     public Vector3f getChunkPos() {

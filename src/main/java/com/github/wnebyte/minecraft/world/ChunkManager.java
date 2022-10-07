@@ -90,20 +90,23 @@ public class ChunkManager {
             subchunk.first = (i * VERTEX_CAPACITY);
             subchunk.drawCommandIndex = i;
             subchunks.add(subchunk);
-            DebugStats.vertexMemAlloc += (VERTEX_CAPACITY * STRIDE_BYTES);
         }
+        DebugStats.vertexMemAlloc = size;
 
         ibo = glGenBuffers();
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, ibo);
-        glBufferData(GL_DRAW_INDIRECT_BUFFER, (long)drawCommands.capacity() * DrawCommand.SIZE_BYTES, GL_DYNAMIC_DRAW);
+        glBufferData(GL_DRAW_INDIRECT_BUFFER,
+                (long)drawCommands.capacity() * DrawCommand.SIZE_BYTES, GL_DYNAMIC_DRAW);
 
         bibo = glGenBuffers();
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, bibo);
-        glBufferData(GL_DRAW_INDIRECT_BUFFER, (long) transparentDrawCommands.capacity() * DrawCommand.SIZE_BYTES, GL_DYNAMIC_DRAW);
+        glBufferData(GL_DRAW_INDIRECT_BUFFER,
+                (long) transparentDrawCommands.capacity() * DrawCommand.SIZE_BYTES, GL_DYNAMIC_DRAW);
 
         cbo = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, cbo);
-        glBufferData(GL_ARRAY_BUFFER, (long)(subchunks.size() / 2) * (2 * Integer.BYTES), GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER,
+                (long)(subchunks.size() / 2) * (2 * Integer.BYTES), GL_DYNAMIC_DRAW);
 
         glVertexAttribIPointer(1, 2, GL_INT, 2 * Integer.BYTES, 0);
         glVertexAttribDivisor(1, 1);
@@ -124,15 +127,20 @@ public class ChunkManager {
                 Chunk chunk = new Chunk(x, 0, z, map, drawCommands, transparentDrawCommands, subchunks);
                 map.put(chunk.getChunkCoords(), chunk);
                 chunk.generateTerrain();
-                chunk.generateMesh();
             }
         }
+        for (Chunk chunk : map) {
+            chunk.updateNeighbourRefs();
+            chunk.generateMesh();
+        }
         double time = (System.nanoTime() - startTime) * 1E-9;
-        System.out.printf("%dx%d chunks initialized in: %.2fs%n", sqrt, sqrt, time);
+        System.out.printf("%dx%d chunks initialized in: %.2fs%n",  sqrt, sqrt, time);
+        System.out.printf("Vertex mem used:             %.2fMB%n", DebugStats.vertexMemUsed  * 1E-6);
+        System.out.printf("Vertex mem allocated:        %.2fMB%n", DebugStats.vertexMemAlloc * 1E-6);
+        System.out.printf("Number of subchunks:         %d%n",     subchunks.size());
     }
 
     public void render() {
-        glBindVertexArray(vao);
         // Render pass 1:
         // set opqaue render states
         glEnable(GL_CULL_FACE);
@@ -155,6 +163,7 @@ public class ChunkManager {
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_BUFFER, BlockMap.getTexCoordsTextureId());
         shader.uploadTexture(Shader.U_TEX_COORDS_TEXTURE, 1);
+        glBindVertexArray(vao);
         glMultiDrawArraysIndirect(GL_TRIANGLES, 0, drawCommands.size(), 0);
         texture.unbind();
         shader.detach();

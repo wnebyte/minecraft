@@ -1,8 +1,9 @@
 package com.github.wnebyte.minecraft.core;
 
-import com.github.wnebyte.minecraft.world.Chunk;
+import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.world.World;
 import com.github.wnebyte.minecraft.renderer.*;
+import com.github.wnebyte.minecraft.componenets.Text2D;
 import com.github.wnebyte.minecraft.util.Assets;
 import com.github.wnebyte.minecraft.util.BlockMap;
 import com.github.wnebyte.minecraft.util.TexturePacker;
@@ -13,7 +14,7 @@ public class Scene {
 
     private Frustrum frustrum;
 
-    private Chunk chunk;
+    private MyRenderer renderer;
 
     private World world;
 
@@ -24,6 +25,7 @@ public class Scene {
     public Scene(Camera camera) {
         this.camera = camera;
         this.frustrum = new Frustrum();
+        this.renderer = new MyRenderer(camera);
         this.world = new World(camera);
     }
 
@@ -46,21 +48,21 @@ public class Scene {
 
     public void update(float dt) {
         world.update(dt);
-        /*
         Vector3f v = camera.getPosition();
         String s = String.format("%.0f, %.0f, %.0f", v.x, v.y, v.z);
         Text2D text = new Text2D(s, -3.6f, 1.5f, 0.0070f, 0xFFFF);
         renderer.clearText2D();
         renderer.addText2D(text);
-         */
     }
 
     public void render() {
         world.render();
+        renderer.render();
     }
 
     public void destroy() {
         world.destroy();
+        renderer.destroy();
     }
 
     public Camera getCamera() {

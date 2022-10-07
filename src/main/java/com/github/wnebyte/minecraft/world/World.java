@@ -1,16 +1,15 @@
 package com.github.wnebyte.minecraft.world;
 
-import com.github.wnebyte.minecraft.componenets.BoxRenderer;
+import java.util.List;
+import java.util.ArrayList;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.core.GameObject;
 import com.github.wnebyte.minecraft.core.Transform;
 import com.github.wnebyte.minecraft.renderer.*;
+import com.github.wnebyte.minecraft.componenets.BoxRenderer;
 import com.github.wnebyte.minecraft.util.*;
-import org.joml.Vector4f;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class World {
 
@@ -34,7 +33,8 @@ public class World {
 
     public static final int SPAWN_CHUNK_SIZE = 5 * 5;
 
-    private static final Vector4f SUN_COLOR = new Vector4f(252f / 255f, 248f / 255f, 3f / 255f, 1.0f);
+    private static final Vector4f SUN_COLOR = new Vector4f(1f, 1f, 1f, 1f);
+            // = new Vector4f(252f / 255f, 248f / 255f, 3f / 255f, 1.0f);
 
     private Camera camera;
 
@@ -102,10 +102,10 @@ public class World {
     public void render() {
         // render skybox
         skybox.render();
-        // render chunks
-        chunkManager.render();
         // render game objects
         renderer.render();
+        // render chunks
+        chunkManager.render();
     }
 
     public void destroy() {
@@ -115,4 +115,5 @@ public class World {
             go.destroy();
         }
     }
+
 }
