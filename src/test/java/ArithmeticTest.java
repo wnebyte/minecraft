@@ -1,3 +1,4 @@
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.junit.Assert;
@@ -139,6 +140,47 @@ public class ArithmeticTest {
         Vector4f oneFillerVec = new Vector4f(1.0f);
         System.out.printf("x: %.0f, y: %.0f, z: %.0f, w: %.0f%n", zeroFillerVec.x, zeroFillerVec.y, zeroFillerVec.z, zeroFillerVec.w);
         System.out.printf("x: %.0f, y: %.0f, z: %.0f, w: %.0f%n", oneFillerVec.x, oneFillerVec.y, oneFillerVec.z, oneFillerVec.w);
+    }
+
+    @Test
+    public void test04() {
+        int iMax = 16, jMax = 256, kMax = 16;
+
+        // YN(-)
+        System.out.println("YN(-)");
+        for (int j = 0; j < jMax; j++) {
+            int subchunkLevel = j / 16;
+            if (j % 16 == 0 && subchunkLevel != 0) {
+                System.out.print(j + ", ");
+            }
+        }
+        // YP(+)
+        System.out.println("\nYP(+)");
+        for (int j = 0; j < jMax; j++) {
+            int subchunkLevel = j / 16;
+            if ((j + 1) % 16 == 0 && subchunkLevel != 15) {
+                System.out.print(j + ", ");
+            }
+        }
+    }
+
+    @Test
+    public void test05() {
+        Vector3f center     = new Vector3f(0.5f, 0.5f, 0.5f);
+        Vector3f dimensions = new Vector3f(1f, 1f, 1f);
+        addBox3D(center, dimensions);
+    }
+
+    private void addBox3D(Vector3f center, Vector3f dimensions) {
+        Vector3f min = new Vector3f(center).sub(new Vector3f(dimensions).mul(0.5f));
+        Vector3f max = new Vector3f(center).add(new Vector3f(dimensions).mul(0.5f));
+
+        System.out.printf("x: %.2f, y: %.2f, z: %.2f%n", min.x, min.y, min.z);
+        System.out.printf("x: %.2f, y: %.2f, z: %.2f%n", max.x, max.y, max.z);
+
+        Vector3f[] vertices = {
+
+        };
     }
 
     private Vector3f toCoordinates(int index) {

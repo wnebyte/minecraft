@@ -7,6 +7,8 @@ import org.joml.Matrix4f;
 import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.core.Transform;
 
+import java.util.Arrays;
+
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
@@ -244,5 +246,12 @@ public class BoxRendererBatch implements Batch<BoxRenderer> {
     @Override
     public boolean hasSpace() {
         return (size < maxBatchSize);
+    }
+
+    @Override
+    public void clear() {
+        Arrays.fill(data, 0f);
+        Arrays.fill(boxes, null);
+        size = 0;
     }
 }

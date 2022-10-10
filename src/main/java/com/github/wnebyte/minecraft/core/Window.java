@@ -170,6 +170,10 @@ public class Window {
         return height;
     }
 
+    public float getAspectRatio() {
+        return (float)width / (float)height;
+    }
+
     public Scene getScene() {
         return scene;
     }

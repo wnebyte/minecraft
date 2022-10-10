@@ -56,16 +56,13 @@ public class VertexBuffer {
     public void append(int position, int uv, byte face) {
         // Todo: FRONT, LEFT, and RIGHT facing textures are upside-down
         assert (size <= capacity() - 6) : String.format("Error: (VertexBuffer) Overflow: %d", size);
-        if (face == Chunk.FaceType.FRONT.ordinal()) {
-            uv = 289;
-        }
         int shared = compress(position, uv, face);
-        data.put(shared | 0);
-        data.put(shared | 3);
-        data.put(shared | 2);
-        data.put(shared | 1);
-        data.put(shared | 0);
-        data.put(shared | 2);
+        data.put(shared | 0); // TR
+        data.put(shared | 3); // TL
+        data.put(shared | 2); // BL
+        data.put(shared | 1); // BR
+        data.put(shared | 0); // TR
+        data.put(shared | 2); // BL
         size += STRIDE * 6;
         DebugStats.vertexMemUsed += (long)STRIDE_BYTES * 6;
     }

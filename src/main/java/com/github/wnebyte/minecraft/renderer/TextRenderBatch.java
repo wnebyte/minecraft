@@ -57,12 +57,14 @@ public class TextRenderBatch {
 
     private Camera camera;
 
+    private boolean started;
+
     public TextRenderBatch(Camera camera) {
         this.vertices = new float[BATCH_SIZE * STRIDE];
         this.size = 0;
         this.camera = camera;
         this.shader = Assets.getShader("C:/users/ralle/dev/java/minecraft/assets/shaders/font.glsl");
-        this.font = Assets.getFont("C:/users/ralle/dev/java/minecraft/assets/fonts/Minecraft.ttf", 20);
+        this.font = Assets.getFont("C:/users/ralle/dev/java/minecraft/assets/fonts/Minecraft.ttf", 16);
     }
 
     public void start() {
@@ -90,6 +92,8 @@ public class TextRenderBatch {
 
         glVertexAttribPointer(2, UV_SIZE, GL_FLOAT, false, STRIDE_BYTES, UV_OFFSET);
         glEnableVertexAttribArray(2);
+
+        started = true;
     }
 
     public void flush() {
@@ -106,7 +110,7 @@ public class TextRenderBatch {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, font.getTextureId());
         shader.uploadTexture(Shader.U_FONT_TEXTURE, 0);
-        shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
+        shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrixHUD());
 
         glBindVertexArray(vao);
         glDrawElements(GL_TRIANGLES, size * 6, GL_UNSIGNED_INT, 0);
@@ -114,8 +118,8 @@ public class TextRenderBatch {
         // Reset batch for use on the next draw call
         size = 0;
         Arrays.fill(vertices, 0);
-        shader.detach();
         glBindTexture(GL_TEXTURE_2D, 0);
+        shader.detach();
     }
 
     public void destroy() {
@@ -217,5 +221,9 @@ public class TextRenderBatch {
             elements[i] = INDICES[(i % 6)] + ((i / 6) * 4);
         }
         return elements;
+    }
+
+    public boolean isStarted() {
+        return started;
     }
 }

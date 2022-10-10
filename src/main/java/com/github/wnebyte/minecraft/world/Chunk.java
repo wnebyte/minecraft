@@ -2,7 +2,6 @@ package com.github.wnebyte.minecraft.world;
 
 import java.util.Objects;
 import java.util.Random;
-
 import org.joml.Vector2i;
 import org.joml.Vector3i;
 import org.joml.Vector3f;
@@ -47,12 +46,12 @@ public class Chunk {
 
     public static Vector3i toChunkCoords3D(Vector3f pos) {
         int x = (int)Math.floor(pos.x / Chunk.WIDTH);
-        int y = (int)Math.floor(pos.y / Chunk.HEIGHT);
+        int y = (int)Math.floor(pos.y / 16);
         int z = (int)Math.floor(pos.z / Chunk.DEPTH);
         return new Vector3i(x, y, z);
     }
 
-    public static Vector3f toWorld(Vector2i chunkCoords){
+    public static Vector3f toWorldCoords(Vector2i chunkCoords){
         float x = chunkCoords.x * Chunk.WIDTH;
         float y = 0;
         float z = chunkCoords.y * Chunk.DEPTH;
@@ -65,6 +64,13 @@ public class Chunk {
                 index3D.x + (chunkCoords.x * Chunk.WIDTH),
                 index3D.y,
                 index3D.z + (chunkCoords.y * Chunk.DEPTH));
+    }
+
+    public static Vector3i world2Index3D(Vector3f pos, Vector2i chunkCoords) {
+        int i = (int)Math.floor(pos.x - (chunkCoords.x * Chunk.WIDTH));
+        int j = (int)Math.floor(pos.y);
+        int k = (int)Math.floor(pos.z - (chunkCoords.y * Chunk.DEPTH));
+        return new Vector3i(i, j, k);
     }
 
     public static int getUvIndex(BlockFormat blockFormat, FaceType face) {
@@ -173,16 +179,56 @@ public class Chunk {
         return data[index];
     }
 
+    public Block getBlock(Vector3f pos) {
+        Vector3i index = Chunk.world2Index3D(pos, chunkCoords);
+        return getBlock(index.x, index.y, index.z);
+    }
+
     public void setBlock(Block b, int i, int j, int k) {
+        setBlock(b, i, j, k, false);
+    }
+
+    public void setBlock(Block b, int i, int j, int k, boolean remesh) {
         int index = toIndex(i, j, k);
         data[index] = b;
+
+        if (remesh) {
+            int subchunkLevel = j / 16;
+            generateMesh(subchunkLevel);
+
+            // YN(-)
+            if (j % 16 == 0 && subchunkLevel != 0) {
+                generateMesh(subchunkLevel - 1);
+            }
+            // YP(+)
+            else if ((j + 1) % 16 == 0 && subchunkLevel != 15) {
+                generateMesh(subchunkLevel + 1);
+            }
+            // XN(-)
+            if (i == 0 && cXN != null) {
+                cXN.generateMesh(subchunkLevel);
+            }
+            // XP(+)
+            else if (i == Chunk.WIDTH - 1 && cXP != null) {
+                cXP.generateMesh(subchunkLevel);
+            }
+            // ZN(-)
+            if (k == 0 && cZN != null) {
+                cZN.generateMesh(subchunkLevel);
+            }
+            // ZP(+)
+            else if (k == Chunk.DEPTH - 1 && cZP != null) {
+                cZP.generateMesh(subchunkLevel);
+            }
+
+        }
     }
 
     public void updateNeighbourRefs() {
-        cXN = map.get(chunkCoordX - 1, chunkCoordZ);
-        cXP = map.get(chunkCoordX + 1, chunkCoordZ);
-        cZN = map.get(chunkCoordX, chunkCoordZ - 1);
-        cZP = map.get(chunkCoordX, chunkCoordZ + 1);
+        cXN = map.getChunk(chunkCoordX - 1, chunkCoordZ);
+        cXP = map.getChunk(chunkCoordX + 1, chunkCoordZ);
+        cZN = map.getChunk(chunkCoordX, chunkCoordZ - 1);
+        cZP = map.getChunk(chunkCoordX, chunkCoordZ + 1);
     }
 
     private final float minBiomeHeight = 55.0f;
@@ -395,11 +441,6 @@ public class Chunk {
         int index = toIndex(i, j, k);
         Block n = data[index];
         return compare(b, n);
-    }
-
-    private boolean differentBlock(int access, Block compare) {
-        Block b = data[access];
-        return b.id != compare.id;
     }
 
     private boolean compare(Block b, Block neighbour) {

@@ -54,7 +54,7 @@ public class ChunkManager {
 
     private Map map;
 
-    public ChunkManager(Camera camera) {
+    public ChunkManager(Camera camera, Map map) {
         this.camera = camera;
         this.shader = Assets.getShader(Assets.DIR + "/shaders/opaque.glsl");
         this.transparentShader = Assets.getShader(Assets.DIR + "/shaders/transparent.glsl");
@@ -63,7 +63,7 @@ public class ChunkManager {
         this.drawCommands = new DrawCommandBuffer(World.CHUNK_CAPACITY * 16);
         this.transparentDrawCommands = new DrawCommandBuffer(World.CHUNK_CAPACITY * 16);
         this.subchunks = new Pool<>(2 * World.CHUNK_CAPACITY * 16);
-        this.map = new Map();
+        this.map = map;
     }
 
     public void start() {
@@ -116,7 +116,6 @@ public class ChunkManager {
         int x = (int)(Math.sqrt(World.SPAWN_CHUNK_SIZE) * 16) / 2;
         int y = 51;
         int z = x;
-        camera.setPosition(new Vector3f(x, y + 0.25f, z));
     }
 
     private void initMap() {
@@ -143,7 +142,7 @@ public class ChunkManager {
     public void render() {
         // Render pass 1:
         // set opqaue render states
-        glEnable(GL_CULL_FACE);
+       // glEnable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
         glDepthMask(true);
@@ -170,7 +169,7 @@ public class ChunkManager {
 
         // Render pass 2:
         // set transparent render states
-        glDisable(GL_CULL_FACE);
+       // glDisable(GL_CULL_FACE);
         glDepthMask(false);
         glEnable(GL_BLEND);
         glBlendFunci(1, GL_ONE, GL_ONE); // accumulation blend target
@@ -229,5 +228,9 @@ public class ChunkManager {
         glDeleteBuffers(ibo);
         glDeleteBuffers(cbo);
         glDeleteBuffers(bibo);
+    }
+
+    public Map getMap() {
+        return map;
     }
 }

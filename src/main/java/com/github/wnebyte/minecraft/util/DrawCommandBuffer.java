@@ -62,14 +62,6 @@ public class DrawCommandBuffer implements Iterable<DrawCommand> {
         return chunkCoordsData[index];
     }
 
-    public void sort() {
-        sort(false);
-    }
-
-    public void sort(boolean asc) {
-
-    }
-
     public int[] data() {
         int index = 0;
         int[] drawCommands = new int[DrawCommand.SIZE * size];

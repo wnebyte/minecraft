@@ -1,5 +1,6 @@
 package com.github.wnebyte.minecraft.core;
 
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Matrix4f;
 
@@ -40,9 +41,11 @@ public class Camera {
 
     public static final float DEFAULT_Z_FAR             =  100.0f;
 
-    public static final float DEFAULT_PROJECTION_WIDTH = 6;
+    private static final float PROJECTION_WIDTH         =  6;
 
-    public static final float DEFAULT_PROJECTION_HEIGHT = 3;
+    private static final float PROJECTION_HEIGHT        =  3;
+
+    private static final Vector2f PROJECTION_SIZE = new Vector2f(PROJECTION_WIDTH, PROJECTION_HEIGHT);
 
     /*
     ###########################
@@ -52,7 +55,7 @@ public class Camera {
 
     private Vector3f position;
 
-    private Vector3f front;
+    private Vector3f forward;
 
     private Vector3f up;
 
@@ -82,7 +85,13 @@ public class Camera {
 
     private Matrix4f inverseView;
 
-    private Movement lastMovement;
+    private Matrix4f projectionMatrixHUD;
+
+    private Matrix4f viewMatrixHUD;
+
+    private Matrix4f inverseProjectionHUD;
+
+    private Matrix4f inverseViewHUD;
 
     /*
     ###########################
@@ -90,26 +99,26 @@ public class Camera {
     ###########################
     */
 
-    public Camera(Vector3f position, Vector3f front, Vector3f up) {
-        this(position, front, up, DEFAULT_YAW, DEFAULT_PITCH);
+    public Camera(Vector3f position, Vector3f forward, Vector3f up) {
+        this(position, forward, up, DEFAULT_YAW, DEFAULT_PITCH);
     }
 
-    public Camera(Vector3f position, Vector3f front, Vector3f up, float yaw, float pitch) {
-        this(position, front, up,
+    public Camera(Vector3f position, Vector3f forward, Vector3f up, float yaw, float pitch) {
+        this(position, forward, up,
                 yaw, pitch, DEFAULT_MOVEMENT_SPEED, DEFAULT_MOUSE_SENSITIVITY, DEFAULT_ZOOM);
     }
 
-    public Camera(Vector3f position, Vector3f front, Vector3f up,
+    public Camera(Vector3f position, Vector3f forward, Vector3f up,
                   float yaw, float pitch, float movementSpeed, float mouseSensitivity, float zoom) {
-        this(position, front, up,
+        this(position, forward, up,
                 yaw, pitch, movementSpeed, mouseSensitivity, zoom, DEFAULT_Z_NEAR, DEFAULT_Z_FAR);
     }
 
-    public Camera(Vector3f position, Vector3f front, Vector3f up,
+    public Camera(Vector3f position, Vector3f forward, Vector3f up,
                   float yaw, float pitch, float movementSpeed, float mouseSensitivity, float zoom,
                   float zNear, float zFar) {
         this.position = position;
-        this.front = front;
+        this.forward = forward;
         this.up = new Vector3f();
         this.worldUp = up;
         this.right = new Vector3f();
@@ -124,6 +133,10 @@ public class Camera {
         this.viewMatrix = new Matrix4f();
         this.inverseProjection = new Matrix4f();
         this.inverseView = new Matrix4f();
+        this.projectionMatrixHUD = new Matrix4f();
+        this.viewMatrixHUD = new Matrix4f();
+        this.inverseProjectionHUD = new Matrix4f();
+        this.inverseViewHUD = new Matrix4f();
         updateCameraVectors();
     }
 
@@ -133,20 +146,39 @@ public class Camera {
     ###########################
     */
 
+    // Todo: precalculate matrices when camera state changes
     public Matrix4f getProjectionMatrix() {
         projectionMatrix.identity();
         projectionMatrix.perspective(
                 (float)Math.toRadians(zoom),
-                (float)Application.getWindow().getWidth() / (float)Application.getWindow().getHeight(), zNear, zFar);
+                Application.getWindow().getAspectRatio(), zNear, zFar);
         projectionMatrix.invert(inverseProjection);
         return projectionMatrix;
     }
 
     public Matrix4f getViewMatrix() {
         viewMatrix.identity();
-        viewMatrix.lookAt(position, new Vector3f(position).add(front), up);
+        viewMatrix.lookAt(position, new Vector3f(position).add(forward), up);
         viewMatrix.invert(inverseView);
         return viewMatrix;
+    }
+
+    public Matrix4f getProjectionMatrixHUD() {
+        projectionMatrixHUD.identity();
+        Vector2f halfSize = new Vector2f(PROJECTION_SIZE).div(2.0f);
+        projectionMatrixHUD.ortho(-halfSize.x, halfSize.x, -halfSize.y, halfSize.y, -0.1f, 1000.0f);
+        projectionMatrixHUD.invert(inverseProjectionHUD);
+        return projectionMatrixHUD;
+    }
+
+    public Matrix4f getViewMatrixHUD() {
+        viewMatrixHUD.identity();
+        viewMatrixHUD.lookAt(
+                new Vector3f(0.0f, 0.0f, 10.0f),
+                new Vector3f(0.0f, 0.0f, 9.0f),
+                new Vector3f(0.0f, 1.0f, 0.0f));
+        viewMatrixHUD.invert(inverseViewHUD);
+        return viewMatrixHUD;
     }
 
     /**
@@ -156,10 +188,10 @@ public class Camera {
         float velocity = movementSpeed * dt;
         switch (direction) {
             case FORWARD:
-                position.add(new Vector3f(front).mul(velocity));
+                position.add(new Vector3f(forward).mul(velocity));
                 break;
             case BACKWARD:
-                position.sub(new Vector3f(front).mul(velocity));
+                position.sub(new Vector3f(forward).mul(velocity));
                 break;
             case LEFT:
                 position.sub(new Vector3f(right).mul(velocity));
@@ -174,7 +206,6 @@ public class Camera {
                 position.sub(new Vector3f(up).mul(velocity));
                 break;
         }
-        lastMovement = direction;
     }
 
     /**
@@ -219,14 +250,14 @@ public class Camera {
         f.x = (float)Math.cos(Math.toRadians(yaw)) * (float)Math.cos(Math.toRadians(pitch));
         f.y = (float)Math.sin(pitch);
         f.z = (float)Math.sin(Math.toRadians(yaw)) * (float)Math.cos(Math.toRadians(pitch));
-        f.normalize(front);
+        f.normalize(forward);
         // calculate the new right vector
         Vector3f r = new Vector3f(right);
-        front.cross(worldUp, r);
+        forward.cross(worldUp, r);
         r.normalize(right);
         // calculate the new up vector
         Vector3f u = new Vector3f(up);
-        right.cross(front, u);
+        right.cross(forward, u);
         u.normalize(up);
     }
 
@@ -262,8 +293,8 @@ public class Camera {
         this.position.set(position);
     }
 
-    public Vector3f getFront() {
-        return front;
+    public Vector3f getForward() {
+        return forward;
     }
 
     public float getZNear() {
@@ -274,7 +305,4 @@ public class Camera {
         return zFar;
     }
 
-    public Movement getLastMovement() {
-        return lastMovement;
-    }
 }

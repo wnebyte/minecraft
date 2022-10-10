@@ -1,9 +1,11 @@
 package com.github.wnebyte.minecraft.core;
 
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.world.World;
 import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.componenets.Text2D;
+import com.github.wnebyte.minecraft.util.JMath;
 import com.github.wnebyte.minecraft.util.Assets;
 import com.github.wnebyte.minecraft.util.BlockMap;
 import com.github.wnebyte.minecraft.util.TexturePacker;
@@ -14,7 +16,7 @@ public class Scene {
 
     private Frustrum frustrum;
 
-    private MyRenderer renderer;
+    private Renderer renderer;
 
     private World world;
 
@@ -25,8 +27,8 @@ public class Scene {
     public Scene(Camera camera) {
         this.camera = camera;
         this.frustrum = new Frustrum();
-        this.renderer = new MyRenderer(camera);
-        this.world = new World(camera);
+        this.renderer = new Renderer(camera);
+        this.world = new World(camera, renderer);
     }
 
     private void loadResources() {
@@ -43,16 +45,29 @@ public class Scene {
 
     public void start() {
         loadResources();
-        world.start();
+        world.start(this);
     }
 
     public void update(float dt) {
         world.update(dt);
-        Vector3f v = camera.getPosition();
-        String s = String.format("%.0f, %.0f, %.0f", v.x, v.y, v.z);
-        Text2D text = new Text2D(s, -3.6f, 1.5f, 0.0070f, 0xFFFF);
         renderer.clearText2D();
+        Vector3f origin = new Vector3f(camera.getPosition());
+        String s = String.format("%.1f, %.1f, %.1f", origin.x, origin.y, origin.z);
+        Text2D text = new Text2D(s, -3.0f + 0.05f, 1.2f, 0.005f, 0x0000);
         renderer.addText2D(text);
+
+        float crosshairSize = 0.10f;
+        float crosshairHalfSize = crosshairSize / 2.0f;
+        renderer.addLine2D(
+                new Vector2f(0.0f, -crosshairHalfSize),
+                new Vector2f(0.0f, crosshairHalfSize),
+                new Vector3f(0f, 0f, 0f),
+                1);
+        renderer.addLine2D(
+                new Vector2f(-crosshairHalfSize, 0.0f),
+                new Vector2f(crosshairHalfSize,  0.0f),
+                new Vector3f(0f, 0f, 0f),
+                1);
     }
 
     public void render() {

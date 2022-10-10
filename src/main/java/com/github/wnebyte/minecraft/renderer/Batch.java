@@ -12,5 +12,7 @@ public interface Batch<T> {
 
     boolean remove(T element);
 
+    void clear();
+
     boolean hasSpace();
 }

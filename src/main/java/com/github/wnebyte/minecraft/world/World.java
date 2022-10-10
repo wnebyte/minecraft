@@ -2,14 +2,20 @@ package com.github.wnebyte.minecraft.world;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Random;
+
+import com.github.wnebyte.minecraft.core.*;
+import com.github.wnebyte.minecraft.physics.Physics;
+import com.github.wnebyte.minecraft.physics.RaycastInfo;
 import org.joml.Vector3f;
+import org.joml.Vector3i;
 import org.joml.Vector4f;
-import com.github.wnebyte.minecraft.core.Camera;
-import com.github.wnebyte.minecraft.core.GameObject;
-import com.github.wnebyte.minecraft.core.Transform;
 import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.componenets.BoxRenderer;
 import com.github.wnebyte.minecraft.util.*;
+
+import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
+import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT;
 
 public class World {
 
@@ -38,11 +44,15 @@ public class World {
 
     private Camera camera;
 
+    private Map map;
+
     private ChunkManager chunkManager;
 
     private Renderer renderer;
 
     private Skybox skybox;
+
+    private Physics physics;
 
     private GameObject sun;
 
@@ -50,21 +60,36 @@ public class World {
 
     private float time;
 
-    private float debounceTime = 3.5f;
+    private float debounceTime = 0.2f;
 
     private float debounce = debounceTime;
 
-    public World(Camera camera) {
+    private float raycastDebounceTime = 0.0f;
+
+    private float raycastDebounce = raycastDebounceTime;
+
+    private float placeBlockDebounceTime = 0.2f;
+
+    private float placeBlockDebounce = placeBlockDebounceTime;
+
+    private Random rand;
+
+    private Vector3f block;
+
+    public World(Camera camera, Renderer renderer) {
         this.camera = camera;
-        this.chunkManager = new ChunkManager(camera);
-        this.renderer = new Renderer(camera);
+        this.map = new Map();
+        this.chunkManager = new ChunkManager(camera, map);
+        this.renderer = renderer;
         this.skybox = new Skybox(camera);
+        this.physics = new Physics(renderer, chunkManager.getMap());
         this.sun = createSun(400, 80f, 50f, 10f, SUN_COLOR);
         this.gameObjects = new ArrayList<>();
         this.gameObjects.add(sun);
+        this.rand = new Random();
     }
 
-    public void start() {
+    public void start(Scene scene) {
         // start chunk manager
         chunkManager.start();
         // start skybox
@@ -74,6 +99,7 @@ public class World {
             go.start();
             renderer.add(go);
         }
+        camera.setPosition(new Vector3f(-1, 51, 0));
     }
 
     /*
@@ -84,28 +110,56 @@ public class World {
      */
     public void update(float dt) {
         debounce -= dt;
+        raycastDebounce -= dt;
+        placeBlockDebounce -= dt;
         time += (dt / 6);
         float blend = JMath.clamp((time / 1440), 0.0f, 1.0f);
         if (time == 1.0f) time = 0.0f;
         skybox.setBlend(blend);
 
-        if (debounce < 0) {
-            JMath.subX(sun.transform.position, dt * 2);
+        if (raycastDebounce < 0) {
+            Vector3f origin = new Vector3f(camera.getPosition());
+            Vector3f normal = new Vector3f(camera.getForward());
+            RaycastInfo info = physics.raycast(origin, normal, 15f);
+            if (info.hit) {
+                renderer.clearLines3D();
+                renderer.addBox3D(info.blockCenter, info.blockSize, 0f,
+                        new Vector3f(1f, 1f, 1f), 60 * 5);
+                block = info.blockCenter;
+            }
+            raycastDebounce = raycastDebounceTime;
+        }
+
+        if (MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && block != null && debounce < 0) {
+            Chunk chunk = map.getChunk(block.x, block.y, block.z);
+            if (chunk != null) {
+                Vector3i index = Chunk.world2Index3D(block, chunk.getChunkCoords());
+                chunk.setBlock(Block.AIR, index.x, index.y, index.z, true);
+                block = null;
+                renderer.clearLines3D();
+            }
             debounce = debounceTime;
         }
 
-        for (GameObject go : gameObjects) {
-            go.update(dt);
+        if (MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT) && block != null && placeBlockDebounce < 0) {
+            Chunk chunk = map.getChunk(block.x, block.y, block.z);
+            if (chunk != null && (block.y + 1) < Chunk.HEIGHT) {
+                Vector3i index = Chunk.world2Index3D(block, chunk.getChunkCoords());
+                chunk.setBlock(Block.DIRT, index.x, index.y + 1, index.z, true);
+                block = null;
+                renderer.clearLines3D();
+            }
+            placeBlockDebounce = placeBlockDebounceTime;
         }
     }
 
     public void render() {
         // render skybox
         skybox.render();
-        // render game objects
-        renderer.render();
         // render chunks
         chunkManager.render();
+        // render game objects
+        renderer.render();
     }
 
     public void destroy() {
