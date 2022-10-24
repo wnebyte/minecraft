@@ -1,7 +1,7 @@
 package com.github.wnebyte.minecraft.world;
 
 import java.nio.ByteBuffer;
-import org.joml.Vector3f;
+import org.joml.Vector2i;
 import org.lwjgl.system.MemoryUtil;
 import com.github.wnebyte.minecraft.core.Application;
 import com.github.wnebyte.minecraft.core.Camera;
@@ -26,15 +26,15 @@ import static org.lwjgl.opengl.GL44C.GL_MAP_PERSISTENT_BIT;
 
 public class ChunkManager {
 
-    private int vao;
+    private int vaoID;
 
-    private int vbo;
+    private int vboID;
 
-    private int ibo;
+    private int iboID;
 
-    private int bibo;
+    private int biboID;
 
-    private int cbo;
+    private int cboID;
 
     private Camera camera;
 
@@ -67,46 +67,43 @@ public class ChunkManager {
     }
 
     public void start() {
-        vao = glGenVertexArrays();
-        glBindVertexArray(vao);
+        vaoID = glGenVertexArrays();
+        glBindVertexArray(vaoID);
 
-        vbo = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        vboID = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, vboID);
 
         glVertexAttribIPointer(0, DATA_SIZE, GL_UNSIGNED_INT, STRIDE_BYTES, DATA_OFFSET);
         glEnableVertexAttribArray(0);
 
-        int numBuffers = subchunks.size();
-        int size = numBuffers * (VERTEX_CAPACITY * STRIDE_BYTES);
-        int length = size / numBuffers;
+        int size = subchunks.capacity() * (VERTEX_CAPACITY * STRIDE_BYTES);
+        int length = size / subchunks.capacity();
         int flags = GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT;
         glBufferStorage(GL_ARRAY_BUFFER, size, flags);
         ByteBuffer buffer = glMapBufferRange(GL_ARRAY_BUFFER, 0, size, flags);
         long base = MemoryUtil.memAddress(buffer);
-
-        for (int offset = 0, i = 0; offset <= size - length && i < subchunks.size(); offset += length, i++) {
+        for (int offset = 0, i = 0; offset <= size - length && i < subchunks.capacity(); offset += length, i++) {
             ByteBuffer slice = MemoryUtil.memByteBuffer(base + offset, length);
             Subchunk subchunk = new Subchunk(new VertexBuffer(slice));
-            subchunk.first = (i * VERTEX_CAPACITY);
-            subchunk.drawCommandIndex = i;
+            subchunk.setFirst(i * VERTEX_CAPACITY);
             subchunks.add(subchunk);
         }
         DebugStats.vertexMemAlloc = size;
 
-        ibo = glGenBuffers();
-        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, ibo);
+        iboID = glGenBuffers();
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, iboID);
         glBufferData(GL_DRAW_INDIRECT_BUFFER,
                 (long)drawCommands.capacity() * DrawCommand.SIZE_BYTES, GL_DYNAMIC_DRAW);
 
-        bibo = glGenBuffers();
-        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, bibo);
+        biboID = glGenBuffers();
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, biboID);
         glBufferData(GL_DRAW_INDIRECT_BUFFER,
                 (long) transparentDrawCommands.capacity() * DrawCommand.SIZE_BYTES, GL_DYNAMIC_DRAW);
 
-        cbo = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, cbo);
+        cboID = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, cboID);
         glBufferData(GL_ARRAY_BUFFER,
-                (long)(subchunks.size() / 2) * (2 * Integer.BYTES), GL_DYNAMIC_DRAW);
+                (long)drawCommands.capacity() * (2 * Integer.BYTES), GL_DYNAMIC_DRAW);
 
         glVertexAttribIPointer(1, 2, GL_INT, 2 * Integer.BYTES, 0);
         glVertexAttribDivisor(1, 1);
@@ -123,23 +120,67 @@ public class ChunkManager {
         int sqrt = (int)Math.sqrt(World.SPAWN_CHUNK_SIZE);
         for (int x = 0; x < sqrt; x++) {
             for (int z = 0; z < sqrt; z++) {
-                Chunk chunk = new Chunk(x, 0, z, map, drawCommands, transparentDrawCommands, subchunks);
-                map.put(chunk.getChunkCoords(), chunk);
+                Chunk chunk = new Chunk(x, 0, z, map, subchunks);
+                map.putChunk(chunk);
                 chunk.generateTerrain();
             }
         }
         for (Chunk chunk : map) {
-            chunk.updateNeighbourRefs();
             chunk.generateMesh();
         }
         double time = (System.nanoTime() - startTime) * 1E-9;
         System.out.printf("%dx%d chunks initialized in: %.2fs%n",  sqrt, sqrt, time);
         System.out.printf("Vertex mem used:             %.2fMB%n", DebugStats.vertexMemUsed  * 1E-6);
         System.out.printf("Vertex mem allocated:        %.2fMB%n", DebugStats.vertexMemAlloc * 1E-6);
-        System.out.printf("Number of subchunks:         %d%n",     subchunks.size());
+        System.out.printf("Number of subchunks:         %d%n",     subchunks.capacity());
     }
 
-    public void render() {
+    public void unloadChunk(Chunk chunk) {
+        if (chunk != null) {
+            map.removeChunk(chunk);
+            chunk.unload();
+            Chunk[] neighbours = chunk.getNeighbours();
+            for (Chunk c : neighbours) {
+                if (c != null) {
+                    c.generateMesh();
+                }
+            }
+        }
+    }
+
+    public void loadChunk(Vector2i chunkCoords) {
+        if (!map.contains(chunkCoords) && map.size() < World.CHUNK_CAPACITY) {
+            Chunk chunk = new Chunk(chunkCoords.x, 0, chunkCoords.y, map, subchunks);
+            map.putChunk(chunk);
+            chunk.load();
+            Chunk[] neighbours = chunk.getNeighbours();
+            for (Chunk c : neighbours) {
+                if (c != null) {
+                    c.generateMesh();
+                }
+            }
+        }
+    }
+
+    public void loadSpawnChunk(Vector2i chunkCoords) {
+        
+    }
+
+    private void generateDrawCommands() {
+        for (Subchunk subchunk : subchunks) {
+            if (subchunk.getState() == Subchunk.State.MESHED) {
+                if (subchunk.isBlendable()) {
+                    transparentDrawCommands.add(subchunk);
+                } else {
+                    drawCommands.add(subchunk);
+                }
+            }
+        }
+    }
+
+    public void render(float dt) {
+        generateDrawCommands();
+
         // Render pass 1:
         // set opqaue render states
        // glEnable(GL_CULL_FACE);
@@ -149,10 +190,10 @@ public class ChunkManager {
         glDisable(GL_BLEND);
 
         // draw opaque geometry
-        glBindBuffer(GL_ARRAY_BUFFER, cbo);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, drawCommands.chunkCoords());
-        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, ibo);
-        glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, drawCommands.data());
+        glBindBuffer(GL_ARRAY_BUFFER, cboID);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, drawCommands.getChunkCoords());
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, iboID);
+        glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, drawCommands.getDrawCommands());
         shader.use();
         shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
         shader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
@@ -162,7 +203,7 @@ public class ChunkManager {
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_BUFFER, BlockMap.getTexCoordsTextureId());
         shader.uploadTexture(Shader.U_TEX_COORDS_TEXTURE, 1);
-        glBindVertexArray(vao);
+        glBindVertexArray(vaoID);
         glMultiDrawArraysIndirect(GL_TRIANGLES, 0, drawCommands.size(), 0);
         texture.unbind();
         shader.detach();
@@ -176,16 +217,15 @@ public class ChunkManager {
         glBlendFunci(2, GL_ZERO, GL_ONE_MINUS_SRC_COLOR); // revealage blend target
         glBlendEquation(GL_FUNC_ADD);
 
-        int[] bufs = { GL_NONE, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-        glDrawBuffers(bufs);
+        glDrawBuffers(Application.BUFS_N12);
         glClearBufferfv(GL_COLOR, 1, Application.ZERO_FILLER_VEC);
         glClearBufferfv(GL_COLOR, 2, Application.ONE_FILLER_VEC);
 
         // draw transparent geometry
-        glBindBuffer(GL_ARRAY_BUFFER, cbo);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, transparentDrawCommands.chunkCoords());
-        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, bibo);
-        glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, transparentDrawCommands.data());
+        glBindBuffer(GL_ARRAY_BUFFER, cboID);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, transparentDrawCommands.getChunkCoords());
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, biboID);
+        glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, transparentDrawCommands.getDrawCommands());
         transparentShader.use();
         transparentShader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
         transparentShader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
@@ -205,8 +245,7 @@ public class ChunkManager {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        bufs = new int[]{ GL_COLOR_ATTACHMENT0, GL_NONE, GL_NONE };
-        glDrawBuffers(bufs);
+        glDrawBuffers(Application.BUFS_0NN);
 
         // draw screen quad
         Framebuffer framebuffer = Application.getFramebuffer();
@@ -219,18 +258,29 @@ public class ChunkManager {
         compositeShader.uploadTexture(Shader.REVEAL, 1);
         ScreenRenderer.render();
         compositeShader.detach();
+
+        drawCommands.reset();
+        transparentDrawCommands.reset();
     }
 
     public void destroy() {
         glDeleteVertexArrays(0);
-        glUnmapBuffer(vbo);
-        glDeleteBuffers(vbo);
-        glDeleteBuffers(ibo);
-        glDeleteBuffers(cbo);
-        glDeleteBuffers(bibo);
+        glUnmapBuffer(vboID);
+        glDeleteBuffers(vboID);
+        glDeleteBuffers(iboID);
+        glDeleteBuffers(cboID);
+        glDeleteBuffers(biboID);
     }
 
     public Map getMap() {
         return map;
+    }
+
+    public Pool<Key, Subchunk> getSubchunks() {
+        return subchunks;
+    }
+
+    public DrawCommandBuffer getDrawCommands() {
+        return drawCommands;
     }
 }

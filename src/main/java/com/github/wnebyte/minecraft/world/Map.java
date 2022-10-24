@@ -16,8 +16,20 @@ public class Map implements Iterable<Chunk> {
         this.chunks = new HashMap<>();
     }
 
-    public Chunk put(Vector2i key, Chunk value) {
+    public Chunk putChunk(Vector2i key, Chunk value) {
         return chunks.put(key, value);
+    }
+
+    public Chunk putChunk(Chunk value) {
+        return putChunk(value.getChunkCoords(), value);
+    }
+
+    public Chunk removeChunk(Vector2i key) {
+        return chunks.remove(key);
+    }
+
+    public Chunk removeChunk(Chunk value) {
+        return removeChunk(value.getChunkCoords());
     }
 
     public Chunk getChunk(int i, int k) {
@@ -43,6 +55,44 @@ public class Map implements Iterable<Chunk> {
             return b;
         }
         return null;
+    }
+
+    public Set<Chunk> getChunksBeyondRadius(Vector2i v, int radius) {
+        Set<Chunk> chunks = new HashSet<>();
+        for (Chunk chunk : this) {
+            Vector2i chunkCoords = chunk.getChunkCoords();
+            int dx = Math.abs(v.x - chunkCoords.x);
+            int dy = Math.abs(v.y - chunkCoords.y);
+            int ds = (dx + dy);
+            if (ds > radius) {
+                chunks.add(chunk);
+            }
+        }
+        return chunks;
+    }
+
+    public Set<Vector2i> getChunkCoordsWithinRadius(Vector2i v, int radius) {
+        Set<Vector2i> set = new HashSet<>();
+        for (int i = -radius; i <= radius; i++) {
+            for (int j = -radius; j <= radius; j++) {
+                Vector2i ivec2 = new Vector2i(v.x + i, v.y + j);
+                int dx = Math.abs(v.x - ivec2.x);
+                int dy = Math.abs(v.y - ivec2.y);
+                int ds = (dx + dy);
+                if (ds < radius) {
+                    set.add(ivec2);
+                }
+            }
+        }
+        return set;
+    }
+
+    public boolean contains(Vector2i v) {
+        return chunks.containsKey(v);
+    }
+
+    public int size() {
+        return chunks.size();
     }
 
     public Set<Vector2i> keys() {

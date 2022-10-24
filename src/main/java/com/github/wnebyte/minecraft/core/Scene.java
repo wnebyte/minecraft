@@ -1,11 +1,12 @@
 package com.github.wnebyte.minecraft.core;
 
+import com.github.wnebyte.minecraft.world.Chunk;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.world.World;
 import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.componenets.Text2D;
-import com.github.wnebyte.minecraft.util.JMath;
 import com.github.wnebyte.minecraft.util.Assets;
 import com.github.wnebyte.minecraft.util.BlockMap;
 import com.github.wnebyte.minecraft.util.TexturePacker;
@@ -20,7 +21,7 @@ public class Scene {
 
     private World world;
 
-    private float debounceTime = 0.2f;
+    private float debounceTime = 2.0f;
 
     private float debounce = debounceTime;
 
@@ -49,12 +50,22 @@ public class Scene {
     }
 
     public void update(float dt) {
+        debounce -= dt;
         world.update(dt);
         renderer.clearText2D();
         Vector3f origin = new Vector3f(camera.getPosition());
         String s = String.format("%.1f, %.1f, %.1f", origin.x, origin.y, origin.z);
         Text2D text = new Text2D(s, -3.0f + 0.05f, 1.2f, 0.005f, 0x0000);
         renderer.addText2D(text);
+
+        Vector2i v = Chunk.toChunkCoords2D(origin);
+        String sn = String.format("%d, %d", v.x, v.y);
+        Text2D stext = new Text2D(sn, -3.0f + 0.05f, 1.1f, 0.005f, 0x0000);
+        renderer.addText2D(stext);
+
+        renderer.addText2D(new Text2D(
+                String.format("%.1f", 1 / dt),
+                -3.0f + 0.05f, 1.0f, 0.005f, 0x0000));
 
         float crosshairSize = 0.10f;
         float crosshairHalfSize = crosshairSize / 2.0f;
@@ -70,8 +81,8 @@ public class Scene {
                 1);
     }
 
-    public void render() {
-        world.render();
+    public void render(float dt) {
+        world.render(dt);
         renderer.render();
     }
 

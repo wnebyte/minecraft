@@ -3,19 +3,20 @@ package com.github.wnebyte.minecraft.world;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
-
-import com.github.wnebyte.minecraft.core.*;
-import com.github.wnebyte.minecraft.physics.Physics;
-import com.github.wnebyte.minecraft.physics.RaycastInfo;
+import java.util.Set;
+import org.joml.Vector2i;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.joml.Vector4f;
+import com.github.wnebyte.minecraft.core.*;
+import com.github.wnebyte.minecraft.physics.Physics;
+import com.github.wnebyte.minecraft.physics.RaycastInfo;
 import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.componenets.BoxRenderer;
+import com.github.wnebyte.minecraft.physics.components.Rigidbody;
+import com.github.wnebyte.minecraft.physics.components.BoxCollider;
 import com.github.wnebyte.minecraft.util.*;
-
-import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
-import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT;
+import static org.lwjgl.glfw.GLFW.*;
 
 public class World {
 
@@ -35,12 +36,26 @@ public class World {
         return go;
     }
 
-    public static final int CHUNK_CAPACITY = 50;
+    public static GameObject createPlayer(float x, float y, float z, float scale) {
+        GameObject go = createGameObject("Player", x, y, z, scale);
+        go.addComponent(new Transform(new Vector3f(x, y, z), new Vector3f(scale, scale, scale)));
+        go.transform = go.getComponent(Transform.class);
+        Rigidbody rb = new Rigidbody();
+        go.addComponent(rb);
+        BoxCollider bc = new BoxCollider();
+        bc.setSize(new Vector3f(1f, 1f, 1f));
+        bc.setOffset(new Vector3f(0f, 0f, 0f));
+        go.addComponent(bc);
+        return go;
+    }
 
-    public static final int SPAWN_CHUNK_SIZE = 5 * 5;
+    public static final int CHUNK_CAPACITY = 500;
+
+    public static final int CHUNK_RADIUS = 5;
+
+    public static final int SPAWN_CHUNK_SIZE = 9 * 9;
 
     private static final Vector4f SUN_COLOR = new Vector4f(1f, 1f, 1f, 1f);
-            // = new Vector4f(252f / 255f, 248f / 255f, 3f / 255f, 1.0f);
 
     private Camera camera;
 
@@ -99,7 +114,7 @@ public class World {
             go.start();
             renderer.add(go);
         }
-        camera.setPosition(new Vector3f(-1, 51, 0));
+        camera.setPosition(new Vector3f(SPAWN_CHUNK_SIZE / 2.0f, 51, SPAWN_CHUNK_SIZE / 2.0f));
     }
 
     /*
@@ -145,21 +160,54 @@ public class World {
             Chunk chunk = map.getChunk(block.x, block.y, block.z);
             if (chunk != null && (block.y + 1) < Chunk.HEIGHT) {
                 Vector3i index = Chunk.world2Index3D(block, chunk.getChunkCoords());
-                chunk.setBlock(Block.DIRT, index.x, index.y + 1, index.z, true);
+                chunk.setBlock(Block.SAND, index.x, index.y + 1, index.z, true);
                 block = null;
                 renderer.clearLines3D();
             }
             placeBlockDebounce = placeBlockDebounceTime;
         }
+
+        if (debounce < 0) {
+            Vector2i v = Chunk.toChunkCoords2D(new Vector3f(camera.getPosition()));
+
+            Set<Chunk> chunks = map.getChunksBeyondRadius(v, CHUNK_RADIUS);
+            for (Chunk chunk : chunks) {
+                chunkManager.unloadChunk(chunk);
+            }
+
+            Set<Vector2i> chunkCoords = map.getChunkCoordsWithinRadius(v, CHUNK_RADIUS);
+            for (Vector2i ivec2 : chunkCoords) {
+                assert (chunks.stream().noneMatch(c -> c.getChunkCoords().equals(ivec2))) :
+                        "Loading recently unloaded chunk";
+                chunkManager.loadChunk(ivec2);
+            }
+
+            /*
+            System.out.printf("Number of loaded chunks, subchunks: %d:%d%n",
+                    map.size(),
+                    ((chunkManager.getSubchunks().size() / 2) / 16));
+             */
+
+            debounce = debounceTime;
+        }
+
     }
 
-    public void render() {
+    private String toString(Set<Vector2i> set) {
+        StringBuilder b = new StringBuilder();
+        b.append("[");
+        for (Vector2i ivec2 : set) {
+            b.append(String.format("(%d, %d)", ivec2.x, ivec2.y));
+        }
+        b.append("]");
+        return b.toString();
+    }
+
+    public void render(float dt) {
         // render skybox
         skybox.render();
         // render chunks
-        chunkManager.render();
-        // render game objects
-        renderer.render();
+        chunkManager.render(dt);
     }
 
     public void destroy() {

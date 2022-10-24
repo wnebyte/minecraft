@@ -1,16 +1,20 @@
 package com.github.wnebyte.minecraft.renderer;
 
 import java.util.Objects;
-import java.util.Comparator;
-import com.github.wnebyte.minecraft.util.Settings;
 
-public class DrawCommand implements Comparable<DrawCommand> {
+public class DrawCommand {
 
     public static final int SIZE = 4;
 
     public static final int SIZE_BYTES = SIZE * Integer.BYTES;
 
-    public static final Comparator<DrawCommand> COMPARATOR = DrawCommand::compareTo;
+    public int vertexCount;
+
+    public int instanceCount;
+
+    public int first;
+
+    public int baseInstance;
 
     public DrawCommand() {
         this(0, 0, 0, 0);
@@ -23,17 +27,36 @@ public class DrawCommand implements Comparable<DrawCommand> {
         this.baseInstance = baseInstance;
     }
 
-    public int vertexCount;
+    public int getVertexCount() {
+        return vertexCount;
+    }
 
-    public int instanceCount;
+    public void setVertexCount(int vertexCount) {
+        this.vertexCount = vertexCount;
+    }
 
-    public int first;
+    public int getInstanceCount() {
+        return instanceCount;
+    }
 
-    public int baseInstance;
+    public void setInstanceCount(int instanceCount) {
+        this.instanceCount = instanceCount;
+    }
 
-    @Override
-    public int compareTo(DrawCommand o) {
-        return Integer.compare(this.first, o.first);
+    public int getFirst() {
+        return first;
+    }
+
+    public void setFirst(int first) {
+        this.first = first;
+    }
+
+    public int getBaseInstance() {
+        return baseInstance;
+    }
+
+    public void setBaseInstance(int baseInstance) {
+        this.baseInstance = baseInstance;
     }
 
     @Override
@@ -63,9 +86,4 @@ public class DrawCommand implements Comparable<DrawCommand> {
         return String.format("DrawCommand[vertexCount: %d, instanceCount: %d, first: %d, baseInstance: %d]",
                 this.vertexCount, this.instanceCount, this.first, this.baseInstance);
     }
-
-    public String toJson() {
-        return Settings.GSON.toJson(this);
-    }
-
 }

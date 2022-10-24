@@ -8,12 +8,12 @@ public class Pool<K, V> implements Iterable<V> {
 
     private final Queue<V> queue;
 
-    private int size;
+    private int capacity;
 
-    public Pool(int size) {
-        this.pool = new HashMap<>(size);
+    public Pool(int capacity) {
+        this.pool = new HashMap<>(capacity);
         this.queue = new LinkedList<>();
-        this.size = size;
+        this.capacity = capacity;
     }
 
     public void add(V v) {
@@ -40,12 +40,20 @@ public class Pool<K, V> implements Iterable<V> {
         return false;
     }
 
+    public int capacity() {
+        return capacity;
+    }
+
     public int size() {
-        return size;
+        return pool.size();
+    }
+
+    public int remaining() {
+        return queue.size();
     }
 
     public boolean hasRoom() {
-        return (pool.size() < size && queue.size() > 0);
+        return (size() < capacity() && remaining() > 0);
     }
 
     @Override

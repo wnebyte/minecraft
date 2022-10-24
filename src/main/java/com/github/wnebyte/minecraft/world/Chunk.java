@@ -1,12 +1,11 @@
 package com.github.wnebyte.minecraft.world;
 
+import java.util.List;
 import java.util.Objects;
-import java.util.Random;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.renderer.VertexBuffer;
-import com.github.wnebyte.minecraft.renderer.DrawCommand;
 import com.github.wnebyte.minecraft.util.*;
 
 public class Chunk {
@@ -24,6 +23,11 @@ public class Chunk {
         LEFT,
         TOP,
         BOTTOM;
+    }
+
+    public enum State {
+        MESHED,
+        UNMESHED
     }
 
     public static Vector3i toIndex3D(int index) {
@@ -106,6 +110,9 @@ public class Chunk {
     // |/           | /      z
     // v2 --------- v3
 
+    private static final Formatter<Chunk> FILEPATH_FORMATTER = chunk ->
+            String.format("chunk-%d-%d.json", chunk.chunkCoordX, chunk.chunkCoordZ);
+
     /*
     ###########################
     #          FIELDS         #
@@ -126,16 +133,10 @@ public class Chunk {
 
     private Map map;
 
-    private DrawCommandBuffer drawCommands;
-
-    private DrawCommandBuffer transparentDrawCommands;
-
     private Pool<Key, Subchunk> subchunks;
 
     // References to neighbouring chunks
     private Chunk cXN, cXP, cZN, cZP, cYN, cYP;
-
-    private Random rand;
 
     /*
     ###########################
@@ -143,9 +144,7 @@ public class Chunk {
     ###########################
     */
 
-    public Chunk(int i, int j, int k,
-                 Map map, DrawCommandBuffer drawCommands, DrawCommandBuffer transparentDrawCommands,
-                 Pool<Key, Subchunk> subchunks) {
+    public Chunk(int i, int j, int k, Map map, Pool<Key, Subchunk> subchunks) {
         this.chunkPosX = i * WIDTH;
         this.chunkPosY = j * HEIGHT;
         this.chunkPosZ = k * DEPTH;
@@ -154,10 +153,7 @@ public class Chunk {
         this.chunkCoordZ = k;
         this.chunkCoords = new Vector2i(i, k);
         this.map = map;
-        this.drawCommands = drawCommands;
-        this.transparentDrawCommands = transparentDrawCommands;
         this.subchunks = subchunks;
-        this.rand = new Random();
         this.data = new Block[WIDTH * HEIGHT * DEPTH];
     }
 
@@ -224,6 +220,38 @@ public class Chunk {
         }
     }
 
+    public void unload() {
+        String path = Assets.DIR + "/data/world/" + FILEPATH_FORMATTER.format(this);
+        serialize(path);
+        unmesh();
+    }
+
+    public void load() {
+        String path = Assets.DIR + "/data/world/" + FILEPATH_FORMATTER.format(this);
+        if (!deserialize(path)) {
+            generateTerrain();
+        }
+        generateMesh();
+    }
+
+    private boolean deserialize(String path) {
+        if (!Files.exists(path)) { return false; }
+        List<String> lines = Files.readAllLines(path);
+        if (lines != null) {
+            String json = String.join(System.lineSeparator(), lines);
+            Block[] blocks = Settings.GSON.fromJson(json, Block[].class);
+            if (blocks != null) {
+                System.arraycopy(blocks, 0, data, 0, blocks.length);
+            }
+        }
+        return true;
+    }
+
+    private void serialize(String path) {
+        String json = Settings.GSON.toJson(data, Block[].class);
+        Files.write(path, json);
+    }
+
     public void updateNeighbourRefs() {
         cXN = map.getChunk(chunkCoordX - 1, chunkCoordZ);
         cXP = map.getChunk(chunkCoordX + 1, chunkCoordZ);
@@ -264,15 +292,26 @@ public class Chunk {
         }
     }
 
-    public void generateDecorations() {
-        for (int z = 0; z < Chunk.DEPTH; z++) {
-            for (int x = 0; x < Chunk.WIDTH; x++) {
-
-            }
+    public void unmesh() {
+        for (int j = 0; j < 16; j++) {
+            unmesh(j);
         }
     }
 
+    public void unmesh(int subchunkLevel) {
+        Vector3i v = new Vector3i(chunkCoordX, subchunkLevel, chunkCoordZ);
+        Key opaqueKey = new Key(v, false);
+        Key transparentKey = new Key(v, true);
+        Subchunk opaqueSubchunk = subchunks.get(opaqueKey);
+        Subchunk transparentSubchunk = subchunks.get(transparentKey);
+        opaqueSubchunk.setState(Subchunk.State.UNMESHED);
+        transparentSubchunk.setState(Subchunk.State.UNMESHED);
+        assert subchunks.free(opaqueKey) : "Free failed";
+        assert subchunks.free(transparentKey) : "Free failed";
+    }
+
     public void generateMesh() {
+        updateNeighbourRefs();
         for (int j = 0; j < 16; j++) {
             generateMesh(j);
         }
@@ -280,13 +319,17 @@ public class Chunk {
 
     public void generateMesh(int subchunkLevel) {
         Vector3i v = new Vector3i(chunkCoordX, subchunkLevel, chunkCoordZ);
-        Subchunk opaque = subchunks.get(new Key(v, false));
-        Subchunk transparent = subchunks.get(new Key(v, true));
-        assert (opaque != null && transparent != null) : "buffer is null";
-        opaque.chunkCoords = chunkCoords;
-        transparent.chunkCoords = chunkCoords;
-        opaque.data.reset();
-        transparent.data.reset();
+        Key opaqueKey = new Key(v, false);
+        Key transparentKey = new Key(v, true);
+        Subchunk opaqueSubchunk = subchunks.get(opaqueKey);
+        Subchunk transparentSubchunk = subchunks.get(transparentKey);
+        assert (opaqueSubchunk != null && transparentSubchunk != null) : "buffer is null";
+        opaqueSubchunk.setBlendable(false);
+        opaqueSubchunk.setChunkCoords(chunkCoords);
+        opaqueSubchunk.resetVertexBuffer();
+        transparentSubchunk.setBlendable(true);
+        transparentSubchunk.setChunkCoords(chunkCoords);
+        transparentSubchunk.resetVertexBuffer();
         int j = subchunkLevel * 16;
         int jMax = j + 16;
         int access;
@@ -298,26 +341,14 @@ public class Chunk {
                     Block b = data[access];
 
                     if (Block.isAir(b)) { continue; }
-                    createCube(b.isBlendable() ? transparent.data : opaque.data, b, i, j, k, access);
+                    createCube(b.isBlendable() ? transparentSubchunk.getVertexBuffer() : opaqueSubchunk.getVertexBuffer(),
+                            b, i, j, k, access);
                 }
             }
         }
 
-        if (opaque.data.size() > 0) {
-            DrawCommand drawCommand = new DrawCommand();
-            drawCommand.vertexCount = opaque.data.getNumVertices();
-            drawCommand.first = opaque.first;
-            drawCommand.instanceCount = 1;
-            drawCommands.putCommand(drawCommand, chunkCoords);
-        }
-
-        if (transparent.data.size() > 0) {
-            DrawCommand drawCommand = new DrawCommand();
-            drawCommand.vertexCount = transparent.data.getNumVertices();
-            drawCommand.first = transparent.first;
-            drawCommand.instanceCount = 1;
-            transparentDrawCommands.putCommand(drawCommand, chunkCoords);
-        }
+        opaqueSubchunk.setState(Subchunk.State.MESHED);
+        transparentSubchunk.setState(Subchunk.State.MESHED);
     }
 
     private void createCube(VertexBuffer buffer, Block b, int i, int j, int k, int access) {
@@ -443,11 +474,10 @@ public class Chunk {
         return compare(b, n);
     }
 
-    private boolean compare(Block b, Block neighbour) {
-        if (Block.isAir(neighbour)) {
+    private boolean compare(Block a, Block b) {
+        if (Block.isAir(b)) {
             return true;
-        }
-        if (b.isSolid() && neighbour.isTransparent()) {
+        } if (a.isSolid() && b.isTransparent()) {
             return true;
         }
         return false;
@@ -479,6 +509,10 @@ public class Chunk {
 
     public int getChunkCoordZ() {
         return chunkCoordZ;
+    }
+
+    public Chunk[] getNeighbours() {
+        return new Chunk[]{ cXN, cXP, cZN, cZP };
     }
 
     @Override

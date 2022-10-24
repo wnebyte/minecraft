@@ -1,9 +1,14 @@
 package com.github.wnebyte.minecraft.componenets;
 
+import com.github.wnebyte.minecraft.core.KeyListener;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import com.github.wnebyte.minecraft.core.Component;
+import com.github.wnebyte.minecraft.core.Camera;
 
-public class CharacterController {
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_W;
+
+public class CharacterController extends Component {
 
     public float baseSpeed;
 
@@ -28,4 +33,18 @@ public class CharacterController {
     public boolean applyJumpForce;
 
     public boolean inMiddleOfJump;
+
+    public Camera camera;
+
+    private float debounceTime = 0.2f;
+
+    private float debounce = debounceTime;
+
+    @Override
+    public void update(float dt) {
+        if (KeyListener.isKeyPressed(GLFW_KEY_W)) {
+            float velocity = baseSpeed * dt;
+            camera.getPosition().add((new Vector3f(camera.getForward().mul(velocity))));
+        }
+    }
 }

@@ -1,88 +1,70 @@
 package com.github.wnebyte.minecraft.util;
 
 import java.util.Arrays;
-import java.util.Iterator;
+
+import com.github.wnebyte.minecraft.world.Subchunk;
 import org.joml.Vector2i;
 import com.github.wnebyte.minecraft.renderer.DrawCommand;
 
-public class DrawCommandBuffer implements Iterable<DrawCommand> {
+public class DrawCommandBuffer {
 
-    private final DrawCommand[] data;
+    private DrawCommand[] drawCommands;
 
-    private final Vector2i[] chunkCoordsData;
-
-    private final int capacity;
+    private Vector2i[] chunkCoords;
 
     private int size;
 
-    private boolean dirty;
+    private int capacity;
 
     public DrawCommandBuffer(int capacity) {
         this.capacity = capacity;
-        this.data = new DrawCommand[capacity];
-        this.chunkCoordsData = new Vector2i[capacity];
+        this.drawCommands = new DrawCommand[capacity];
+        this.chunkCoords = new Vector2i[capacity];
         this.size = 0;
-        this.dirty = true;
     }
 
-    public void putCommand(DrawCommand drawCommand, Vector2i chunkCoords) {
-        int index = Arrays.binarySearch(data, 0, size, drawCommand, DrawCommand.COMPARATOR);
-        if (index > 0) {
-            setDrawCommand(index, drawCommand, chunkCoords);
-        } else {
-            addCommand(drawCommand, chunkCoords);
+    public boolean add(Subchunk subchunk) {
+        return add(subchunk.getFirst(), subchunk.getNumVertices(), subchunk.getChunkCoords());
+    }
+
+    public boolean add(int first, int vertexCount, Vector2i vec2i) {
+        if (remaining() > 0) {
+            DrawCommand drawCommand = new DrawCommand(vertexCount, 1, first, size);
+            drawCommands[size] = drawCommand;
+            chunkCoords[size] = vec2i;
+            size++;
+            return true;
         }
+        return false;
     }
 
-    public void addCommand(DrawCommand drawCommand, Vector2i chunkCoords) {
-        if (size == capacity) return;
-        drawCommand.baseInstance = size;
-        data[size] = drawCommand;
-        chunkCoordsData[size] = chunkCoords;
-        size++;
-        dirty = true;
+    public void reset() {
+        Arrays.fill(drawCommands, 0, size,null);
+        Arrays.fill(chunkCoords, 0, size, null);
+        size = 0;
     }
 
-    public void setDrawCommand(int index, DrawCommand drawCommand, Vector2i chunkCoords) {
-        if (index < 0 || index >= capacity)
-            return;
-        boolean contains = (data[index] != null);
-        drawCommand.baseInstance = index;
-        data[index] = drawCommand;
-        chunkCoordsData[index] = chunkCoords;
-        if (!contains) size++;
-        dirty = true;
-    }
-
-    public DrawCommand get(int index) {
-        return data[index];
-    }
-
-    public Vector2i getChunkCoord(int index) {
-        return chunkCoordsData[index];
-    }
-
-    public int[] data() {
+    public int[] getDrawCommands() {
+        int[] data = new int[DrawCommand.SIZE * size];
         int index = 0;
-        int[] drawCommands = new int[DrawCommand.SIZE * size];
         for (int i = 0; i < size; i++) {
-            DrawCommand drawCommand = data[i];
-            drawCommands[index + 0] = drawCommand.vertexCount;
-            drawCommands[index + 1] = drawCommand.instanceCount;
-            drawCommands[index + 2] = drawCommand.first;
-            drawCommands[index + 3] = drawCommand.baseInstance;
+            DrawCommand drawCommand = drawCommands[i];
+            data[index + 0] = drawCommand.vertexCount;
+            data[index + 1] = drawCommand.instanceCount;
+            data[index + 2] = drawCommand.first;
+            data[index + 3] = drawCommand.baseInstance;
             index += DrawCommand.SIZE;
         }
-        return drawCommands;
+        return data;
     }
 
-    public int[] chunkCoords() {
-        int index = 0;
+    public int[] getChunkCoords() {
         int[] data = new int[2 * size];
+        int index = 0;
         for (int i = 0; i < size; i++) {
-            Vector2i chunkCoords = chunkCoordsData[i];
-            data[index + 0] = chunkCoords.x;
-            data[index + 1] = chunkCoords.y;
+            Vector2i ivec2 = chunkCoords[i];
+            data[index + 0] = ivec2.x;
+            data[index + 1] = ivec2.y;
             index += 2;
         }
         return data;
@@ -96,20 +78,7 @@ public class DrawCommandBuffer implements Iterable<DrawCommand> {
         return capacity;
     }
 
-    public boolean isDirty() {
-        return dirty;
-    }
-
-    public void clean() {
-        dirty = false;
-    }
-
-    public void setDirty() {
-        dirty = true;
-    }
-
-    @Override
-    public Iterator<DrawCommand> iterator() {
-        return Arrays.stream(data, 0, size).iterator();
+    public int remaining() {
+        return capacity - size;
     }
 }

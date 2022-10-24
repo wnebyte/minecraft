@@ -24,6 +24,10 @@ public class Application {
 
     public static final float[] ONE_FILLER_VEC  = { 1.0f, 1.0f, 1.0f, 1.0f };
 
+    public static final int[] BUFS_0NN   = { GL_COLOR_ATTACHMENT0, GL_NONE, GL_NONE };
+
+    public static final int[] BUFS_N12 = { GL_NONE, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+
     private static Application app;
 
     private Window window;
@@ -114,12 +118,11 @@ public class Application {
             lastFrame = currentFrame;
 
             framebuffer.bind();
-            int[] bufs = { GL_COLOR_ATTACHMENT0, GL_NONE, GL_NONE };
-            glDrawBuffers(bufs);
+            glDrawBuffers(BUFS_0NN);
             glClearBufferfv(GL_COLOR, 0, ZERO_FILLER_VEC);
             glClearBufferfv(GL_DEPTH, 0, ONE_FILLER_VEC);
             scene.update(dt);
-            scene.render();
+            scene.render(dt);
 
             // Render pass 4:
             // set backbuffer render states

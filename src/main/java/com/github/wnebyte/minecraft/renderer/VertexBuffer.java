@@ -3,7 +3,6 @@ package com.github.wnebyte.minecraft.renderer;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import com.github.wnebyte.minecraft.util.DebugStats;
-import com.github.wnebyte.minecraft.world.Chunk;
 
 public class VertexBuffer {
 
@@ -23,7 +22,7 @@ public class VertexBuffer {
 
     public static final int STRIDE_BYTES = STRIDE * Integer.BYTES;
 
-    public static final int VERTEX_CAPACITY = 10_000;
+    public static final int VERTEX_CAPACITY = 8000;
 
     public static final int POSITION_BITMASK = 0xFFFF0000;
 

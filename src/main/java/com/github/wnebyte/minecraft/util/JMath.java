@@ -211,6 +211,26 @@ public class JMath {
         return v;
     }
 
+    public static Vector3f round(Vector3f vec) {
+        Vector3f v = new Vector3f();
+        if (Float.compare((float)Math.ceil(vec.x) - vec.x, 0.5f) < 0) {
+            v.x = (float)Math.ceil(v.x);
+        } else {
+            v.x = (float)Math.floor(v.x);
+        }
+        if (Float.compare((float)Math.ceil(vec.y) - vec.y, 0.5f) < 0) {
+            v.y = (float)Math.ceil(vec.y);
+        } else {
+            v.y = (float)Math.floor(vec.y);
+        }
+        if (Float.compare((float)Math.ceil(vec.z) - vec.z, 0.5f) < 0) {
+            v.z = (float)Math.ceil(vec.z);
+        } else {
+            v.z = (float)Math.floor(vec.z);
+        }
+        return v;
+    }
+
     public static Vector3f sign(Vector3f vec) {
         Vector3f v = new Vector3f();
         v.x = Math.signum(vec.x);

@@ -7,11 +7,11 @@ public class Key {
 
     private Vector3i v;
 
-    private boolean isBlendable;
+    private boolean blendable;
 
-    public Key(Vector3i v, boolean isBlendable) {
+    public Key(Vector3i v, boolean blendable) {
         this.v = v;
-        this.isBlendable = isBlendable;
+        this.blendable = blendable;
     }
 
     public Vector3i getVector3i() {
@@ -19,7 +19,7 @@ public class Key {
     }
 
     public boolean isBlendable() {
-        return isBlendable;
+        return blendable;
     }
 
     @Override
@@ -29,7 +29,7 @@ public class Key {
         if (!(o instanceof Key)) return false;
         Key key = (Key) o;
         return Objects.equals(key.v, this.v) &&
-                Objects.equals(key.isBlendable, this.isBlendable);
+                Objects.equals(key.blendable, this.blendable);
     }
 
     @Override
@@ -37,7 +37,7 @@ public class Key {
         int result = 75;
         return result +
                 Objects.hashCode(this.v) +
-                Objects.hashCode(this.isBlendable);
+                Objects.hashCode(this.blendable);
     }
 
 }
