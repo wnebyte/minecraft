@@ -37,7 +37,7 @@ public class PlayerController extends Component {
 
     @Override
     public void start() {
-        camera = Application.getScene().getCamera();
+        camera = Application.getWindow().getScene().getCamera();
     }
 
     @Override

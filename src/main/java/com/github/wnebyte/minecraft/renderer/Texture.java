@@ -72,7 +72,7 @@ public class Texture {
         }
     }
 
-    public static class Specification {
+    public static class Configuration {
 
         private int
         target,
@@ -86,7 +86,7 @@ public class Texture {
 
         private List<Parameter> parameters;
 
-        private Specification() {}
+        private Configuration() {}
 
         public boolean hasParameters() {
             return (parameters != null) && !(parameters.isEmpty());
@@ -210,8 +210,8 @@ public class Texture {
                 return this;
             }
 
-            public Specification build() {
-                Specification spec = new Specification();
+            public Configuration build() {
+                Configuration spec = new Configuration();
                 spec.target = target;
                 spec.level = level;
                 spec.internalFormat = internalFormat;
@@ -321,7 +321,7 @@ public class Texture {
                 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
     }
 
-    public Texture(Specification spec) {
+    public Texture(Configuration spec) {
         this.target = spec.target;
         this.width = spec.width;
         this.height = spec.height;

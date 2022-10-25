@@ -3,13 +3,18 @@ package com.github.wnebyte.minecraft.core;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.glfw.GLFWErrorCallback;
-
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Window {
+
+    /*
+    ###########################
+    #         UTLITIES        #
+    ###########################
+    */
 
     public static class Resolution {
 
@@ -24,18 +29,55 @@ public class Window {
     public static Window newInstance(String title) {
         if (Window.window == null) {
             Window.window = new Window(title);
-            Window.window.init();
             return Window.window;
         } else {
             throw new IllegalStateException(
-                    "Window has already been initialized"
+                    "Window has already been instantiated"
             );
         }
     }
 
+    public static Resolution getResolution() {
+        return getResolution(glfwGetPrimaryMonitor());
+    }
+
+    public static Resolution getResolution(long monitor) {
+        int width = 0, height = 0, size = 0;
+        boolean found = false;
+
+        GLFWVidMode.Buffer buffer = glfwGetVideoModes(monitor);
+        if (buffer != null) {
+            for (GLFWVidMode mode : buffer) {
+                int tmpWidth = mode.width();
+                int tmpHeight = mode.height();
+                int tmpSize = tmpWidth * tmpHeight;
+                if (tmpSize > size) {
+                    width = tmpWidth;
+                    height = tmpHeight;
+                    size = tmpSize;
+                    found = true;
+                }
+            }
+        }
+
+        return found ? new Resolution(width, height) : new Resolution(1920, 1080);
+    }
+
+    /*
+    ###########################
+    #      STATIC FIELDS      #
+    ###########################
+    */
+
     private static Window window;
 
     private long glfwWindow;
+
+    /*
+    ###########################
+    #          FIELDS         #
+    ###########################
+    */
 
     private String title;
 
@@ -43,9 +85,21 @@ public class Window {
 
     private Scene scene;
 
+    /*
+    ###########################
+    #       CONSTRUCTORS      #
+    ###########################
+    */
+
     private Window(String title) {
         this.title = title;
     }
+
+    /*
+    ###########################
+    #          METHODS        #
+    ###########################
+    */
 
     public void init() {
         // Setup an error callback
@@ -101,7 +155,14 @@ public class Window {
         // bindings available for use.
         GL.createCapabilities();
 
-        glViewport(0, 0, width, height);
+        viewport();
+    }
+
+    public void update(float dt) {
+        if (scene != null) {
+            scene.update(dt);
+            scene.render();
+        }
     }
 
     public boolean shouldClose() {
@@ -112,39 +173,19 @@ public class Window {
         glfwSwapBuffers(glfwWindow);
     }
 
-    public void pollEvents() {
+    public void pollEvents(float dt) {
         glfwPollEvents();
+        if (scene != null) {
+            scene.processInput(dt);
+        }
     }
 
-    public void setViewport() {
+    public void viewport() {
         glViewport(0, 0, width, height);
     }
 
-    public void processInput(Camera camera, float dt) {
-        if (glfwGetKey(glfwWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-            glfwSetWindowShouldClose(glfwWindow, true);
-        }
-        if (glfwGetKey(glfwWindow, GLFW_KEY_W) == GLFW_PRESS) {
-            camera.handleKeyboard(Camera.Movement.FORWARD, dt);
-        }
-        if (glfwGetKey(glfwWindow, GLFW_KEY_S) == GLFW_PRESS) {
-            camera.handleKeyboard(Camera.Movement.BACKWARD, dt);
-        }
-        if (glfwGetKey(glfwWindow, GLFW_KEY_A) == GLFW_PRESS) {
-            camera.handleKeyboard(Camera.Movement.LEFT, dt);
-        }
-        if (glfwGetKey(glfwWindow, GLFW_KEY_D) == GLFW_PRESS) {
-            camera.handleKeyboard(Camera.Movement.RIGHT, dt);
-        }
-        if (glfwGetKey(glfwWindow, GLFW_KEY_SPACE) == GLFW_PRESS) {
-            camera.handleKeyboard(Camera.Movement.UP, dt);
-        }
-        if (glfwGetKey(glfwWindow, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-            camera.handleKeyboard(Camera.Movement.DOWN, dt);
-        }
-        if (glfwGetKey(glfwWindow, GLFW_KEY_COMMA) == GLFW_PRESS) {
-            camera.resetZoom();
-        }
+    public void setWindowShouldClose(boolean value) {
+        glfwSetWindowShouldClose(glfwWindow, value);
     }
 
     private void framebufferSizeCallback(long window, int width, int height) {
@@ -154,6 +195,9 @@ public class Window {
     }
 
     public void destroy() {
+        if (scene != null) {
+            scene.destroy();
+        }
         // Free the allocated memory
         glfwFreeCallbacks(glfwWindow);
         glfwDestroyWindow(glfwWindow);
@@ -178,27 +222,13 @@ public class Window {
         return scene;
     }
 
-    public static Resolution getResolution(long monitor) {
-        int width = 0;
-        int height = 0;
-        int size = 0;
-        boolean found = false;
-
-        GLFWVidMode.Buffer buffer = glfwGetVideoModes(monitor);
-        if (buffer != null) {
-            for (GLFWVidMode mode : buffer) {
-                int tmpWidth = mode.width();
-                int tmpHeight = mode.height();
-                int tmpSize = tmpWidth * tmpHeight;
-                if (tmpSize > size) {
-                    width = tmpWidth;
-                    height = tmpHeight;
-                    size = tmpSize;
-                    found = true;
-                }
-            }
+    public void setScene(Scene newScene) {
+        if (scene != null) {
+            scene.destroy();
         }
-
-        return found ? new Resolution(width, height) : new Resolution(1920, 1080);
+        this.scene = newScene;
+        if (scene != null) {
+            scene.start();
+        }
     }
 }

@@ -7,7 +7,7 @@ import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER;
 
 public class Framebuffer {
 
-    public static class Specification {
+    public static class Configuration {
 
         private int width;
 
@@ -17,7 +17,7 @@ public class Framebuffer {
 
         private Texture depthAttachment;
 
-        private Specification() {
+        private Configuration() {
 
         }
 
@@ -84,8 +84,8 @@ public class Framebuffer {
                 return this;
             }
 
-            public Specification build() {
-                Specification spec = new Specification();
+            public Configuration build() {
+                Configuration spec = new Configuration();
                 spec.width = width;
                 spec.height = height;
                 spec.colorAttachments = colorAttachments;
@@ -101,7 +101,7 @@ public class Framebuffer {
 
     private Texture depthAttachment;
 
-    public Framebuffer(Specification spec) {
+    public Framebuffer(Configuration spec) {
         this.id = glGenFramebuffers();
         this.colorAttachments = spec.getColorAttachments();
         this.depthAttachment = spec.getDepthAttachment();

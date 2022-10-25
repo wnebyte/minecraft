@@ -1,9 +1,8 @@
 package com.github.wnebyte.minecraft.world;
 
+import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Random;
-import java.util.Set;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
@@ -12,42 +11,16 @@ import com.github.wnebyte.minecraft.core.*;
 import com.github.wnebyte.minecraft.physics.Physics;
 import com.github.wnebyte.minecraft.physics.RaycastInfo;
 import com.github.wnebyte.minecraft.renderer.*;
-import com.github.wnebyte.minecraft.componenets.BoxRenderer;
-import com.github.wnebyte.minecraft.physics.components.Rigidbody;
-import com.github.wnebyte.minecraft.physics.components.BoxCollider;
 import com.github.wnebyte.minecraft.util.*;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class World {
 
-    public static GameObject createGameObject(String name, float x, float y, float z, float scale) {
-        GameObject go = new GameObject(name);
-        Transform transform = new Transform(new Vector3f(x, y, z), new Vector3f(scale, scale, scale), 0f);
-        go.addComponent(transform);
-        go.transform = transform;
-        return go;
-    }
-
-    public static GameObject createSun(float x, float y, float z, float scale, Vector4f color) {
-        GameObject go = createGameObject("Sun", x, y, z, scale);
-        BoxRenderer box = new BoxRenderer();
-        box.setColor(color);
-        go.addComponent(box);
-        return go;
-    }
-
-    public static GameObject createPlayer(float x, float y, float z, float scale) {
-        GameObject go = createGameObject("Player", x, y, z, scale);
-        go.addComponent(new Transform(new Vector3f(x, y, z), new Vector3f(scale, scale, scale)));
-        go.transform = go.getComponent(Transform.class);
-        Rigidbody rb = new Rigidbody();
-        go.addComponent(rb);
-        BoxCollider bc = new BoxCollider();
-        bc.setSize(new Vector3f(1f, 1f, 1f));
-        bc.setOffset(new Vector3f(0f, 0f, 0f));
-        go.addComponent(bc);
-        return go;
-    }
+    /*
+    ###########################
+    #      STATIC FIELDS      #
+    ###########################
+    */
 
     public static final int CHUNK_CAPACITY = 500;
 
@@ -55,7 +28,11 @@ public class World {
 
     public static final int SPAWN_CHUNK_SIZE = 9 * 9;
 
-    private static final Vector4f SUN_COLOR = new Vector4f(1f, 1f, 1f, 1f);
+    /*
+    ###########################
+    #          FIELDS         #
+    ###########################
+    */
 
     private Camera camera;
 
@@ -87,22 +64,34 @@ public class World {
 
     private float placeBlockDebounce = placeBlockDebounceTime;
 
-    private Random rand;
-
     private Vector3f block;
+
+    private Vector3f lastCameraPos;
+
+    /*
+    ###########################
+    #       CONSTRUCTORS      #
+    ###########################
+    */
 
     public World(Camera camera, Renderer renderer) {
         this.camera = camera;
+        this.lastCameraPos = new Vector3f(camera.getPosition());
         this.map = new Map();
         this.chunkManager = new ChunkManager(camera, map);
         this.renderer = renderer;
         this.skybox = new Skybox(camera);
-        this.physics = new Physics(renderer, chunkManager.getMap());
-        this.sun = createSun(400, 80f, 50f, 10f, SUN_COLOR);
+        this.physics = new Physics(renderer, map);
+        this.sun = Prefabs.createSun(400, 80f, 50f, 10f, new Vector4f(1f, 1f, 1f, 1f));
         this.gameObjects = new ArrayList<>();
         this.gameObjects.add(sun);
-        this.rand = new Random();
     }
+
+    /*
+    ###########################
+    #          METHODS        #
+    ###########################
+    */
 
     public void start(Scene scene) {
         // start chunk manager
@@ -145,7 +134,7 @@ public class World {
             raycastDebounce = raycastDebounceTime;
         }
 
-        if (MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && block != null && debounce < 0) {
+        if (MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && block != null && debounce <= 0) {
             Chunk chunk = map.getChunk(block.x, block.y, block.z);
             if (chunk != null) {
                 Vector3i index = Chunk.world2Index3D(block, chunk.getChunkCoords());
@@ -156,7 +145,7 @@ public class World {
             debounce = debounceTime;
         }
 
-        if (MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT) && block != null && placeBlockDebounce < 0) {
+        if (MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT) && block != null && placeBlockDebounce <= 0) {
             Chunk chunk = map.getChunk(block.x, block.y, block.z);
             if (chunk != null && (block.y + 1) < Chunk.HEIGHT) {
                 Vector3i index = Chunk.world2Index3D(block, chunk.getChunkCoords());
@@ -167,8 +156,9 @@ public class World {
             placeBlockDebounce = placeBlockDebounceTime;
         }
 
-        if (debounce < 0) {
-            Vector2i v = Chunk.toChunkCoords2D(new Vector3f(camera.getPosition()));
+        // load/unload chunks
+        if (!camera.getPosition().equals(lastCameraPos) && debounce <= 0) {
+            Vector2i v = Chunk.toChunkCoords(new Vector3f(camera.getPosition()));
 
             Set<Chunk> chunks = map.getChunksBeyondRadius(v, CHUNK_RADIUS);
             for (Chunk chunk : chunks) {
@@ -182,32 +172,17 @@ public class World {
                 chunkManager.loadChunk(ivec2);
             }
 
-            /*
-            System.out.printf("Number of loaded chunks, subchunks: %d:%d%n",
-                    map.size(),
-                    ((chunkManager.getSubchunks().size() / 2) / 16));
-             */
-
+            lastCameraPos.set(camera.getPosition());
             debounce = debounceTime;
         }
 
     }
 
-    private String toString(Set<Vector2i> set) {
-        StringBuilder b = new StringBuilder();
-        b.append("[");
-        for (Vector2i ivec2 : set) {
-            b.append(String.format("(%d, %d)", ivec2.x, ivec2.y));
-        }
-        b.append("]");
-        return b.toString();
-    }
-
-    public void render(float dt) {
+    public void render() {
         // render skybox
         skybox.render();
         // render chunks
-        chunkManager.render(dt);
+        chunkManager.render();
     }
 
     public void destroy() {

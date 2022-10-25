@@ -178,7 +178,7 @@ public class ChunkManager {
         }
     }
 
-    public void render(float dt) {
+    public void render() {
         generateDrawCommands();
 
         // Render pass 1:
@@ -217,9 +217,9 @@ public class ChunkManager {
         glBlendFunci(2, GL_ZERO, GL_ONE_MINUS_SRC_COLOR); // revealage blend target
         glBlendEquation(GL_FUNC_ADD);
 
-        glDrawBuffers(Application.BUFS_N12);
-        glClearBufferfv(GL_COLOR, 1, Application.ZERO_FILLER_VEC);
-        glClearBufferfv(GL_COLOR, 2, Application.ONE_FILLER_VEC);
+        glDrawBuffers(Constants.BUFS_NONE_ONE_TWO);
+        glClearBufferfv(GL_COLOR, 1, Constants.ZERO_FILLER_VEC);
+        glClearBufferfv(GL_COLOR, 2, Constants.ONE_FILLER_VEC);
 
         // draw transparent geometry
         glBindBuffer(GL_ARRAY_BUFFER, cboID);
@@ -245,7 +245,7 @@ public class ChunkManager {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        glDrawBuffers(Application.BUFS_0NN);
+        glDrawBuffers(Constants.BUFS_ZERO_NONE_NONE);
 
         // draw screen quad
         Framebuffer framebuffer = Application.getFramebuffer();

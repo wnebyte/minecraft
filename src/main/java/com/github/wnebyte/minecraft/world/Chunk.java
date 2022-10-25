@@ -5,6 +5,7 @@ import java.util.Objects;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
 import org.joml.Vector3f;
+import com.github.wnebyte.minecraft.core.Application;
 import com.github.wnebyte.minecraft.renderer.VertexBuffer;
 import com.github.wnebyte.minecraft.util.*;
 
@@ -42,17 +43,10 @@ public class Chunk {
         return (z * Chunk.WIDTH * Chunk.HEIGHT) + (y * Chunk.WIDTH) + x;
     }
 
-    public static Vector2i toChunkCoords2D(Vector3f pos) {
+    public static Vector2i toChunkCoords(Vector3f pos) {
         int x = (int)Math.floor(pos.x / Chunk.WIDTH);
         int z = (int)Math.floor(pos.z / Chunk.DEPTH);
         return new Vector2i(x, z);
-    }
-
-    public static Vector3i toChunkCoords3D(Vector3f pos) {
-        int x = (int)Math.floor(pos.x / Chunk.WIDTH);
-        int y = (int)Math.floor(pos.y / 16);
-        int z = (int)Math.floor(pos.z / Chunk.DEPTH);
-        return new Vector3i(x, y, z);
     }
 
     public static Vector3f toWorldCoords(Vector2i chunkCoords){
@@ -119,21 +113,21 @@ public class Chunk {
     ###########################
     */
 
-    private Block[] data;
+    private final Block[] data;
 
     // Global map position of this chunk
-    private int chunkPosX, chunkPosY, chunkPosZ;
+    private final int chunkPosX, chunkPosY, chunkPosZ;
 
-    private Vector3f chunkPos;
+    private final Vector3f chunkPos;
 
     // Relative position of this chunk
-    private int chunkCoordX, chunkCoordZ;
+    private final int chunkCoordX, chunkCoordZ;
 
-    private Vector2i chunkCoords;
+    private final Vector2i chunkCoords;
 
-    private Map map;
+    private final Map map;
 
-    private Pool<Key, Subchunk> subchunks;
+    private final Pool<Key, Subchunk> subchunks;
 
     // References to neighbouring chunks
     private Chunk cXN, cXP, cZN, cZP, cYN, cYP;
@@ -145,16 +139,16 @@ public class Chunk {
     */
 
     public Chunk(int i, int j, int k, Map map, Pool<Key, Subchunk> subchunks) {
-        this.chunkPosX = i * WIDTH;
-        this.chunkPosY = j * HEIGHT;
-        this.chunkPosZ = k * DEPTH;
+        this.chunkPosX = i * Chunk.WIDTH;
+        this.chunkPosY = j * Chunk.HEIGHT;
+        this.chunkPosZ = k * Chunk.DEPTH;
         this.chunkPos = new Vector3f(chunkPosX, chunkPosY, chunkPosZ);
         this.chunkCoordX = i;
         this.chunkCoordZ = k;
         this.chunkCoords = new Vector2i(i, k);
         this.map = map;
         this.subchunks = subchunks;
-        this.data = new Block[WIDTH * HEIGHT * DEPTH];
+        this.data = new Block[Chunk.WIDTH * Chunk.HEIGHT * Chunk.DEPTH];
     }
 
     /*
@@ -222,15 +216,13 @@ public class Chunk {
 
     public void unload() {
         String path = Assets.DIR + "/data/world/" + FILEPATH_FORMATTER.format(this);
-        serialize(path);
+        Application.submit(() -> serialize(path));
         unmesh();
     }
 
     public void load() {
         String path = Assets.DIR + "/data/world/" + FILEPATH_FORMATTER.format(this);
-        if (!deserialize(path)) {
-            generateTerrain();
-        }
+        generateTerrain();
         generateMesh();
     }
 

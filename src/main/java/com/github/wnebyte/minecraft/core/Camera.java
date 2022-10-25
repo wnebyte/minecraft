@@ -1,5 +1,6 @@
 package com.github.wnebyte.minecraft.core;
 
+import java.util.Objects;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Matrix4f;
@@ -19,6 +20,15 @@ public class Camera extends Component {
         RIGHT,
         UP,
         DOWN;
+    }
+
+    public static Camera copy(Camera camera) {
+        Camera copy = new Camera(
+                camera.position,
+                camera.forward,
+                camera.up
+        );
+        return copy;
     }
 
     /*
@@ -293,6 +303,10 @@ public class Camera extends Component {
         this.position.set(position);
     }
 
+    public void setPosition(float x, float y, float z) {
+        this.position.set(x, y, z);
+    }
+
     public Vector3f getForward() {
         return forward;
     }
@@ -305,4 +319,25 @@ public class Camera extends Component {
         return zFar;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == null) return false;
+        if (o == this) return true;
+        if (!(o instanceof Camera)) return false;
+        Camera camera = (Camera) o;
+        return Objects.equals(camera.position, this.position) &&
+                Objects.equals(camera.forward, this.forward) &&
+                Objects.equals(camera.up, this.up) &&
+                Objects.equals(camera.right, this.right);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 93;
+        return result +
+                Objects.hashCode(this.position) +
+                Objects.hashCode(this.forward) +
+                Objects.hashCode(this.up) +
+                Objects.hashCode(this.right);
+    }
 }

@@ -4,6 +4,10 @@ import java.util.Objects;
 
 public class BlockFormat {
 
+    public static boolean isAir(BlockFormat block) {
+        return (block == null || block.id == 1);
+    }
+
     private int id;
 
     private String name;
@@ -14,23 +18,23 @@ public class BlockFormat {
 
     private TextureFormat bottomTextureFormat;
 
-    private boolean isSolid;
+    private boolean solid;
 
-    private boolean isTransparent;
+    private boolean transparent;
 
-    private boolean isBlendable;
+    private boolean blendable;
 
     public BlockFormat(int id, String name,
-            TextureFormat sideTextureFormat, TextureFormat topTextureFormat, TextureFormat bottomTextureFormat,
-                       boolean isSolid, boolean isTransparent, boolean isBlendable) {
+                       TextureFormat sideTextureFormat, TextureFormat topTextureFormat, TextureFormat bottomTextureFormat,
+                       boolean solid, boolean transparent, boolean blendable) {
         this.id = id;
         this.name = name;
         this.sideTextureFormat = sideTextureFormat;
         this.topTextureFormat = topTextureFormat;
         this.bottomTextureFormat = bottomTextureFormat;
-        this.isSolid = isSolid;
-        this.isTransparent = isTransparent;
-        this.isBlendable = isBlendable;
+        this.solid = solid;
+        this.transparent = transparent;
+        this.blendable = blendable;
     }
 
     public int getId() {
@@ -54,15 +58,15 @@ public class BlockFormat {
     }
 
     public boolean isSolid() {
-        return isSolid;
+        return solid;
     }
 
     public boolean isTransparent() {
-        return isTransparent;
+        return transparent;
     }
 
     public boolean isBlendable() {
-        return isBlendable;
+        return blendable;
     }
 
     @Override
