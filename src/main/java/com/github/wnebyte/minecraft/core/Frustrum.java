@@ -1,4 +1,4 @@
-package com.github.wnebyte.minecraft.renderer;
+package com.github.wnebyte.minecraft.core;
 
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -46,9 +46,9 @@ public class Frustrum {
     }
 
     private Vector3f intersection(Plane a, Plane b, Plane c, Vector3f[] crosses) {
-        Vector3f va = JMath.toVector3f(getPlane(a));
-        Vector3f vb = new Vector3f(crosses[ij2k(b, c)]);
-        float dot = va.dot(vb);
+        Vector3f aVec = JMath.toVector3f(getPlane(a));
+        Vector3f bVec = new Vector3f(crosses[ij2k(b, c)]);
+        float dot = aVec.dot(bVec);
         Matrix3f mat = new Matrix3f(crosses[ij2k(b, c)], crosses[ij2k(a, c)].negate(), crosses[ij2k(a, b)]);
         Vector3f vec = new Vector3f(getPlane(a).w, getPlane(b).w, getPlane(c).w);
         Vector3f res = vec.mul(mat);
@@ -129,7 +129,8 @@ public class Frustrum {
                     (planes[i].dot(new Vector4f(minp.x, minp.y, maxp.z, 1.0f)) < 0.0f) &&
                     (planes[i].dot(new Vector4f(maxp.x, minp.y, maxp.z, 1.0f)) < 0.0f) &&
                     (planes[i].dot(new Vector4f(minp.x, maxp.y, maxp.z, 1.0f)) < 0.0f) &&
-                    (planes[i].dot(new Vector4f(maxp.x, maxp.y, maxp.z, 1.0f)) < 0.0f)) {
+                    (planes[i].dot(new Vector4f(maxp.x, maxp.y, maxp.z, 1.0f)) < 0.0f))
+            {
                 return false;
             }
         }

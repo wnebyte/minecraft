@@ -1,8 +1,7 @@
 package com.github.wnebyte.minecraft.util;
 
-import org.joml.*;
-
 import java.lang.Math;
+import org.joml.*;
 
 public class JMath {
 
@@ -11,7 +10,7 @@ public class JMath {
         c.x = a.x + b.x;
         c.y = a.y + b.y;
         c.z = a.z + b.z;
-        c.w = a.w = b.w;
+        c.w = a.w + b.w;
         return c;
     }
 

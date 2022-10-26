@@ -111,6 +111,8 @@ public class Camera extends Component {
 
     private Matrix4f inverseViewHUD;
 
+    private Frustrum frustrum;
+
     /*
     ###########################
     #       CONSTRUCTORS      #
@@ -155,6 +157,7 @@ public class Camera extends Component {
         this.viewMatrixHUD = new Matrix4f();
         this.inverseProjectionHUD = new Matrix4f();
         this.inverseViewHUD = new Matrix4f();
+        this.frustrum = new Frustrum();
         updateCameraVectors();
     }
 
@@ -164,20 +167,33 @@ public class Camera extends Component {
     ###########################
     */
 
-    // Todo: precalculate matrices when camera state changes
-    public Matrix4f getProjectionMatrix() {
+    @Override
+    public void update(float dt) {
+        updateProjectionMatrix();
+        updateViewMatrix();
+        Matrix4f vp = new Matrix4f(projectionMatrix).mul(viewMatrix);
+        frustrum.update(vp);
+    }
+
+    private void updateProjectionMatrix() {
         projectionMatrix.identity();
         projectionMatrix.perspective(
                 (float)Math.toRadians(zoom),
                 Application.getWindow().getAspectRatio(), zNear, zFar);
         projectionMatrix.invert(inverseProjection);
+    }
+
+    private void updateViewMatrix() {
+        viewMatrix.identity();
+        viewMatrix.lookAt(position, new Vector3f(position).add(forward), up);
+        viewMatrix.invert(inverseView);
+    }
+
+    public Matrix4f getProjectionMatrix() {
         return projectionMatrix;
     }
 
     public Matrix4f getViewMatrix() {
-        viewMatrix.identity();
-        viewMatrix.lookAt(position, new Vector3f(position).add(forward), up);
-        viewMatrix.invert(inverseView);
         return viewMatrix;
     }
 
@@ -262,7 +278,7 @@ public class Camera extends Component {
         }
     }
 
-    public void updateCameraVectors() {
+    private void updateCameraVectors() {
         // calculate the new front vector
         Vector3f f = new Vector3f();
         f.x = (float)Math.cos(Math.toRadians(yaw)) * (float)Math.cos(Math.toRadians(pitch));
@@ -333,6 +349,10 @@ public class Camera extends Component {
 
     public float getZFar() {
         return zFar;
+    }
+
+    public Frustrum getFrustrum() {
+        return frustrum;
     }
 
     @Override

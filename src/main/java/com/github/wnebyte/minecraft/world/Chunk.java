@@ -52,9 +52,12 @@ public class Chunk {
         return new Vector2i(x, z);
     }
 
-    public static Vector3f toWorldCoords(Vector2i chunkCoords){
+    public static Vector3f toWorldCoords(Vector2i chunkCoords) {
+        return toWorldCoords(chunkCoords, 0);
+    }
+
+    public static Vector3f toWorldCoords(Vector2i chunkCoords, float y) {
         float x = chunkCoords.x * Chunk.WIDTH;
-        float y = 0;
         float z = chunkCoords.y * Chunk.DEPTH;
         return new Vector3f(x, y, z);
     }
@@ -344,9 +347,11 @@ public class Chunk {
         assert (opaqueSubchunk != null && transparentSubchunk != null) : "buffer is null";
         opaqueSubchunk.setBlendable(false);
         opaqueSubchunk.setChunkCoords(chunkCoords);
+        opaqueSubchunk.setSubchunkLevel(subchunkLevel);
         opaqueSubchunk.resetVertexBuffer();
         transparentSubchunk.setBlendable(true);
         transparentSubchunk.setChunkCoords(chunkCoords);
+        transparentSubchunk.setSubchunkLevel(subchunkLevel);
         transparentSubchunk.resetVertexBuffer();
         int j = subchunkLevel * 16;
         int jMax = j + 16;

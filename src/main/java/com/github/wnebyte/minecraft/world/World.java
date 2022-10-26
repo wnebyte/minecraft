@@ -85,6 +85,10 @@ public class World {
         this.sun = Prefabs.createSun(400, 80f, 50f, 10f, new Vector4f(1f, 1f, 1f, 1f));
         this.gameObjects = new ArrayList<>();
         this.gameObjects.add(sun);
+        GameObject go = new GameObject("Camera");
+        go.addComponent(camera);
+        go.addComponent(new Transform());
+        this.gameObjects.set(0, go);
     }
 
     /*
@@ -117,11 +121,19 @@ public class World {
         debounce -= dt;
         raycastDebounce -= dt;
         placeBlockDebounce -= dt;
+
+        // set skybox blend value
         time += (dt / 6);
         float blend = JMath.clamp((time / 1440), 0.0f, 1.0f);
         if (time == 1.0f) time = 0.0f;
         skybox.setBlend(blend);
 
+        // update game objects
+        for (GameObject go : gameObjects) {
+            go.update(dt);
+        }
+
+        // do raycast
         if (raycastDebounce < 0) {
             Vector3f origin = new Vector3f(camera.getPosition());
             Vector3f normal = new Vector3f(camera.getForward());
@@ -135,6 +147,7 @@ public class World {
             raycastDebounce = raycastDebounceTime;
         }
 
+        // destroy block
         if (MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && block != null && debounce <= 0) {
             Chunk chunk = map.getChunk(block.x, block.y, block.z);
             if (chunk != null) {
@@ -146,6 +159,7 @@ public class World {
             debounce = debounceTime;
         }
 
+        // place block
         if (MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT) && block != null && placeBlockDebounce <= 0) {
             Chunk chunk = map.getChunk(block.x, block.y, block.z);
             if (chunk != null && (block.y + 1) < Chunk.HEIGHT) {
@@ -159,17 +173,21 @@ public class World {
 
         // load/unload chunks
         if (!camera.getPosition().equals(lastCameraPos) && debounce <= 0) {
-            Vector2i v = Chunk.toChunkCoords(new Vector3f(camera.getPosition()));
+            Vector2i v = Chunk.toChunkCoords(camera.getPosition());
 
             Set<Chunk> chunks = map.getChunksBeyondRadius(v, CHUNK_RADIUS);
-            chunkManager.unloadChunksAsync(chunks);
+            if (chunks.size() > 0) {
+                chunkManager.unloadChunksAsync(chunks);
+            }
 
             Set<Vector2i> chunkCoords = map.getChunkCoordsWithinRadius(v, CHUNK_RADIUS);
             for (Vector2i ivec2 : chunkCoords) {
                 assert (chunks.stream().noneMatch(c -> c.getChunkCoords().equals(ivec2))) :
                         "Loading recently unloaded chunk";
             }
-            chunkManager.loadChunksAsync(chunkCoords);
+            if (chunkCoords.size() > 0) {
+                chunkManager.loadChunksAsync(chunkCoords);
+            }
 
             lastCameraPos.set(camera.getPosition());
             debounce = debounceTime;

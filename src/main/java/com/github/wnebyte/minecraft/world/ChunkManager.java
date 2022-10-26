@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.concurrent.Future;
 import java.nio.ByteBuffer;
 import org.joml.Vector2i;
+import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
 import com.github.wnebyte.minecraft.core.Application;
 import com.github.wnebyte.minecraft.core.Camera;
@@ -209,13 +210,20 @@ public class ChunkManager {
         });
     }
 
-    private void generateDrawCommands() {
+    public void generateDrawCommands() {
         for (Subchunk subchunk : subchunks) {
             if (subchunk.getState() == Subchunk.State.MESHED) {
-                if (subchunk.isBlendable()) {
-                    transparentDrawCommands.add(subchunk);
-                } else {
-                    drawCommands.add(subchunk);
+                float yMin = subchunk.getSubchunkLevel() * 16;
+                Vector3f min = Chunk.toWorldCoords(subchunk.getChunkCoords(), yMin)
+                        .sub(0.5f, 0.5f, 0.5f);
+                Vector3f max = new Vector3f(min)
+                        .add(new Vector3f(16.0f, 16.0f, 16.0f));
+                if (camera.getFrustrum().isBoxVisisble(min, max)) {
+                    if (subchunk.isBlendable()) {
+                        transparentDrawCommands.add(subchunk);
+                    } else {
+                        drawCommands.add(subchunk);
+                    }
                 }
             }
         }
@@ -317,13 +325,5 @@ public class ChunkManager {
 
     public Map getMap() {
         return map;
-    }
-
-    public Pool<Key, Subchunk> getSubchunks() {
-        return subchunks;
-    }
-
-    public DrawCommandBuffer getDrawCommands() {
-        return drawCommands;
     }
 }

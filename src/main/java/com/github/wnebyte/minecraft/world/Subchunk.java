@@ -20,6 +20,8 @@ public class Subchunk {
 
     private Vector2i chunkCoords;
 
+    private int subchunkLevel;
+
     private AtomicReference<State> state;
 
     public Subchunk(VertexBuffer vertexBuffer) {
@@ -53,6 +55,14 @@ public class Subchunk {
 
     public void setChunkCoords(Vector2i chunkCoords) {
         this.chunkCoords = chunkCoords;
+    }
+
+    public int getSubchunkLevel() {
+        return subchunkLevel;
+    }
+
+    public void setSubchunkLevel(int subchunkLevel) {
+        this.subchunkLevel = subchunkLevel;
     }
 
     public void setBlendable(boolean value) {

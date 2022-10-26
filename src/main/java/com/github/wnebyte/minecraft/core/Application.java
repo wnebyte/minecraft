@@ -83,7 +83,6 @@ public class Application {
         threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() - 1);
         messageQueue = new ConcurrentLinkedQueue<>();
         window = Window.newInstance("Minecraft");
-        window.init();
         window.setScene(new Scene());
         ScreenRenderer.start();
         framebuffer = new Framebuffer(new Framebuffer.Configuration.Builder()

@@ -12,7 +12,7 @@ public class Window {
 
     /*
     ###########################
-    #         UTLITIES        #
+    #         UTILITIES       #
     ###########################
     */
 
@@ -29,6 +29,7 @@ public class Window {
     public static Window newInstance(String title) {
         if (Window.window == null) {
             Window.window = new Window(title);
+            Window.window.init();
             return Window.window;
         } else {
             throw new IllegalStateException(
@@ -71,13 +72,13 @@ public class Window {
 
     private static Window window;
 
-    private long glfwWindow;
-
     /*
     ###########################
     #          FIELDS         #
     ###########################
     */
+
+    private long glfwWindow;
 
     private String title;
 
@@ -101,7 +102,7 @@ public class Window {
     ###########################
     */
 
-    public void init() {
+    private void init() {
         // Setup an error callback
         GLFWErrorCallback.createPrint(System.err).set();
 
