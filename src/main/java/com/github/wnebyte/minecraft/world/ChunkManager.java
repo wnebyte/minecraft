@@ -1,5 +1,10 @@
 package com.github.wnebyte.minecraft.world;
 
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.concurrent.Future;
 import java.nio.ByteBuffer;
 import org.joml.Vector2i;
 import org.lwjgl.system.MemoryUtil;
@@ -108,25 +113,20 @@ public class ChunkManager {
         glVertexAttribIPointer(1, 2, GL_INT, 2 * Integer.BYTES, 0);
         glVertexAttribDivisor(1, 1);
         glEnableVertexAttribArray(1);
-
-        initMap();
-        int x = (int)(Math.sqrt(World.SPAWN_CHUNK_SIZE) * 16) / 2;
-        int y = 51;
-        int z = x;
     }
 
-    private void initMap() {
+    public void loadSpawnChunks() {
         long startTime = System.nanoTime();
         int sqrt = (int)Math.sqrt(World.SPAWN_CHUNK_SIZE);
         for (int x = 0; x < sqrt; x++) {
             for (int z = 0; z < sqrt; z++) {
                 Chunk chunk = new Chunk(x, 0, z, map, subchunks);
                 map.putChunk(chunk);
-                chunk.generateTerrain();
+                chunk.load();
             }
         }
         for (Chunk chunk : map) {
-            chunk.generateMesh();
+            chunk.mesh();
         }
         double time = (System.nanoTime() - startTime) * 1E-9;
         System.out.printf("%dx%d chunks initialized in: %.2fs%n",  sqrt, sqrt, time);
@@ -135,35 +135,78 @@ public class ChunkManager {
         System.out.printf("Number of subchunks:         %d%n",     subchunks.capacity());
     }
 
-    public void unloadChunk(Chunk chunk) {
-        if (chunk != null) {
-            map.removeChunk(chunk);
-            chunk.unload();
-            Chunk[] neighbours = chunk.getNeighbours();
-            for (Chunk c : neighbours) {
-                if (c != null) {
-                    c.generateMesh();
+    /*
+    Step 1: Deserialize all chunks
+    Step 2: Retrieve all neighbours
+    Step 3: Mesh all newly loaded chunks and their neighbours
+     */
+    public void loadChunksAsync(Set<Vector2i> set) {
+        Application.submit(() -> {
+            Set<Chunk> chunks = new HashSet<>();
+            List<Future<?>> futures = new ArrayList<>();
+            Future<?> future;
+            for (Vector2i ivec2 : set) {
+                if (!map.contains(ivec2)) {
+                    Chunk chunk = new Chunk(ivec2.x, 0, ivec2.y, map, subchunks);
+                    map.putChunk(chunk);
+                    future = chunk.loadAsync();
+                    futures.add(future);
+                    chunk.updateNeighbourRefs();
+                    chunks.add(chunk);
+                    for (Chunk c : chunk.getNeighbours()) {
+                        if (c != null) {
+                            chunks.add(c);
+                        }
+                    }
                 }
             }
-        }
-    }
-
-    public void loadChunk(Vector2i chunkCoords) {
-        if (!map.contains(chunkCoords) && map.size() < World.CHUNK_CAPACITY) {
-            Chunk chunk = new Chunk(chunkCoords.x, 0, chunkCoords.y, map, subchunks);
-            map.putChunk(chunk);
-            chunk.load();
-            Chunk[] neighbours = chunk.getNeighbours();
-            for (Chunk c : neighbours) {
-                if (c != null) {
-                    c.generateMesh();
+            if (!futures.isEmpty()) {
+                try {
+                    for (Future<?> it : futures) it.get();
+                    for (Chunk c : chunks) {
+                        assert c.isLoaded() : "Chunk is not loaded";
+                        c.meshAsync();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
-        }
+        });
     }
 
-    public void loadSpawnChunk(Vector2i chunkCoords) {
-        
+    /*
+    Step 1: Serialize and unmesh all chunks that need to be unloaded
+    Step 2: When Step 1 has completed; mesh all neighbours
+     */
+    // Todo: it's not necessary to wait for step 1 to complete in order to start step 2.
+    public void unloadChunksAsync(Set<Chunk> chunks) {
+        Application.submit(() -> {
+            Set<Chunk> neighbours = new HashSet<>();
+            List<Future<?>> futures = new ArrayList<>();
+            Future<?> future;
+            for (Chunk chunk : chunks) {
+                map.removeChunk(chunk);
+                future = chunk.unloadAsync();
+                futures.add(future);
+                for (Chunk c : chunk.getNeighbours()) {
+                    if (c != null) {
+                        neighbours.add(c);
+                    }
+                }
+            }
+            if (!futures.isEmpty()) {
+                try {
+                    for (Future<?> it : futures) it.get();
+                    for (Chunk c : neighbours) {
+                        if (c.isLoaded()) {
+                            c.meshAsync();
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     private void generateDrawCommands() {
@@ -195,8 +238,8 @@ public class ChunkManager {
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, iboID);
         glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, drawCommands.getDrawCommands());
         shader.use();
-        shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
         shader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
+        shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
         glActiveTexture(GL_TEXTURE0);
         texture.bind();
         shader.uploadTexture(Shader.U_TEXTURE, 0);
@@ -227,8 +270,8 @@ public class ChunkManager {
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, biboID);
         glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, transparentDrawCommands.getDrawCommands());
         transparentShader.use();
-        transparentShader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
         transparentShader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
+        transparentShader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
         glActiveTexture(GL_TEXTURE0);
         texture.bind();
         transparentShader.uploadTexture(Shader.U_TEXTURE, 0);

@@ -1,6 +1,8 @@
 package com.github.wnebyte.minecraft.util;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Pool<K, V> implements Iterable<V> {
 
@@ -11,8 +13,8 @@ public class Pool<K, V> implements Iterable<V> {
     private int capacity;
 
     public Pool(int capacity) {
-        this.pool = new HashMap<>(capacity);
-        this.queue = new LinkedList<>();
+        this.pool = new ConcurrentHashMap<>(capacity);
+        this.queue = new ConcurrentLinkedQueue<>();
         this.capacity = capacity;
     }
 
@@ -23,10 +25,12 @@ public class Pool<K, V> implements Iterable<V> {
     public V get(K k) {
         if (pool.containsKey(k)) {
             return pool.get(k);
-        } else if (hasRoom()) {
+        } else {
             V v = queue.poll();
-            pool.put(k, v);
-            return v;
+            if (v != null) {
+                pool.put(k, v);
+                return v;
+            }
         }
         return null;
     }
@@ -42,18 +46,6 @@ public class Pool<K, V> implements Iterable<V> {
 
     public int capacity() {
         return capacity;
-    }
-
-    public int size() {
-        return pool.size();
-    }
-
-    public int remaining() {
-        return queue.size();
-    }
-
-    public boolean hasRoom() {
-        return (size() < capacity() && remaining() > 0);
     }
 
     @Override

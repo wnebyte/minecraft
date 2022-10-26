@@ -104,6 +104,7 @@ public class World {
             renderer.add(go);
         }
         camera.setPosition(new Vector3f(SPAWN_CHUNK_SIZE / 2.0f, 51, SPAWN_CHUNK_SIZE / 2.0f));
+        chunkManager.loadSpawnChunks();
     }
 
     /*
@@ -138,7 +139,7 @@ public class World {
             Chunk chunk = map.getChunk(block.x, block.y, block.z);
             if (chunk != null) {
                 Vector3i index = Chunk.world2Index3D(block, chunk.getChunkCoords());
-                chunk.setBlock(Block.AIR, index.x, index.y, index.z, true);
+                chunk.setBlock(BlockMap.getBlock("air"), index.x, index.y, index.z, true);
                 block = null;
                 renderer.clearLines3D();
             }
@@ -149,7 +150,7 @@ public class World {
             Chunk chunk = map.getChunk(block.x, block.y, block.z);
             if (chunk != null && (block.y + 1) < Chunk.HEIGHT) {
                 Vector3i index = Chunk.world2Index3D(block, chunk.getChunkCoords());
-                chunk.setBlock(Block.SAND, index.x, index.y + 1, index.z, true);
+                chunk.setBlock(BlockMap.getBlock("sand"), index.x, index.y + 1, index.z, true);
                 block = null;
                 renderer.clearLines3D();
             }
@@ -161,16 +162,14 @@ public class World {
             Vector2i v = Chunk.toChunkCoords(new Vector3f(camera.getPosition()));
 
             Set<Chunk> chunks = map.getChunksBeyondRadius(v, CHUNK_RADIUS);
-            for (Chunk chunk : chunks) {
-                chunkManager.unloadChunk(chunk);
-            }
+            chunkManager.unloadChunksAsync(chunks);
 
             Set<Vector2i> chunkCoords = map.getChunkCoordsWithinRadius(v, CHUNK_RADIUS);
             for (Vector2i ivec2 : chunkCoords) {
                 assert (chunks.stream().noneMatch(c -> c.getChunkCoords().equals(ivec2))) :
                         "Loading recently unloaded chunk";
-                chunkManager.loadChunk(ivec2);
             }
+            chunkManager.loadChunksAsync(chunkCoords);
 
             lastCameraPos.set(camera.getPosition());
             debounce = debounceTime;

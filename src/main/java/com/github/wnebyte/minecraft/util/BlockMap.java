@@ -1,13 +1,10 @@
 package com.github.wnebyte.minecraft.util;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 import java.util.Collections;
 import com.google.gson.*;
 import org.joml.Vector2f;
-
+import com.github.wnebyte.minecraft.world.Block;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL30C.GL_R32F;
 import static org.lwjgl.opengl.GL31C.GL_TEXTURE_BUFFER;
@@ -15,11 +12,11 @@ import static org.lwjgl.opengl.GL31C.glTexBuffer;
 
 public class BlockMap {
 
-    private static final Map<Integer, BlockFormat> blockFormats = new HashMap<>();
+    private static final Map<Byte, Block> blocks = new HashMap<>();
 
     private static final Map<String, TextureFormat> textureFormats = new HashMap<>();
 
-    private static final Map<String, Integer> nameToId = new HashMap<>();
+    private static final Map<String, Byte> nameToId = new HashMap<>();
 
     private static int texCoordsTextureId;
 
@@ -34,18 +31,18 @@ public class BlockMap {
         }
     }
 
-    public static BlockFormat getBlockFormat(int id) {
-        if (blockFormats.containsKey(id)) {
-            return blockFormats.get(id);
+    public static Block getBlock(int id) {
+        if (blocks.containsKey((byte)id)) {
+            return blocks.get((byte)id);
         } else {
-            assert false : String.format("Error: (BlockMap) BlockFormat with id: '%s' does not exist", id);
+            assert false : String.format("Error: (BlockMap) Block with id: '%s' does not exist", id);
             return null;
         }
     }
 
-    public static BlockFormat getBlockFormat(String name) {
-        int id = nameToId.get(name);
-        return getBlockFormat(id);
+    public static Block getBlock(String name) {
+        byte id = nameToId.get(name.toLowerCase(Locale.ROOT));
+        return getBlock(id);
     }
 
     public static void load(String textureConfigPath, String blockConfigPath) {
@@ -66,29 +63,29 @@ public class BlockMap {
                 continue;
             }
             JsonObject jsonObject = e.getAsJsonObject();
-            int id = jsonObject.get("id").getAsInt();
+            byte id = jsonObject.get("id").getAsByte();
             String name = jsonObject.get("name").getAsString();
-            boolean isSolid = jsonObject.get("isSolid").getAsBoolean();
-            boolean isTransparent = jsonObject.get("isTransparent").getAsBoolean();
-            boolean isBlendable = jsonObject.get("isBlendable").getAsBoolean();
+            boolean solid = jsonObject.get("isSolid").getAsBoolean();
+            boolean transparent = jsonObject.get("isTransparent").getAsBoolean();
+            boolean blendable = jsonObject.get("isBlendable").getAsBoolean();
             String side = jsonObject.get("side").getAsString();
             String top = jsonObject.get("top").getAsString();
             String bottom = jsonObject.get("bottom").getAsString();
             TextureFormat sideTextureFormat = textureFormats.get(side);
             TextureFormat topTextureFormat = textureFormats.get(top);
             TextureFormat bottomTextureForamt = textureFormats.get(bottom);
-            BlockFormat blockFormat = new BlockFormat.Builder()
+            Block block = new Block.Builder()
                     .setId(id)
                     .setName(name)
                     .setSideTextureFormat(sideTextureFormat)
                     .setTopTextureFormat(topTextureFormat)
                     .setBottomTextureFormat(bottomTextureForamt)
-                    .setIsSolid(isSolid)
-                    .setIsTransparent(isTransparent)
-                    .setIsBlendable(isBlendable)
+                    .setIsSolid(solid)
+                    .setIsTransparent(transparent)
+                    .setIsBlendable(blendable)
                     .build();
-            blockFormats.put(id, blockFormat);
-            nameToId.put(name, id);
+            blocks.put(id, block);
+            nameToId.put(name.toLowerCase(Locale.ROOT), id);
         }
     }
 
@@ -135,8 +132,8 @@ public class BlockMap {
         return texCoordsBufferId;
     }
 
-    public static Collection<BlockFormat> getAllBlockFormats() {
-        return Collections.unmodifiableCollection(blockFormats.values());
+    public static Collection<Block> getAllBlocks() {
+        return Collections.unmodifiableCollection(blocks.values());
     }
 
     public static Collection<TextureFormat> getAllTextureFormats() {

@@ -1,54 +1,38 @@
 package com.github.wnebyte.minecraft.world;
 
 import java.util.Objects;
+import com.github.wnebyte.minecraft.util.TextureFormat;
 
 public class Block {
 
     public static boolean isAir(Block block) {
-        return (block == null || block.id == Block.AIR.id);
+        return (block == null || block.id == 1);
     }
 
-    public static final Block
-            AIR                = new Block(1,  false, true,  false),
-            GRASS              = new Block(2,  true,  false, false),
-            SAND               = new Block(3,  true,  false, false),
-            DIRT               = new Block(4,  true,  false, false),
-            GREEN_CONCRETE     = new Block(5,  true,  false, false),
-            STONE              = new Block(6,  true,  false, false),
-            BEDROCK            = new Block(7,  true,  false, false),
-            OAK_LOG            = new Block(8,  true,  false, false),
-            OAK_LEAVES         = new Block(9,  true,  true,  true),
-            OAK_PLANKS         = new Block(10, true,  false, false),
-            GLOWSTONE          = new Block(11, true,  false, false),
-            COBBLESTONE        = new Block(12, true,  false, false),
-            SPRUCE_LOG         = new Block(13, true,  false, false),
-            SPRUCE_PLANKS      = new Block(14, true,  false, false),
-            GLASS              = new Block(15, true,  true,  true),
-            SEA_LATERN         = new Block(16, true,  false, false),
-            BIRCH_LOG          = new Block(17, true,  false, false),
-            BLUE_STAINED_GLASS = new Block(18, true,  true,  true),
-            WATER              = new Block(19, false, true,  true),
-            BIRCH_PLANKS       = new Block(20, true,  false, false),
-            DIAMOND_BLOCKS     = new Block(21, true,  false, false),
-            OBSIDIAN           = new Block(22, true,  false, false),
-            CRYING_OBSIDIAN    = new Block(23, true,  false, false),
-            DARK_OAK_LOG       = new Block(24, true,  false, false),
-            DARK_OAK_PLANKS    = new Block(25, true,  false, false),
-            JUNGLE_LOG         = new Block(26, true,  false, false),
-            JUNGLE_PLANKS      = new Block(27, true,  false, false),
-            ACACIA_LOG         = new Block(28, true,  false, false),
-            ACACIA_PLANKS      = new Block(29, true,  false, false);
+    private byte id;
 
-    public final byte id;
+    private String name;
 
-    private final boolean solid;
+    private TextureFormat sideTextureFormat;
 
-    private final boolean transparent;
+    private TextureFormat topTextureFormat;
 
-    private final boolean blendable;
+    private TextureFormat bottomTextureFormat;
 
-    public Block(int id, boolean solid, boolean transparent, boolean blendable) {
-        this.id = (byte)id;
+    private boolean solid;
+
+    private boolean transparent;
+
+    private boolean blendable;
+
+    public Block(byte id, String name,
+                 TextureFormat sideTextureFormat, TextureFormat topTextureFormat, TextureFormat bottomTextureFormat,
+                 boolean solid, boolean transparent, boolean blendable) {
+        this.id = id;
+        this.name = name;
+        this.sideTextureFormat = sideTextureFormat;
+        this.topTextureFormat = topTextureFormat;
+        this.bottomTextureFormat = bottomTextureFormat;
         this.solid = solid;
         this.transparent = transparent;
         this.blendable = blendable;
@@ -56,6 +40,22 @@ public class Block {
 
     public byte getId() {
         return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public TextureFormat getSideTextureFormat() {
+        return sideTextureFormat;
+    }
+
+    public TextureFormat getTopTextureFormat() {
+        return topTextureFormat;
+    }
+
+    public TextureFormat getBottomTextureFormat() {
+        return bottomTextureFormat;
     }
 
     public boolean isSolid() {
@@ -76,20 +76,84 @@ public class Block {
         if (o == this) return true;
         if (!(o instanceof Block)) return false;
         Block block = (Block) o;
-        return Objects.equals(block.id, this.id);
+        return Objects.equals(this.id, block.id) &&
+                Objects.equals(this.name, block.name) &&
+                Objects.equals(this.sideTextureFormat, block.sideTextureFormat) &&
+                Objects.equals(this.topTextureFormat, block.topTextureFormat) &&
+                Objects.equals(this.bottomTextureFormat, block.bottomTextureFormat);
     }
 
     @Override
     public int hashCode() {
-        int result = 5;
-        return 2 *
+        int result = 27;
+        return 3 *
                 result +
-                Objects.hashCode(this.id);
+                Objects.hashCode(this.id) +
+                Objects.hashCode(this.name) +
+                Objects.hashCode(this.sideTextureFormat) +
+                Objects.hashCode(this.topTextureFormat) +
+                Objects.hashCode(this.bottomTextureFormat);
     }
 
     @Override
     public String toString() {
-        return String.format("Block[id: %d, solid: %b, transparent: %b, blendable: %b]",
-                id, solid, transparent, blendable);
+        return String.format("Block[id: %d, name: %s, side: %s, top: %s, bottom: %s]", id, name,
+                sideTextureFormat, topTextureFormat, bottomTextureFormat);
+    }
+
+    public static class Builder {
+
+        private byte id;
+
+        private String name;
+
+        private TextureFormat sideTextureFormat, topTextureFormat, bottomTextureFormat;
+
+        private boolean solid, transparent, blendable;
+
+        public Builder setId(byte id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder setName(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder setSideTextureFormat(TextureFormat sideTextureFormat) {
+            this.sideTextureFormat = sideTextureFormat;
+            return this;
+        }
+
+        public Builder setTopTextureFormat(TextureFormat topTextureFormat) {
+            this.topTextureFormat = topTextureFormat;
+            return this;
+        }
+
+        public Builder setBottomTextureFormat(TextureFormat bottomTextureFormat) {
+            this.bottomTextureFormat = bottomTextureFormat;
+            return this;
+        }
+
+        public Builder setIsSolid(boolean value) {
+            this.solid = value;
+            return this;
+        }
+
+        public Builder setIsTransparent(boolean value) {
+            this.transparent = value;
+            return this;
+        }
+
+        public Builder setIsBlendable(boolean value) {
+            this.blendable = value;
+            return this;
+        }
+
+        public Block build() {
+            return new Block(id, name, sideTextureFormat, topTextureFormat, bottomTextureFormat,
+                    solid, transparent, blendable);
+        }
     }
 }

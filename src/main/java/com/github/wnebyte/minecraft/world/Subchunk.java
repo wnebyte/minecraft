@@ -12,7 +12,7 @@ public class Subchunk {
         UNMESHED;
     }
 
-    private VertexBuffer vertexBuffer;
+    private final VertexBuffer vertexBuffer;
 
     private int first;
 

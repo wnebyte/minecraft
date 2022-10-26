@@ -1,6 +1,7 @@
 package com.github.wnebyte.minecraft.world;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
 
@@ -13,7 +14,7 @@ public class Map implements Iterable<Chunk> {
     }
 
     public Map(int initialCapacity) {
-        this.chunks = new HashMap<>();
+        this.chunks = new ConcurrentHashMap<>();
     }
 
     public Chunk putChunk(Vector2i key, Chunk value) {

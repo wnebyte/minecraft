@@ -1,11 +1,10 @@
 package com.github.wnebyte.minecraft.core;
 
 import java.util.Queue;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.concurrent.Future;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.util.Assets;
 import com.github.wnebyte.minecraft.util.Constants;
@@ -82,7 +81,7 @@ public class Application {
     private void init() {
         thread = Thread.currentThread().getId();
         threadPool = Executors.newFixedThreadPool(7);
-        messageQueue = new LinkedList<>();
+        messageQueue = new ConcurrentLinkedQueue<>();
         window = Window.newInstance("Minecraft");
         window.init();
         window.setScene(new Scene());
@@ -118,6 +117,7 @@ public class Application {
                         .addParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR)
                         .addParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR)
                         .build()))
+                // depth
                 .setDepthAttachment(new Texture(new Texture.Configuration.Builder()
                         .setTarget(GL_TEXTURE_2D)
                         .setSize(window.getWidth(), window.getHeight())
@@ -136,10 +136,14 @@ public class Application {
             dt = currentFrame - lastFrame;
             lastFrame = currentFrame;
 
-            Iterator<Runnable> it = messageQueue.iterator();
-            while (it.hasNext()) {
-                Runnable task = it.next();
-                task.run();
+            Runnable msg;
+            while ((msg = messageQueue.poll()) != null) {
+                msg.run();
+                currentFrame = (float)glfwGetTime();
+                float elapsedTime = currentFrame - lastFrame;
+                if (elapsedTime >= (1f / 60f) * 0.15f) {
+                    break;
+                }
             }
 
             framebuffer.bind();

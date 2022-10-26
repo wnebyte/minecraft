@@ -31,6 +31,14 @@ public class Camera extends Component {
         return copy;
     }
 
+    public static Camera copy(Camera src, Camera dest) {
+        dest.position = new Vector3f(src.position);
+        dest.forward = new Vector3f(src.forward);
+        dest.up = new Vector3f(src.up);
+        dest.right = new Vector3f(src.right);
+        return dest;
+    }
+
     /*
     ###########################
     #      STATIC FIELDS      #
@@ -309,6 +317,14 @@ public class Camera extends Component {
 
     public Vector3f getForward() {
         return forward;
+    }
+
+    public Vector3f getUp() {
+        return up;
+    }
+
+    public Vector3f getRight() {
+        return right;
     }
 
     public float getZNear() {
