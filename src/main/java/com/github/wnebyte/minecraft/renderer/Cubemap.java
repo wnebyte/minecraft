@@ -4,9 +4,8 @@ import java.util.List;
 import java.util.Arrays;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-
-import com.github.wnebyte.minecraft.util.Assets;
 import org.lwjgl.BufferUtils;
+import com.github.wnebyte.minecraft.util.Assets;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE;
 import static org.lwjgl.opengl.GL12.GL_TEXTURE_WRAP_R;
@@ -16,10 +15,22 @@ import static org.lwjgl.stb.STBImage.*;
 
 public class Cubemap {
 
+    /*
+    ###########################
+    #        UTILITIES        #
+    ###########################
+    */
+
     public enum Type {
         DAY,
         NIGHT;
     }
+
+    /*
+    ###########################
+    #      STATIC FIELDS      #
+    ###########################
+    */
 
     private static final List<String> FACES_DAY = Arrays.asList(
             Assets.DIR + "/images/sky/dayRight.png",
@@ -39,7 +50,19 @@ public class Cubemap {
             Assets.DIR + "/images/sky/nightFront.png"
     );
 
+    /*
+    ###########################
+    #          FIELDS         #
+    ###########################
+    */
+
     private int id;
+
+    /*
+    ###########################
+    #       CONSTRUCTORS      #
+    ###########################
+    */
 
     public Cubemap(Type type) {
         this.id = glGenTextures();
@@ -80,6 +103,12 @@ public class Cubemap {
             stbi_image_free(image);
         }
     }
+
+    /*
+    ###########################
+    #          METHODS        #
+    ###########################
+    */
 
     public int getId() {
         return id;

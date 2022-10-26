@@ -16,7 +16,7 @@ public class Application {
 
     /*
     ###########################
-    #         UTLITIES        #
+    #        UTILITIES        #
     ###########################
     */
 
@@ -80,7 +80,7 @@ public class Application {
 
     private void init() {
         thread = Thread.currentThread().getId();
-        threadPool = Executors.newFixedThreadPool(7);
+        threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() - 1);
         messageQueue = new ConcurrentLinkedQueue<>();
         window = Window.newInstance("Minecraft");
         window.init();

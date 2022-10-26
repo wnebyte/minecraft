@@ -2,10 +2,17 @@ package com.github.wnebyte.minecraft.renderer;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Objects;
 import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER;
 
 public class Framebuffer {
+
+    /*
+    ###########################
+    #        UTILITIES        #
+    ###########################
+    */
 
     public static class Configuration {
 
@@ -17,11 +24,16 @@ public class Framebuffer {
 
         private Texture depthAttachment;
 
-        private Configuration() {
+        private Configuration() {}
 
+        private Configuration(int width, int height, List<Texture> colorAttachments, Texture depthAttachment) {
+            this.width = width;
+            this.height = height;
+            this.colorAttachments = colorAttachments;
+            this.depthAttachment = depthAttachment;
         }
 
-        public boolean hasColorAttachment() {
+        public boolean hasColorAttachments() {
             return (colorAttachments != null) && !(colorAttachments.isEmpty());
         }
 
@@ -85,37 +97,48 @@ public class Framebuffer {
             }
 
             public Configuration build() {
-                Configuration spec = new Configuration();
-                spec.width = width;
-                spec.height = height;
-                spec.colorAttachments = colorAttachments;
-                spec.depthAttachment = depthAttachment;
-                return spec;
+                Configuration conf = new Configuration();
+                conf.width = width;
+                conf.height = height;
+                conf.colorAttachments = colorAttachments;
+                conf.depthAttachment = depthAttachment;
+                return conf;
             }
         }
     }
 
+
+    /*
+    ###########################
+    #          FIELDS         #
+    ###########################
+    */
+
     private int id;
 
-    private List<Texture> colorAttachments;
+    private Configuration conf;
 
-    private Texture depthAttachment;
+    /*
+    ###########################
+    #       CONSTRUCTORS      #
+    ###########################
+    */
 
-    public Framebuffer(Configuration spec) {
+    public Framebuffer(Configuration conf) {
+        this.conf = conf;
         this.id = glGenFramebuffers();
-        this.colorAttachments = spec.getColorAttachments();
-        this.depthAttachment = spec.getDepthAttachment();
         glBindFramebuffer(GL_FRAMEBUFFER, id);
 
-        if (spec.hasColorAttachment()) {
+        if (conf.hasColorAttachments()) {
             int i = 0;
-            for (Texture colorAttachment : colorAttachments) {
+            for (Texture colorAttachment : conf.getColorAttachments()) {
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i,
                         colorAttachment.getTarget(),  colorAttachment.getId(), 0);
                 i++;
             }
         }
-        if (spec.hasDepthAttachment()) {
+        if (conf.hasDepthAttachment()) {
+            Texture depthAttachment = conf.getDepthAttachment();
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
                     depthAttachment.getTarget(), depthAttachment.getId(), 0);
         }
@@ -126,6 +149,13 @@ public class Framebuffer {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
+    /*
+    ###########################
+    #          METHODS        #
+    ###########################
+    */
+
+    // Todo: impl
     public void resize(int width, int height) {
 
     }
@@ -138,23 +168,32 @@ public class Framebuffer {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    public void drawColorBuffers() {
-        int[] bufs = new int[colorAttachments.size()];
-        for (int i = 0; i < bufs.length; i++) {
-            bufs[i] = GL_COLOR_ATTACHMENT0 + i;
-        }
-        glDrawBuffers(bufs);
-    }
-
     public int getId() {
         return id;
     }
 
     public Texture getColorAttachment(int index) {
-        return colorAttachments.get(index);
+        return conf.getColorAttachments().get(index);
     }
 
     public Texture getDepthAttachment() {
-        return depthAttachment;
+        return conf.getDepthAttachment();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null) return false;
+        if (o == this) return true;
+        if (!(o instanceof Framebuffer)) return false;
+        Framebuffer framebuffer = (Framebuffer) o;
+        return Objects.equals(framebuffer.id, this.id);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 39;
+        return result +
+                3 +
+                Objects.hashCode(this.id);
     }
 }

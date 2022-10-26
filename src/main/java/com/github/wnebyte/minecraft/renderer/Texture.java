@@ -12,6 +12,12 @@ import static org.lwjgl.stb.STBImage.*;
 
 public class Texture {
 
+    /*
+    ###########################
+    #        UTILITIES        #
+    ###########################
+    */
+
     public static class Parameter {
 
         private int name;
@@ -211,20 +217,26 @@ public class Texture {
             }
 
             public Configuration build() {
-                Configuration spec = new Configuration();
-                spec.target = target;
-                spec.level = level;
-                spec.internalFormat = internalFormat;
-                spec.width = width;
-                spec.height = height;
-                spec.border = border;
-                spec.format = format;
-                spec.type = type;
-                spec.parameters = parameters;
-                return spec;
+                Configuration conf = new Configuration();
+                conf.target = target;
+                conf.level = level;
+                conf.internalFormat = internalFormat;
+                conf.width = width;
+                conf.height = height;
+                conf.border = border;
+                conf.format = format;
+                conf.type = type;
+                conf.parameters = parameters;
+                return conf;
             }
         }
     }
+
+    /*
+    ###########################
+    #          FIELDS         #
+    ###########################
+    */
 
     private int id;
 
@@ -235,6 +247,12 @@ public class Texture {
     private int width;
 
     private int height;
+
+    /*
+    ###########################
+    #       CONSTRUCTORS      #
+    ###########################
+    */
 
     public Texture(String path, boolean pixelate) {
         this.target = GL_TEXTURE_2D;
@@ -321,20 +339,27 @@ public class Texture {
                 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
     }
 
-    public Texture(Configuration spec) {
-        this.target = spec.target;
-        this.width = spec.width;
-        this.height = spec.height;
+    public Texture(Configuration conf) {
+        this.target = conf.getTarget();
+        this.width = conf.getWidth();
+        this.height = conf.getHeight();
         this.path = "Generated";
         this.id = glGenTextures();
         glBindTexture(target, id);
-        if (spec.hasParameters()) {
-            for (Parameter param : spec.parameters) {
+        if (conf.hasParameters()) {
+            for (Parameter param : conf.getParameters()) {
                 glTexParameteri(target, param.getName(), param.getValue());
             }
         }
-        glTexImage2D(target, spec.level, spec.internalFormat, width, height, spec.border, spec.format, spec.type, 0);
+        glTexImage2D(target, conf.getLevel(), conf.getInternalFormat(), width, height,
+                conf.getBorder(), conf.getFormat(), conf.getType(), 0);
     }
+
+    /*
+    ###########################
+    #          METHODS        #
+    ###########################
+    */
 
     public void bind() {
         glBindTexture(target, id);

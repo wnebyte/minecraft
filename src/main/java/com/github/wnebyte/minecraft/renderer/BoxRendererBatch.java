@@ -1,20 +1,24 @@
 package com.github.wnebyte.minecraft.renderer;
 
-import com.github.wnebyte.minecraft.componenets.BoxRenderer;
-import com.github.wnebyte.minecraft.util.Assets;
+import java.util.Arrays;
 import org.joml.Vector4f;
 import org.joml.Matrix4f;
 import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.core.Transform;
-
-import java.util.Arrays;
-
+import com.github.wnebyte.minecraft.componenets.BoxRenderer;
+import com.github.wnebyte.minecraft.util.Assets;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
 import static org.lwjgl.opengl.GL30.*;
 
 public class BoxRendererBatch implements Batch<BoxRenderer> {
+
+    /*
+    ###########################
+    #        UTILITIES        #
+    ###########################
+    */
 
     public static Vector4f[] toVector4fArray(Transform transform) {
         Vector4f[] array = new Vector4f[8];
@@ -43,6 +47,12 @@ public class BoxRendererBatch implements Batch<BoxRenderer> {
         return array;
     }
 
+    /*
+    ###########################
+    #      STATIC FIELDS      #
+    ###########################
+    */
+
     public static final int POS_SIZE = 3;
 
     public static final int COLOR_SIZE = 4;
@@ -50,7 +60,6 @@ public class BoxRendererBatch implements Batch<BoxRenderer> {
     public static final int POS_OFFSET = 0;
 
     public static final int COLOR_OFFSET = POS_OFFSET + (POS_SIZE * Float.BYTES);
-
 
     public static final int STRIDE = POS_SIZE + COLOR_SIZE;
 
@@ -78,9 +87,15 @@ public class BoxRendererBatch implements Batch<BoxRenderer> {
             3, 2, 6, 7, 3, 6
     };
 
-    private int vao;
+    /*
+    ###########################
+    #          FIELDS         #
+    ###########################
+    */
 
-    private int vbo;
+    private int vaoID;
+
+    private int vboID;
 
     private Camera camera;
 
@@ -98,6 +113,12 @@ public class BoxRendererBatch implements Batch<BoxRenderer> {
 
     private boolean destroyed;
 
+    /*
+    ###########################
+    #       CONSTRUCTORS      #
+    ###########################
+    */
+
     public BoxRendererBatch(Camera camera) {
         this(camera, DEFAULT_MAX_BATCH_SIZE);
     }
@@ -110,14 +131,20 @@ public class BoxRendererBatch implements Batch<BoxRenderer> {
         this.shader = Assets.getShader(Assets.DIR + "/shaders/box.glsl");
     }
 
+    /*
+    ###########################
+    #          METHODS        #
+    ###########################
+    */
+
     @Override
     public void start() {
-        vao = glGenVertexArrays();
-        glBindVertexArray(vao);
+        vaoID = glGenVertexArrays();
+        glBindVertexArray(vaoID);
 
-        vbo = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, (long)data.length * STRIDE_BYTES, GL_STATIC_DRAW);
+        vboID = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, vboID);
+        glBufferData(GL_ARRAY_BUFFER, (long)data.length * STRIDE_BYTES, GL_DYNAMIC_DRAW);
 
         glVertexAttribPointer(0, POS_SIZE, GL_FLOAT, false, STRIDE_BYTES, POS_OFFSET);
         glEnableVertexAttribArray(0);
@@ -133,16 +160,16 @@ public class BoxRendererBatch implements Batch<BoxRenderer> {
         if (!started) {
             start();
         }
-        if (elementsDirty()) {
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        if (isDirty()) {
+            glBindBuffer(GL_ARRAY_BUFFER, vboID);
             glBufferSubData(GL_ARRAY_BUFFER, 0, data);
         }
         shader.use();
         shader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
         shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
 
-        glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, 36 * maxBatchSize);
+        glBindVertexArray(vaoID);
+        glDrawArrays(GL_TRIANGLES, 0, 36 * size);
         glBindVertexArray(0);
 
         shader.detach();
@@ -150,8 +177,8 @@ public class BoxRendererBatch implements Batch<BoxRenderer> {
 
     @Override
     public void destroy() {
-        glDeleteBuffers(vbo);
-        glDeleteVertexArrays(vao);
+        glDeleteBuffers(vboID);
+        glDeleteVertexArrays(vaoID);
         destroyed = true;
     }
 
@@ -194,7 +221,7 @@ public class BoxRendererBatch implements Batch<BoxRenderer> {
         return false;
     }
 
-    private boolean elementsDirty() {
+    private boolean isDirty() {
         boolean rebuffer = false;
         for (int i = 0; i < size; i++) {
             BoxRenderer b = boxes[i];
@@ -209,13 +236,13 @@ public class BoxRendererBatch implements Batch<BoxRenderer> {
 
     private void loadVertexProperties(int index) {
         BoxRenderer b = boxes[index];
-        Vector4f[] v = toVector4fArray(b.gameObject.transform);
+        Vector4f[] verts = toVector4fArray(b.gameObject.transform);
         Vector4f color = b.getColor();
         int offset = index * 36 * STRIDE;
 
         for (int i = 0; i < 36; i++) {
             index = INDICES[i];
-            Vector4f pos = v[index];
+            Vector4f pos = verts[index];
             data[offset + 0] = pos.x;
             data[offset + 1] = pos.y;
             data[offset + 2] = pos.z;

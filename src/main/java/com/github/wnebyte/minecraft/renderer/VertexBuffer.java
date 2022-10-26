@@ -6,6 +6,12 @@ import com.github.wnebyte.minecraft.util.DebugStats;
 
 public class VertexBuffer {
 
+    /*
+    ###########################
+    #        UTILITIES        #
+    ###########################
+    */
+
     static int compress(int position, int uv, byte face, byte vertex) {
         return (position << 16) | (uv << 6) | (face << 3) | vertex;
     }
@@ -13,6 +19,12 @@ public class VertexBuffer {
     static int compress(int position, int uv, byte face) {
         return (position << 16) | (uv << 6) | (face << 3);
     }
+
+    /*
+    ###########################
+    #      STATIC FIELDS      #
+    ###########################
+    */
 
     public static final int DATA_SIZE = 1;
 
@@ -32,14 +44,32 @@ public class VertexBuffer {
 
     public static final int VERTEX_BITMASK = 0x7;
 
-    private IntBuffer data;
+    /*
+    ###########################
+    #          FIELDS         #
+    ###########################
+    */
+
+    private final IntBuffer data;
 
     private int size;
 
+    /*
+    ###########################
+    #       CONSTRUCTORS      #
+    ###########################
+    */
+
     public VertexBuffer(ByteBuffer buffer) {
-        data = buffer.asIntBuffer();
-        size = 0;
+        this.data = buffer.asIntBuffer();
+        this.size = 0;
     }
+
+    /*
+    ###########################
+    #          METHODS        #
+    ###########################
+    */
 
     public void reset() {
         data.clear();

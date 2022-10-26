@@ -5,12 +5,10 @@ import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-
-import com.github.wnebyte.minecraft.light.DirectionalCaster;
-import com.github.wnebyte.minecraft.light.Light;
-import com.github.wnebyte.minecraft.light.PointCaster;
 import org.joml.*;
 import org.lwjgl.BufferUtils;
+import com.github.wnebyte.minecraft.light.PointCaster;
+import com.github.wnebyte.minecraft.light.DirectionalCaster;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
 import static org.lwjgl.opengl.GL20.*;
 
