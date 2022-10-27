@@ -1,4 +1,4 @@
-package com.github.wnebyte.minecraft.componenets;
+package com.github.wnebyte.minecraft.components;
 
 import java.util.Objects;
 import com.github.wnebyte.minecraft.fonts.SFont;

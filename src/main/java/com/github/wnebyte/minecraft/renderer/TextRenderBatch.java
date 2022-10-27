@@ -5,7 +5,7 @@ import org.joml.Vector2f;
 import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.fonts.SFont;
 import com.github.wnebyte.minecraft.fonts.CharInfo;
-import com.github.wnebyte.minecraft.componenets.Text2D;
+import com.github.wnebyte.minecraft.components.Text2D;
 import com.github.wnebyte.minecraft.util.Assets;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;

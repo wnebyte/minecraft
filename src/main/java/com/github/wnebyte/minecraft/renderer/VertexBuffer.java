@@ -96,6 +96,21 @@ public class VertexBuffer {
         DebugStats.vertexMemUsed += (long)STRIDE_BYTES * 6;
     }
 
+    public void append(int index, int position, int uv, byte face) {
+        int shared = compress(position, uv, face);
+        boolean overwrite = (data.get(index) != 0);
+        data.put(index + 0, shared | 0); // TR
+        data.put(index + 1, shared | 3); // TL
+        data.put(index + 2, shared | 2); // BL
+        data.put(index + 3, shared | 1); // BR
+        data.put(index + 4, shared | 0); // TR
+        data.put(index + 5, shared | 2); // BL
+        if (!overwrite) {
+            size += STRIDE * 6;
+            DebugStats.vertexMemUsed += (long)STRIDE_BYTES * 6;
+        }
+    }
+
     public int size() {
         return size;
     }

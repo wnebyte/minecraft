@@ -17,7 +17,6 @@ public class ScreenRenderer {
             -1.0f, -1.0f,  0.0f,  0.0f,  0.0f
     };
 
-
     private static final int POS_SIZE = 3;
 
     private static final int UV_SIZE = 2;

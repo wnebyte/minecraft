@@ -1,9 +1,8 @@
 package com.github.wnebyte.minecraft.util;
 
 import java.util.Arrays;
-
-import com.github.wnebyte.minecraft.world.Subchunk;
 import org.joml.Vector2i;
+import com.github.wnebyte.minecraft.world.Subchunk;
 import com.github.wnebyte.minecraft.renderer.DrawCommand;
 
 public class DrawCommandBuffer {
@@ -27,11 +26,11 @@ public class DrawCommandBuffer {
         return add(subchunk.getFirst(), subchunk.getNumVertices(), subchunk.getChunkCoords());
     }
 
-    public boolean add(int first, int vertexCount, Vector2i vec2i) {
+    public boolean add(int first, int vertexCount, Vector2i ivec2) {
         if (remaining() > 0) {
             DrawCommand drawCommand = new DrawCommand(vertexCount, 1, first, size);
             drawCommands[size] = drawCommand;
-            chunkCoords[size] = vec2i;
+            chunkCoords[size] = ivec2;
             size++;
             return true;
         }
@@ -39,8 +38,8 @@ public class DrawCommandBuffer {
     }
 
     public void reset() {
-        Arrays.fill(drawCommands, 0, size,null);
-        Arrays.fill(chunkCoords, 0, size, null);
+        Arrays.fill(drawCommands, 0, size, null);
+        Arrays.fill(chunkCoords,  0, size, null);
         size = 0;
     }
 

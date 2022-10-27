@@ -1,5 +1,6 @@
 package com.github.wnebyte.minecraft.world;
 
+import java.util.Random;
 import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
@@ -68,6 +69,8 @@ public class World {
 
     private Vector3f lastCameraPos;
 
+    private Random rand;
+
     /*
     ###########################
     #       CONSTRUCTORS      #
@@ -77,18 +80,19 @@ public class World {
     public World(Camera camera, Renderer renderer) {
         this.camera = camera;
         this.lastCameraPos = new Vector3f(camera.getPosition());
-        this.map = new Map();
+        this.map = new Map(CHUNK_CAPACITY);
         this.chunkManager = new ChunkManager(camera, map);
         this.renderer = renderer;
         this.skybox = new Skybox(camera);
         this.physics = new Physics(renderer, map);
         this.sun = Prefabs.createSun(400, 80f, 50f, 10f, new Vector4f(1f, 1f, 1f, 1f));
-        this.gameObjects = new ArrayList<>();
-        this.gameObjects.add(sun);
         GameObject go = new GameObject("Camera");
         go.addComponent(camera);
         go.addComponent(new Transform());
-        this.gameObjects.set(0, go);
+        this.gameObjects = new ArrayList<>();
+        this.gameObjects.add(go);
+        this.gameObjects.add(sun);
+        this.rand = new Random();
     }
 
     /*
@@ -164,7 +168,8 @@ public class World {
             Chunk chunk = map.getChunk(block.x, block.y, block.z);
             if (chunk != null && (block.y + 1) < Chunk.HEIGHT) {
                 Vector3i index = Chunk.world2Index3D(block, chunk.getChunkCoords());
-                chunk.setBlock(BlockMap.getBlock("sand"), index.x, index.y + 1, index.z, true);
+                Block newBlock = BlockMap.getBlock(rand.nextBoolean() ? 18 : 15);
+                chunk.setBlock(newBlock, index.x, index.y + 1, index.z, true);
                 block = null;
                 renderer.clearLines3D();
             }
@@ -192,7 +197,6 @@ public class World {
             lastCameraPos.set(camera.getPosition());
             debounce = debounceTime;
         }
-
     }
 
     public void render() {

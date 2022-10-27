@@ -18,15 +18,6 @@ public class Chunk {
     ###########################
     */
 
-    public enum FaceType {
-        FRONT,
-        RIGHT,
-        BACK,
-        LEFT,
-        TOP,
-        BOTTOM;
-    }
-
     public enum State {
         UNLOADED,
         LOADED,
@@ -75,17 +66,6 @@ public class Chunk {
         int j = (int)Math.floor(pos.y);
         int k = (int)Math.floor(pos.z - (chunkCoords.y * Chunk.DEPTH));
         return new Vector3i(i, j, k);
-    }
-
-    public static int getTexCoordsIndex(Block block, FaceType face) {
-        switch (face) {
-            case TOP:
-                return block.getTopTextureFormat().getId();
-            case BOTTOM:
-                return block.getBottomTextureFormat().getId();
-            default:
-                return block.getSideTextureFormat().getId();
-        }
     }
 
     /*
@@ -140,7 +120,7 @@ public class Chunk {
     private final String path;
 
     // References to neighbouring chunks
-    private Chunk cXN, cXP, cZN, cZP, cYN, cYP;
+    private volatile Chunk cXN, cXP, cZN, cZP, cYN, cYP;
 
     /*
     ###########################
@@ -265,23 +245,22 @@ public class Chunk {
         }
     }
 
-    public Future<?> unloadAsync() {
-        state.set(State.UNLOADED);
-        return Application.submit(() -> {
-           serialize();
-           unmesh();
-        });
+    private void serialize() {
+        Files.compress(path, data);
     }
 
-    public Future<?> loadAsync() {
-        return Application.submit(() -> {
-           if (Files.exists(path)) {
-               deserialize();
-           } else {
-               generateTerrain();
-           }
-           state.set(State.LOADED);
-        });
+    private void deserialize() {
+        assert Files.exists(path) : "path does not exist";
+        byte[] blocks = Files.decompress(path);
+        if (blocks != null) {
+            System.arraycopy(blocks, 0, data, 0, blocks.length);
+        }
+    }
+
+    public void unload() {
+        state.set(State.UNLOADED);
+        serialize();
+        unmesh();
     }
 
     public void load() {
@@ -293,24 +272,12 @@ public class Chunk {
         state.set(State.LOADED);
     }
 
-    private boolean deserialize() {
-        if (!Files.exists(path)) { return false; }
-        byte[] blocks = Files.decompress(path);
-        if (blocks != null) {
-            System.arraycopy(blocks, 0, data, 0, blocks.length);
-        }
-        return true;
+    public Future<?> unloadAsync() {
+        return Application.submit(this::unload);
     }
 
-    private void serialize() {
-        Files.compress(path, data);
-    }
-
-    public void updateNeighbourRefs() {
-        cXN = map.getChunk(chunkCoordX - 1, chunkCoordZ);
-        cXP = map.getChunk(chunkCoordX + 1, chunkCoordZ);
-        cZN = map.getChunk(chunkCoordX, chunkCoordZ - 1);
-        cZP = map.getChunk(chunkCoordX, chunkCoordZ + 1);
+    public Future<?> loadAsync() {
+        return Application.submit(this::load);
     }
 
     public synchronized void unmesh() {
@@ -329,6 +296,14 @@ public class Chunk {
         transparentSubchunk.setState(Subchunk.State.UNMESHED);
         assert subchunks.free(opaqueKey) : "Free failed";
         assert subchunks.free(transparentKey) : "Free failed";
+    }
+
+    public synchronized void unmeshAsync() {
+        Application.submit(this::unmesh);
+    }
+
+    public synchronized void unmeshAsync(int subchunkLevel) {
+        Application.submit(() -> this.unmesh(subchunkLevel));
     }
 
     public synchronized void mesh() {
@@ -365,7 +340,7 @@ public class Chunk {
                     Block b = BlockMap.getBlock(id);
 
                     if (Block.isAir(b)) { continue; }
-                    createCube(b.isBlendable() ? transparentSubchunk.getVertexBuffer() : opaqueSubchunk.getVertexBuffer(),
+                    createRenderData(b.isBlendable() ? transparentSubchunk.getVertexBuffer() : opaqueSubchunk.getVertexBuffer(),
                             b, i, j, k, access);
                 }
             }
@@ -375,15 +350,15 @@ public class Chunk {
         transparentSubchunk.setState(Subchunk.State.MESHED);
     }
 
-    public void meshAsync() {
+    public synchronized void meshAsync() {
         Application.submit(this::mesh);
     }
 
-    public void meshAsync(int subchunkLevel) {
+    public synchronized void meshAsync(int subchunkLevel) {
         Application.submit(() -> this.mesh(subchunkLevel));
     }
 
-    private void createCube(VertexBuffer buffer, Block b, int i, int j, int k, int access) {
+    private void createRenderData(VertexBuffer buffer, Block b, int i, int j, int k, int access) {
         // Left face (X-)
         if (visibleFaceXN(b, i-1, j, k)) {
             appendFace(buffer, b, access, FaceType.LEFT);
@@ -410,9 +385,8 @@ public class Chunk {
         }
     }
 
-    private void appendFace(VertexBuffer buffer, Block block, int access, FaceType face) {
-        int uv = getTexCoordsIndex(block, face);
-        buffer.append(access, uv, (byte)face.ordinal());
+    private void appendFace(VertexBuffer buffer, Block b, int access, FaceType face) {
+        buffer.append(access, b.getTexCoordsIndex(face), (byte)face.ordinal());
     }
 
     private boolean visibleFaceXN(Block b, int i, int j, int k) {
@@ -521,6 +495,13 @@ public class Chunk {
         }
     }
 
+    public void updateNeighbourRefs() {
+        cXN = map.getChunk(chunkCoordX - 1, chunkCoordZ);
+        cXP = map.getChunk(chunkCoordX + 1, chunkCoordZ);
+        cZN = map.getChunk(chunkCoordX, chunkCoordZ - 1);
+        cZP = map.getChunk(chunkCoordX, chunkCoordZ + 1);
+    }
+
     public Vector3f getChunkPos() {
         return chunkPos;
     }
@@ -550,6 +531,7 @@ public class Chunk {
     }
 
     public Chunk[] getNeighbours() {
+        updateNeighbourRefs();
         return new Chunk[]{ cXN, cXP, cZN, cZP };
     }
 
@@ -559,6 +541,10 @@ public class Chunk {
 
     public boolean isLoaded() {
         return (state.get() == State.LOADED);
+    }
+
+    public void setUnloaded() {
+        state.set(State.UNLOADED);
     }
 
     @Override

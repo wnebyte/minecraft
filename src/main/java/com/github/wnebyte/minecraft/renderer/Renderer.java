@@ -6,8 +6,8 @@ import org.joml.Vector2f;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.core.GameObject;
-import com.github.wnebyte.minecraft.componenets.Text2D;
-import com.github.wnebyte.minecraft.componenets.BoxRenderer;
+import com.github.wnebyte.minecraft.components.Text2D;
+import com.github.wnebyte.minecraft.components.BoxRenderer;
 import com.github.wnebyte.minecraft.util.JMath;
 
 public class Renderer {

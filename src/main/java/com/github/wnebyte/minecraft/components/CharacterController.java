@@ -1,4 +1,4 @@
-package com.github.wnebyte.minecraft.componenets;
+package com.github.wnebyte.minecraft.components;
 
 import com.github.wnebyte.minecraft.core.KeyListener;
 import org.joml.Vector2f;

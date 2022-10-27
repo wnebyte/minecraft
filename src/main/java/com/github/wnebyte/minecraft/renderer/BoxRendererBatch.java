@@ -5,7 +5,7 @@ import org.joml.Vector4f;
 import org.joml.Matrix4f;
 import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.core.Transform;
-import com.github.wnebyte.minecraft.componenets.BoxRenderer;
+import com.github.wnebyte.minecraft.components.BoxRenderer;
 import com.github.wnebyte.minecraft.util.Assets;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;

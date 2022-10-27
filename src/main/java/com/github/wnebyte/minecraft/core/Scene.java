@@ -8,7 +8,7 @@ import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.world.World;
 import com.github.wnebyte.minecraft.world.Chunk;
 import com.github.wnebyte.minecraft.renderer.*;
-import com.github.wnebyte.minecraft.componenets.Text2D;
+import com.github.wnebyte.minecraft.components.Text2D;
 import com.github.wnebyte.minecraft.util.Assets;
 import com.github.wnebyte.minecraft.util.BlockMap;
 import com.github.wnebyte.minecraft.util.TexturePacker;

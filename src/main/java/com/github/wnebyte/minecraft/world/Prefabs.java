@@ -4,7 +4,7 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 import com.github.wnebyte.minecraft.core.GameObject;
 import com.github.wnebyte.minecraft.core.Transform;
-import com.github.wnebyte.minecraft.componenets.BoxRenderer;
+import com.github.wnebyte.minecraft.components.BoxRenderer;
 import com.github.wnebyte.minecraft.physics.components.BoxCollider;
 import com.github.wnebyte.minecraft.physics.components.Rigidbody;
 

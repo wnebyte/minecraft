@@ -1,4 +1,4 @@
-package com.github.wnebyte.minecraft.componenets;
+package com.github.wnebyte.minecraft.components;
 
 import org.joml.Vector4f;
 import com.github.wnebyte.minecraft.core.Component;

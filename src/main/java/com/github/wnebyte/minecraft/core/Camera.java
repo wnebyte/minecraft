@@ -24,9 +24,9 @@ public class Camera extends Component {
 
     public static Camera copy(Camera camera) {
         Camera copy = new Camera(
-                camera.position,
-                camera.forward,
-                camera.up
+                new Vector3f(camera.position),
+                new Vector3f(camera.forward),
+                new Vector3f(camera.up)
         );
         return copy;
     }
@@ -189,14 +189,6 @@ public class Camera extends Component {
         viewMatrix.invert(inverseView);
     }
 
-    public Matrix4f getProjectionMatrix() {
-        return projectionMatrix;
-    }
-
-    public Matrix4f getViewMatrix() {
-        return viewMatrix;
-    }
-
     public Matrix4f getProjectionMatrixHUD() {
         projectionMatrixHUD.identity();
         Vector2f halfSize = new Vector2f(PROJECTION_SIZE).div(2.0f);
@@ -293,6 +285,14 @@ public class Camera extends Component {
         Vector3f u = new Vector3f(up);
         right.cross(forward, u);
         u.normalize(up);
+    }
+
+    public Matrix4f getProjectionMatrix() {
+        return projectionMatrix;
+    }
+
+    public Matrix4f getViewMatrix() {
+        return viewMatrix;
     }
 
     public Matrix4f getInverseProjection() {

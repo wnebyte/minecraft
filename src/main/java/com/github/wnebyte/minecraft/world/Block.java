@@ -5,6 +5,12 @@ import com.github.wnebyte.minecraft.util.TextureFormat;
 
 public class Block {
 
+    /*
+    ###########################
+    #        UTILITIES        #
+    ###########################
+    */
+
     public static boolean isAir(Block block) {
         return (block == null || block.id == 1);
     }
@@ -36,6 +42,17 @@ public class Block {
         this.solid = solid;
         this.transparent = transparent;
         this.blendable = blendable;
+    }
+
+    public int getTexCoordsIndex(FaceType face) {
+        switch (face) {
+            case TOP:
+                return getTopTextureFormat().getId();
+            case BOTTOM:
+                return getBottomTextureFormat().getId();
+            default:
+                return getSideTextureFormat().getId();
+        }
     }
 
     public byte getId() {

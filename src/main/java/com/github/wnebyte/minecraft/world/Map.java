@@ -7,14 +7,14 @@ import org.joml.Vector3f;
 
 public class Map implements Iterable<Chunk> {
 
-    public java.util.Map<Vector2i, Chunk> chunks;
+    private final java.util.Map<Vector2i, Chunk> chunks;
 
     public Map() {
         this(10);
     }
 
     public Map(int initialCapacity) {
-        this.chunks = new ConcurrentHashMap<>();
+        this.chunks = new ConcurrentHashMap<>(initialCapacity);
     }
 
     public Chunk putChunk(Vector2i key, Chunk value) {
@@ -88,8 +88,8 @@ public class Map implements Iterable<Chunk> {
         return set;
     }
 
-    public boolean contains(Vector2i v) {
-        return chunks.containsKey(v);
+    public boolean contains(Vector2i key) {
+        return chunks.containsKey(key);
     }
 
     public int size() {

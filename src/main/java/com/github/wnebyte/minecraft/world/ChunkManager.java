@@ -85,6 +85,7 @@ public class ChunkManager {
         int size = subchunks.capacity() * (VERTEX_CAPACITY * STRIDE_BYTES);
         int length = size / subchunks.capacity();
         int flags = GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT;
+
         glBufferStorage(GL_ARRAY_BUFFER, size, flags);
         ByteBuffer buffer = glMapBufferRange(GL_ARRAY_BUFFER, 0, size, flags);
         long base = MemoryUtil.memAddress(buffer);
@@ -218,7 +219,7 @@ public class ChunkManager {
                         .sub(0.5f, 0.5f, 0.5f);
                 Vector3f max = new Vector3f(min)
                         .add(new Vector3f(16.0f, 16.0f, 16.0f));
-                if (camera.getFrustrum().isBoxVisisble(min, max)) {
+                if (camera.getFrustrum().isBoxVisible(min, max)) {
                     if (subchunk.isBlendable()) {
                         transparentDrawCommands.add(subchunk);
                     } else {
@@ -233,62 +234,69 @@ public class ChunkManager {
         generateDrawCommands();
 
         // Render pass 1:
-        // set opqaue render states
-       // glEnable(GL_CULL_FACE);
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
-        glDepthMask(true);
-        glDisable(GL_BLEND);
+        if (drawCommands.size() > 0) {
+            // set opqaue render states
+            glEnable(GL_CULL_FACE);
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LESS);
+            glDepthMask(true);
+            glDisable(GL_BLEND);
 
-        // draw opaque geometry
-        glBindBuffer(GL_ARRAY_BUFFER, cboID);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, drawCommands.getChunkCoords());
-        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, iboID);
-        glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, drawCommands.getDrawCommands());
-        shader.use();
-        shader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
-        shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
-        glActiveTexture(GL_TEXTURE0);
-        texture.bind();
-        shader.uploadTexture(Shader.U_TEXTURE, 0);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_BUFFER, BlockMap.getTexCoordsTextureId());
-        shader.uploadTexture(Shader.U_TEX_COORDS_TEXTURE, 1);
-        glBindVertexArray(vaoID);
-        glMultiDrawArraysIndirect(GL_TRIANGLES, 0, drawCommands.size(), 0);
-        texture.unbind();
-        shader.detach();
+            // draw opaque geometry
+            glBindBuffer(GL_ARRAY_BUFFER, cboID);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, drawCommands.getChunkCoords());
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, iboID);
+            glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, drawCommands.getDrawCommands());
+            shader.use();
+            shader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
+            shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
+            glActiveTexture(GL_TEXTURE0);
+            texture.bind();
+            shader.uploadTexture(Shader.U_TEXTURE, 0);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_BUFFER, BlockMap.getTexCoordsTextureId());
+            shader.uploadTexture(Shader.U_TEX_COORDS_TEXTURE, 1);
+            glBindVertexArray(vaoID);
+            glMultiDrawArraysIndirect(GL_TRIANGLES, 0, drawCommands.size(), 0);
+            texture.unbind();
+            shader.detach();
+            drawCommands.reset();
+        }
 
         // Render pass 2:
-        // set transparent render states
-       // glDisable(GL_CULL_FACE);
-        glDepthMask(false);
-        glEnable(GL_BLEND);
-        glBlendFunci(1, GL_ONE, GL_ONE); // accumulation blend target
-        glBlendFunci(2, GL_ZERO, GL_ONE_MINUS_SRC_COLOR); // revealage blend target
-        glBlendEquation(GL_FUNC_ADD);
+        if (transparentDrawCommands.size() > 0) {
+            // set transparent render states
+            glDisable(GL_CULL_FACE);
+            glDepthMask(false);
+            glEnable(GL_BLEND);
+            glBlendFunci(1, GL_ONE, GL_ONE); // accumulation blend target
+            glBlendFunci(2, GL_ZERO, GL_ONE_MINUS_SRC_COLOR); // revealage blend target
+            glBlendEquation(GL_FUNC_ADD);
 
-        glDrawBuffers(Constants.BUFS_NONE_ONE_TWO);
-        glClearBufferfv(GL_COLOR, 1, Constants.ZERO_FILLER_VEC);
-        glClearBufferfv(GL_COLOR, 2, Constants.ONE_FILLER_VEC);
+            glDrawBuffers(Constants.BUFS_NONE_ONE_TWO);
+            glClearBufferfv(GL_COLOR, 1, Constants.ZERO_FILLER_VEC);
+            glClearBufferfv(GL_COLOR, 2, Constants.ONE_FILLER_VEC);
 
-        // draw transparent geometry
-        glBindBuffer(GL_ARRAY_BUFFER, cboID);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, transparentDrawCommands.getChunkCoords());
-        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, biboID);
-        glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, transparentDrawCommands.getDrawCommands());
-        transparentShader.use();
-        transparentShader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
-        transparentShader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
-        glActiveTexture(GL_TEXTURE0);
-        texture.bind();
-        transparentShader.uploadTexture(Shader.U_TEXTURE, 0);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_BUFFER, BlockMap.getTexCoordsTextureId());
-        transparentShader.uploadTexture(Shader.U_TEX_COORDS_TEXTURE, 1);
-        glMultiDrawArraysIndirect(GL_TRIANGLES, 0, transparentDrawCommands.size(), 0);
-        texture.unbind();
-        transparentShader.detach();
+            // draw transparent geometry
+            glBindBuffer(GL_ARRAY_BUFFER, cboID);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, transparentDrawCommands.getChunkCoords());
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, biboID);
+            glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, transparentDrawCommands.getDrawCommands());
+            transparentShader.use();
+            transparentShader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
+            transparentShader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
+            glActiveTexture(GL_TEXTURE0);
+            texture.bind();
+            transparentShader.uploadTexture(Shader.U_TEXTURE, 0);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_BUFFER, BlockMap.getTexCoordsTextureId());
+            transparentShader.uploadTexture(Shader.U_TEX_COORDS_TEXTURE, 1);
+            glBindVertexArray(vaoID);
+            glMultiDrawArraysIndirect(GL_TRIANGLES, 0, transparentDrawCommands.size(), 0);
+            texture.unbind();
+            transparentShader.detach();
+            transparentDrawCommands.reset();
+        }
 
         // Render pass 3:
         // set composite render states
@@ -309,9 +317,6 @@ public class ChunkManager {
         compositeShader.uploadTexture(Shader.REVEAL, 1);
         ScreenRenderer.render();
         compositeShader.detach();
-
-        drawCommands.reset();
-        transparentDrawCommands.reset();
     }
 
     public void destroy() {

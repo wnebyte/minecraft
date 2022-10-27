@@ -119,7 +119,7 @@ public class Frustrum {
     }
 
     // http://iquilezles.org/www/articles/frustumcorrect/frustumcorrect.html
-    public boolean isBoxVisisble(Vector3f minp, Vector3f maxp) {
+    public boolean isBoxVisible(Vector3f minp, Vector3f maxp) {
         // check box outside/inside of frustum
         for (int i = 0; i < COUNT; i++) {
             if ((planes[i].dot(new Vector4f(minp.x, minp.y, minp.z, 1.0f)) < 0.0f) &&
