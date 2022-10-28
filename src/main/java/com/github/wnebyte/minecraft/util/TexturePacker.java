@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.ArrayList;
 import org.joml.Vector2f;
 import org.lwjgl.BufferUtils;
-
 import static org.lwjgl.stb.STBImage.*;
 import static org.lwjgl.stb.STBImageWrite.stbi_flip_vertically_on_write;
 import static org.lwjgl.stb.STBImageWrite.stbi_write_png;
@@ -64,15 +63,15 @@ public class TexturePacker {
     private static final FilenameFilter PNG_FILTER = (dir, name) -> (name.endsWith(".png"));
 
     public static void pack(String path, String configPath, String outputPath, boolean generateMips, int texWidth, int texHeight) {
-        File file = new File(path);
+        File dir = new File(path);
         if (Files.exists(configPath) && Files.exists(outputPath)) {
             File outputFile = new File(outputPath);
-            if (outputFile.lastModified() > file.lastModified()) {
+            if (outputFile.lastModified() > dir.lastModified()) {
                 return;
             }
         }
         List<Location> locations = new ArrayList<>();
-        int numFiles = file.listFiles(PNG_FILTER).length;
+        int numFiles = dir.listFiles(PNG_FILTER).length;
         int pngOutputWidth = (int)Math.sqrt(numFiles * texWidth * texHeight);
         int currentX = 0;
         int currentY = 0;
@@ -81,11 +80,11 @@ public class TexturePacker {
 
         // Generate the first output image
         List<Pixel> pixels = new ArrayList<>(pngOutputWidth);
-        for (File image : file.listFiles(PNG_FILTER)) {
+        for (File image : dir.listFiles(PNG_FILTER)) {
             IntBuffer width = BufferUtils.createIntBuffer(1);
             IntBuffer height = BufferUtils.createIntBuffer(1);
             IntBuffer channels = BufferUtils.createIntBuffer(1);
-            stbi_set_flip_vertically_on_load(true);
+            stbi_set_flip_vertically_on_load(false);
             ByteBuffer rawPixels = stbi_load(image.getPath(), width, height, channels, 4);
 
             int w = width.get(0);
@@ -129,7 +128,7 @@ public class TexturePacker {
 
         int pngOutputHeight = currentY + lineHeight;
         ByteBuffer data = toByteBuffer(pixels);
-        stbi_flip_vertically_on_write(true);
+        stbi_flip_vertically_on_write(false);
         stbi_write_png(outputPath, pngOutputWidth, pngOutputHeight, 4, data, pngOutputWidth * 4);
 
         /*

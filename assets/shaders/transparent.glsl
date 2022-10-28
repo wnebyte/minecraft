@@ -3,17 +3,15 @@
 layout (location=0) in uint aData;
 layout (location=1) in ivec2 aChunkPos;
 
-struct Face {
+out vec3 pos;
+out vec2 uv;
+out struct Face {
     int id;
     vec3 tl;
     vec3 tr;
     vec3 bl;
     vec3 br;
-};
-
-out vec3 pos;
-out vec2 uv;
-out Face face;
+} face;
 flat out uint vertex;
 
 uniform mat4 uView;
@@ -135,17 +133,15 @@ void main()
 
 #type fragment
 #version 460 core
-struct Face {
+in vec3 pos;
+in vec2 uv;
+in struct Face {
     int id;
     vec3 tl;
     vec3 tr;
     vec3 bl;
     vec3 br;
-};
-
-in vec3 pos;
-in vec2 uv;
-in Face face;
+} face;
 flat in uint vertex;
 
 layout (location=1) out vec4 accum;
@@ -183,11 +179,9 @@ void main()
     // sample texture
     vec4 color = texture(uTexture, uv);
 
-    /*
-    if (color.a < 3) {
+    if (color.a < 0.3) {
         discard;
     }
-    */
 
     // weight function
     float weight = clamp(pow(min(1.0, color.a * 10.0) + 0.01, 3.0) * 1e8 * pow(1.0 - gl_FragCoord.z * 0.9, 3.0), 1e-2, 3e3);

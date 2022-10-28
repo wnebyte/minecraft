@@ -170,6 +170,8 @@ public class Application {
             ScreenRenderer.render();
             shader.detach();
 
+           // glEnable(GL_DEPTH_TEST);
+
             window.swapBuffers();
             window.pollEvents(dt);
             KeyListener.endFrame();

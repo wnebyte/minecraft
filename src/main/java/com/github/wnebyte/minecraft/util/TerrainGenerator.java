@@ -18,7 +18,7 @@ public class TerrainGenerator {
         }
     }
 
-    public static void init(String terrainNoiseConfig, int seed) {
+    public static void load(String terrainNoiseConfig, int seed) {
         if (instance != null) {
             throw new IllegalStateException(
                     "TerrainGenerator has already been initialized."
@@ -32,16 +32,9 @@ public class TerrainGenerator {
         Generator[] generators = new Generator[fnlStates.length];
 
         for (int i = 0; i < fnlStates.length; i++) {
-            FnlState wrapper = fnlStates[i];
+            FnlState fnlState = fnlStates[i];
             int newSeed = seed + (i * 7);
-            Generator generator = new Generator(new FastNoiseLite(newSeed), wrapper.getWeight());
-            generator.getFnlState().SetNoiseType(wrapper.getNoiseType());
-            generator.getFnlState().SetFrequency(wrapper.getFrequency());
-            generator.getFnlState().SetFractalType(wrapper.getFractalType());
-            generator.getFnlState().SetFractalOctaves(wrapper.getOctaves());
-            generator.getFnlState().SetFractalLacunarity(wrapper.getLacunarity());
-            generator.getFnlState().SetFractalGain(wrapper.getGain());
-            generator.getFnlState().SetFractalWeightedStrength(wrapper.getWeightedStrength());
+            Generator generator = new Generator(fnlState, newSeed);
             generators[i] = generator;
         }
 
@@ -90,20 +83,17 @@ public class TerrainGenerator {
 
     public float getNormalizedHeight(int x, int z) {
         float blendedNoise = 0.0f;
-        float weightSums = 0.0f;
-        float[] noise = new float[generators.length];
+        float weightSum = 0.0f;
 
-        for (int i = 0; i < noise.length; i++) {
-            Generator generator = generators[i];
-            float n = generator.getNoise(x, z);
+        for (Generator generator : generators) {
+            float noise = generator.getNoise(x, z);
             float weight = generator.getWeight();
-            noise[i] = n;
-            blendedNoise += n * weight;
-            weightSums += weight;
+            blendedNoise += noise * weight;
+            weightSum += weight;
         }
 
         // Divide by the weight of the sums to normalize the value again
-        blendedNoise /= weightSums;
+        blendedNoise /= weightSum;
 
         // Raise it to a power to flatten valleys and increase mountains
         blendedNoise = (float)Math.pow(blendedNoise, 1.19f);

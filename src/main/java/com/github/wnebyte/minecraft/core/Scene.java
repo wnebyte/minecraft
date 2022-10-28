@@ -48,8 +48,9 @@ public class Scene {
                 Camera.DEFAULT_ZOOM,
                 Camera.DEFAULT_Z_NEAR,
                 10_000f);
-        this.renderer = new Renderer(camera);
-        this.world = new World(camera, renderer);
+        Renderer.initialize(camera);
+        this.renderer = Renderer.getInstance();
+        this.world = new World(camera);
     }
 
     private void loadResources() {
@@ -62,7 +63,7 @@ public class Scene {
                 Assets.DIR + "/config/textureFormat.json",
                  Assets.DIR + "/config/blockFormat.json");
         BlockMap.bufferTexCoords();
-        TerrainGenerator.init(
+        TerrainGenerator.load(
                 Assets.DIR + "/config/terrainNoise.json",
                 (int)System.currentTimeMillis());
     }

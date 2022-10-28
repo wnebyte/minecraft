@@ -3,16 +3,13 @@ package com.github.wnebyte.minecraft.world;
 import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Random;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
-import org.joml.Vector3i;
 import com.github.wnebyte.minecraft.core.*;
+import com.github.wnebyte.minecraft.components.PlayerController;
 import com.github.wnebyte.minecraft.physics.Physics;
-import com.github.wnebyte.minecraft.physics.RaycastInfo;
 import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.util.*;
-import static org.lwjgl.glfw.GLFW.*;
 
 public class World {
 
@@ -24,9 +21,10 @@ public class World {
 
     public static final int CHUNK_RADIUS = 12;
 
-    public static final int CHUNK_CAPACITY = (int)((CHUNK_RADIUS * 2) * (CHUNK_RADIUS * 2) * 1.5f);
+    public static final int CHUNK_CAPACITY = 2 * (CHUNK_RADIUS * CHUNK_RADIUS);
+    // (int)((CHUNK_RADIUS * 2) * (CHUNK_RADIUS * 2) * 1.5f);
 
-    public static final int SPAWN_CHUNK_AREA = 9 * 9;
+    public static final int CHUNK_SPAWN_AREA = 9 * 9;
 
     /*
     ###########################
@@ -68,29 +66,30 @@ public class World {
 
     private Vector3f lastCameraPos;
 
-    private Random rand;
-
     /*
     ###########################
     #       CONSTRUCTORS      #
     ###########################
     */
 
-    public World(Camera camera, Renderer renderer) {
+    public World(Camera camera) {
         this.camera = camera;
         this.lastCameraPos = new Vector3f(camera.getPosition());
         this.map = new Map(CHUNK_CAPACITY);
         this.chunkManager = new ChunkManager(camera, map);
-        this.renderer = renderer;
+        this.renderer = Renderer.getInstance();
         this.skybox = new Skybox(camera);
         this.physics = new Physics(renderer, map);
+        this.gameObjects = new ArrayList<>();
        // this.sun = Prefabs.createSun(400, 80f, 50f, 10f, new Vector4f(1f, 1f, 1f, 1f));
         GameObject go = new GameObject("Camera");
         go.addComponent(camera);
         go.addComponent(new Transform());
-        this.gameObjects = new ArrayList<>();
         this.gameObjects.add(go);
-        this.rand = new Random();
+        GameObject player = new GameObject("Player");
+        player.addComponent(new Transform());
+        player.addComponent(new PlayerController(physics, map));
+        this.gameObjects.add(player);
     }
 
     /*
@@ -106,10 +105,10 @@ public class World {
         skybox.start();
         // start game objects
         for (GameObject go : gameObjects) {
-            go.start();
+            go.start(scene);
             renderer.add(go);
         }
-        camera.setPosition(new Vector3f(SPAWN_CHUNK_AREA / 2.0f, 140, SPAWN_CHUNK_AREA / 2.0f));
+        camera.setPosition(new Vector3f(CHUNK_SPAWN_AREA / 2.0f, 140, CHUNK_SPAWN_AREA / 2.0f));
         chunkManager.loadSpawnChunks();
     }
 
@@ -133,45 +132,6 @@ public class World {
         // update game objects
         for (GameObject go : gameObjects) {
             go.update(dt);
-        }
-
-        // do raycast
-        if (raycastDebounce < 0) {
-            Vector3f origin = new Vector3f(camera.getPosition());
-            Vector3f normal = new Vector3f(camera.getForward());
-            RaycastInfo info = physics.raycast(origin, normal, 15f);
-            if (info.hit) {
-                renderer.clearLines3D();
-                renderer.addBox3D(info.blockCenter, info.blockSize, 0f,
-                        new Vector3f(1f, 1f, 1f), 60 * 5);
-                block = info.blockCenter;
-            }
-            raycastDebounce = raycastDebounceTime;
-        }
-
-        // destroy block
-        if (MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && block != null && debounce <= 0) {
-            Chunk chunk = map.getChunk(block.x, block.y, block.z);
-            if (chunk != null) {
-                Vector3i index = Chunk.world2Index3D(block, chunk.getChunkCoords());
-                chunk.setBlock(BlockMap.getBlock("air"), index.x, index.y, index.z, true);
-                block = null;
-                renderer.clearLines3D();
-            }
-            debounce = debounceTime;
-        }
-
-        // place block
-        if (MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT) && block != null && placeBlockDebounce <= 0) {
-            Chunk chunk = map.getChunk(block.x, block.y, block.z);
-            if (chunk != null && (block.y + 1) < Chunk.HEIGHT) {
-                Vector3i index = Chunk.world2Index3D(block, chunk.getChunkCoords());
-                Block newBlock = BlockMap.getBlock(rand.nextBoolean() ? 18 : 15);
-                chunk.setBlock(newBlock, index.x, index.y + 1, index.z, true);
-                block = null;
-                renderer.clearLines3D();
-            }
-            placeBlockDebounce = placeBlockDebounceTime;
         }
 
         // load/unload chunks

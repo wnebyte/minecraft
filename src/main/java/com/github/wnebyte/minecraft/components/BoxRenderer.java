@@ -2,6 +2,7 @@ package com.github.wnebyte.minecraft.components;
 
 import java.util.Objects;
 import org.joml.Vector4f;
+import com.github.wnebyte.minecraft.core.Scene;
 import com.github.wnebyte.minecraft.core.Component;
 import com.github.wnebyte.minecraft.core.Transform;
 
@@ -14,7 +15,7 @@ public class BoxRenderer extends Component {
     private transient boolean dirty = true;
 
     @Override
-    public void start() {
+    public void start(Scene scene) {
         transform = Transform.copy(gameObject.transform);
     }
 

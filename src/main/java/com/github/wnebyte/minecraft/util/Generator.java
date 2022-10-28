@@ -13,6 +13,18 @@ public class Generator {
         this.weight = weight;
     }
 
+    public Generator(FnlState fnlState, int seed) {
+        this.fnlState = new FastNoiseLite(seed);
+        this.fnlState.SetNoiseType(fnlState.getNoiseType());
+        this.fnlState.SetFrequency(fnlState.getFrequency());
+        this.fnlState.SetFractalType(fnlState.getFractalType());
+        this.fnlState.SetFractalOctaves(fnlState.getOctaves());
+        this.fnlState.SetFractalLacunarity(fnlState.getLacunarity());
+        this.fnlState.SetFractalGain(fnlState.getGain());
+        this.fnlState.SetFractalWeightedStrength(fnlState.getWeightedStrength());
+        this.weight = fnlState.getWeight();
+    }
+
     public float getNoise(int x, int z) {
         return JMath.mapRange(fnlState.GetNoise(x, z), -1.0f, 1.0f, 0.0f, 1.0f);
     }

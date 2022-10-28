@@ -3,17 +3,15 @@
 layout (location=0) in uint aData;
 layout (location=1) in ivec2 aChunkPos;
 
-struct Face {
+out vec3 pos;
+out vec2 uv;
+out struct Face {
     int id;
     vec3 tl;
     vec3 tr;
     vec3 bl;
     vec3 br;
-};
-
-out vec3 pos;
-out vec2 uv;
-out Face face;
+} face;
 flat out uint vertex;
 
 uniform mat4 uView;
@@ -105,12 +103,27 @@ void extractVertex(in uint data, out uint vertex)
     vertex = (data & VERTEX_BITMASK);
 }
 
+void normalizeVertex(in Face face, out uint vertex)
+{
+    // BACK face
+    if (face.id == 2)
+    {
+        if (vertex % 2 == 0)
+        {
+            vertex++;
+        }
+        else
+        {
+            vertex--;
+        }
+    }
+}
+
 void main()
 {
     extractPosition(aData, pos);
-    extractVertex(aData, vertex);
-    extractTexCoords(aData, uv);
     extractFace(aData, face);
+    extractVertex(aData, vertex);
 
     switch (vertex)
     {
@@ -128,6 +141,9 @@ void main()
         break;
     }
 
+    normalizeVertex(face, vertex);
+    extractTexCoords(aData, uv);
+
     float xOffset = float(aChunkPos.x) * 16.0;
     float zOffset = float(aChunkPos.y) * 16.0;
     gl_Position = uProjection * uView * vec4(pos.x + xOffset, pos.y, pos.z + zOffset, 1.0);
@@ -135,17 +151,15 @@ void main()
 
 #type fragment
 #version 460 core
-struct Face {
+in vec3 pos;
+in vec2 uv;
+in struct Face {
     int id;
     vec3 tl;
     vec3 tr;
     vec3 bl;
     vec3 br;
-};
-
-in vec3 pos;
-in vec2 uv;
-in Face face;
+} face;
 flat in uint vertex;
 
 out vec4 color;

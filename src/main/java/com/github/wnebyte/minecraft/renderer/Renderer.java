@@ -12,19 +12,65 @@ import com.github.wnebyte.minecraft.util.JMath;
 
 public class Renderer {
 
-    private Camera camera;
+    /*
+    ###########################
+    #        UTILITIES        #
+    ###########################
+    */
 
-    private List<Batch<BoxRenderer>> batches;
+    public static Renderer getInstance() {
+        if (Renderer.instance != null) {
+            return Renderer.instance;
+        } else {
+            throw new IllegalStateException(
+                    "Renderer has not yet been initialized."
+            );
+        }
+    }
 
-    private List<Batch<Line2D>> line2DBatches;
+    public static void initialize(Camera camera) {
+        if (Renderer.instance == null) {
+            Renderer.instance = new Renderer(camera);
+        } else {
+            throw new IllegalStateException(
+                    "Renderer has already been initialized."
+            );
+        }
+    }
 
-    private List<Batch<Line3D>> line3DBatches;
+    /*
+    ###########################
+    #      STATIC FIELDS      #
+    ###########################
+    */
 
-    private List<Text2D> texts;
+    private static Renderer instance;
 
-    private TextRenderBatch textBatch;
+    /*
+    ###########################
+    #          FIELDS         #
+    ###########################
+    */
 
-    public Renderer(Camera camera) {
+    private final Camera camera;
+
+    private final List<Batch<BoxRenderer>> batches;
+
+    private final List<Batch<Line2D>> line2DBatches;
+
+    private final List<Batch<Line3D>> line3DBatches;
+
+    private final List<Text2D> texts;
+
+    private final TextRenderBatch textBatch;
+
+    /*
+    ###########################
+    #       CONSTRUCTORS      #
+    ###########################
+    */
+
+    private Renderer(Camera camera) {
         this.camera = camera;
         this.batches = new ArrayList<>();
         this.line2DBatches = new ArrayList<>();
@@ -32,6 +78,12 @@ public class Renderer {
         this.texts = new ArrayList<>();
         this.textBatch = new TextRenderBatch(camera);
     }
+
+    /*
+    ###########################
+    #          METHODS        #
+    ###########################
+    */
 
     public void add(GameObject go) {
         BoxRenderer c = go.getComponent(BoxRenderer.class);
@@ -278,9 +330,5 @@ public class Renderer {
 
     public void clearLines3D() {
         line3DBatches.clear();
-    }
-
-    public void setCamera(Camera camera) {
-        this.camera = camera;
     }
 }

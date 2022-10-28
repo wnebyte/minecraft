@@ -89,6 +89,7 @@ public class ChunkManager {
         glBufferStorage(GL_ARRAY_BUFFER, size, flags);
         ByteBuffer buffer = glMapBufferRange(GL_ARRAY_BUFFER, 0, size, flags);
         long base = MemoryUtil.memAddress(buffer);
+
         for (int offset = 0, i = 0; offset <= size - length && i < subchunks.capacity(); offset += length, i++) {
             ByteBuffer slice = MemoryUtil.memByteBuffer(base + offset, length);
             Subchunk subchunk = new Subchunk(new VertexBuffer(slice));
@@ -119,7 +120,7 @@ public class ChunkManager {
 
     public void loadSpawnChunks() {
         long startTime = System.nanoTime();
-        int sqrt = (int)Math.sqrt(World.SPAWN_CHUNK_AREA);
+        int sqrt = (int)Math.sqrt(World.CHUNK_SPAWN_AREA);
         for (int x = 0; x < sqrt; x++) {
             for (int z = 0; z < sqrt; z++) {
                 Chunk chunk = new Chunk(x, 0, z, map, subchunks);
@@ -229,8 +230,8 @@ public class ChunkManager {
     public void render() {
         generateDrawCommands();
 
-        // Render pass 1:
         if (drawCommands.size() > 0) {
+            // Render pass 1:
             // set opqaue render states
             glEnable(GL_CULL_FACE);
             glEnable(GL_DEPTH_TEST);
@@ -259,8 +260,8 @@ public class ChunkManager {
             drawCommands.reset();
         }
 
-        // Render pass 2:
         if (transparentDrawCommands.size() > 0) {
+            // Render pass 2:
             // set transparent render states
             glDisable(GL_CULL_FACE);
             glDepthMask(false);
@@ -313,6 +314,8 @@ public class ChunkManager {
         compositeShader.uploadTexture(Shader.REVEAL, 1);
         ScreenRenderer.render();
         compositeShader.detach();
+
+       // glDepthFunc(GL_LESS);
     }
 
     public void destroy() {

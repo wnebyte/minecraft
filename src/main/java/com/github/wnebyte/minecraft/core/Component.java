@@ -14,7 +14,7 @@ public abstract class Component {
         id = ID_COUNTER++;
     }
 
-    public void start() {}
+    public void start(Scene scene) {}
 
     public void update(float dt) {}
 

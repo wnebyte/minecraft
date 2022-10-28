@@ -44,6 +44,10 @@ public class Map implements Iterable<Chunk> {
         return getChunk(i, k);
     }
 
+    public Chunk getChunk(Vector3f vec3f) {
+        return getChunk(vec3f.x, vec3f.y, vec3f.z);
+    }
+
     public Block getBlock(Vector3f v) {
         int i = (int)Math.floor(v.x / Chunk.WIDTH);
         int j = (int)Math.floor(v.y);
