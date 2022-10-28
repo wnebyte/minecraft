@@ -119,7 +119,7 @@ public class ChunkManager {
 
     public void loadSpawnChunks() {
         long startTime = System.nanoTime();
-        int sqrt = (int)Math.sqrt(World.SPAWN_CHUNK_SIZE);
+        int sqrt = (int)Math.sqrt(World.SPAWN_CHUNK_AREA);
         for (int x = 0; x < sqrt; x++) {
             for (int z = 0; z < sqrt; z++) {
                 Chunk chunk = new Chunk(x, 0, z, map, subchunks);
@@ -131,10 +131,11 @@ public class ChunkManager {
             chunk.mesh();
         }
         double time = (System.nanoTime() - startTime) * 1E-9;
-        System.out.printf("%dx%d chunks initialized in: %.2fs%n",  sqrt, sqrt, time);
-        System.out.printf("Vertex mem used:             %.2fMB%n", DebugStats.vertexMemUsed  * 1E-6);
-        System.out.printf("Vertex mem allocated:        %.2fMB%n", DebugStats.vertexMemAlloc * 1E-6);
-        System.out.printf("Number of subchunks:         %d%n",     subchunks.capacity());
+        System.out.printf("%dx%d chunks initialized in:   %.2fs%n",  sqrt, sqrt, time);
+        System.out.printf("Vertex mem used:               %.2fMB%n", DebugStats.vertexMemUsed  * 1E-6);
+        System.out.printf("Vertex mem allocated:          %.2fMB%n", DebugStats.vertexMemAlloc * 1E-6);
+        System.out.printf("Number of allocated subchunks: %d%n",     subchunks.capacity());
+        System.out.printf("Number of allocated chunks:    %d%n",     (subchunks.capacity() / 2) / 16);
     }
 
     /*
@@ -148,13 +149,12 @@ public class ChunkManager {
             List<Future<?>> futures = new ArrayList<>();
             Future<?> future;
             for (Vector2i ivec2 : set) {
-                if (!map.contains(ivec2)) {
+                if (!map.contains(ivec2) && map.size() < World.CHUNK_CAPACITY) {
                     Chunk chunk = new Chunk(ivec2.x, 0, ivec2.y, map, subchunks);
                     map.putChunk(chunk);
+                    chunks.add(chunk);
                     future = chunk.loadAsync();
                     futures.add(future);
-                    chunk.updateNeighbourRefs();
-                    chunks.add(chunk);
                     for (Chunk c : chunk.getNeighbours()) {
                         if (c != null) {
                             chunks.add(c);
@@ -162,16 +162,14 @@ public class ChunkManager {
                     }
                 }
             }
-            if (!futures.isEmpty()) {
-                try {
-                    for (Future<?> it : futures) it.get();
-                    for (Chunk c : chunks) {
-                        assert c.isLoaded() : "Chunk is not loaded";
-                        c.meshAsync();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+            try {
+                for (Future<?> it : futures) it.get();
+                for (Chunk c : chunks) {
+                    assert c.isLoaded() : "Chunk is not loaded";
+                    c.meshAsync();
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         });
     }
@@ -196,17 +194,15 @@ public class ChunkManager {
                     }
                 }
             }
-            if (!futures.isEmpty()) {
-                try {
-                    for (Future<?> it : futures) it.get();
-                    for (Chunk c : neighbours) {
-                        if (c.isLoaded()) {
-                            c.meshAsync();
-                        }
+            try {
+                for (Future<?> it : futures) it.get();
+                for (Chunk c : neighbours) {
+                    if (c.isLoaded()) {
+                        c.meshAsync();
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         });
     }

@@ -17,7 +17,7 @@ public class BufferSortTest {
         int size = 35;
         IntBuffer data = genBuffer(size);
         printBuffer(data);
-        BufferSort.heapSort(data, 0, size, COMPARATOR);
+        BufferSort.heapSort(data, 0, size);
         printBuffer(data);
     }
 

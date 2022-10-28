@@ -1,7 +1,6 @@
 package com.github.wnebyte.minecraft.util;
 
 import java.nio.IntBuffer;
-import java.util.Comparator;
 
 public class BufferSort {
 
@@ -21,7 +20,7 @@ public class BufferSort {
      * @throws IllegalArgumentException  if {@code fromIndex > toIndex}
      * @throws IndexOutOfBoundsException if {@code fromIndex < 0 or toIndex > b.capacity()}
      */
-    public static void heapSort(IntBuffer b, int fromIndex, int toIndex, Comparator<Integer> c) {
+    public static void heapSort(IntBuffer b, int fromIndex, int toIndex) {
         rangeCheck(b.capacity(), fromIndex, toIndex);
 
         int n = toIndex - fromIndex;
@@ -30,36 +29,34 @@ public class BufferSort {
 
         // Build max heap
         for (int i = fromIndex + n / 2 - 1; i >= fromIndex; i--)
-            heapify(b, toIndex, i, fromIndex, c);
+            heapify(b, toIndex, i, fromIndex);
 
         // Heap sort
         for (int i = toIndex - 1; i >= fromIndex; i--) {
             swap(b, fromIndex, i);
 
             // Heapify root element
-            heapify(b, i, fromIndex, fromIndex, c);
+            heapify(b, i, fromIndex, fromIndex);
         }
     }
 
     // based on https://www.programiz.com/dsa/heap-sort
-    private static void heapify(IntBuffer b, int n, int i, int offset, Comparator<Integer> c) {
+    private static void heapify(IntBuffer b, int n, int i, int offset) {
         // Find largest among root, left child and right child
         int largest = i;
         int l = 2 * i + 1 - offset;
         int r = l + 1;
 
-        if (l < n && c.compare(b.get(l), b.get(largest)) > 0)
-       // if (l < n && b.get(l) > b.get(largest))
+        if (l < n && b.get(l) > b.get(largest))
             largest = l;
 
-        if (r < n && c.compare(b.get(r), b.get(largest)) > 0)
-       // if (r < n && b.get(r) > b.get(largest))
+        if (r < n && b.get(r) > b.get(largest))
             largest = r;
 
         // Swap and continue heapifying if root is not largest
         if (largest != i) {
             swap(b, i, largest);
-            heapify(b, n, largest, offset, c);
+            heapify(b, n, largest, offset);
         }
     }
 
@@ -129,7 +126,7 @@ public class BufferSort {
      * @throws IllegalArgumentException  if {@code fromIndex > toIndex}
      * @throws IndexOutOfBoundsException if {@code fromIndex < 0 or toIndex > b.capacity()}
      */
-    public static void insertionSort(IntBuffer b, int fromIndex, int toIndex, Comparator<Integer> c) {
+    public static void insertionSort(IntBuffer b, int fromIndex, int toIndex) {
         rangeCheck(b.capacity(), fromIndex, toIndex);
 
         for (int i = fromIndex + 1; i < toIndex; i++) {
@@ -155,11 +152,11 @@ public class BufferSort {
      * </tr>
      * <tr>
      * <td>{@code [0 - 100)}</td>
-     * <td>{@link BufferSort#insertionSort(IntBuffer, int, int, Comparator) insertionSort}</td>
+     * <td>{@link BufferSort#insertionSort(IntBuffer, int, int) insertionSort}</td>
      * </tr>
      * <tr>
      * <td>{@code [100 - 10^7)}</td>
-     * <td>{@link BufferSort#heapSort(IntBuffer, int, int, Comparator) heapSort}</td>
+     * <td>{@link BufferSort#heapSort(IntBuffer, int, int) heapSort}</td>
      * </tr>
      * <tr>
      * <td>{@code 10^7+}</td>
@@ -174,31 +171,16 @@ public class BufferSort {
      * @throws IllegalArgumentException  if {@code fromIndex > toIndex}
      * @throws IndexOutOfBoundsException if {@code fromIndex < 0 or toIndex > b.capacity()}
      */
-    public static void sort(IntBuffer b, int fromIndex, int toIndex, Comparator<Integer> c) {
+    public static void sort(IntBuffer b, int fromIndex, int toIndex) {
 
         final int length = toIndex - fromIndex;
 
         if (length < SMALL_RANGE)
-            insertionSort(b, fromIndex, toIndex, c);
+            insertionSort(b, fromIndex, toIndex);
         else if (length < LARGE_RANGE)
-            heapSort(b, fromIndex, toIndex, c);
+            heapSort(b, fromIndex, toIndex);
         else
             radixSort(b, fromIndex, toIndex);
-    }
-
-    public static void mySort(IntBuffer b, Comparator<Integer> c) {
-        boolean swap;
-        do {
-            swap = false;
-            for (int i = 6; i < b.capacity(); i += 6) {
-                int j = b.get(i);
-                int k = b.get(i - 6);
-                if (c.compare(j, k) < 0) {
-                    swap(b, i, i - 6);
-                    swap = true;
-                }
-            }
-        } while (swap);
     }
 
     public static boolean rangeCheck(int capacity, int fromIndex, int toIndex) {
@@ -208,5 +190,4 @@ public class BufferSort {
             throw new IndexOutOfBoundsException("");
         return true;
     }
-
 }

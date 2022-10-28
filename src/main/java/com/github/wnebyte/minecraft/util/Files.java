@@ -48,6 +48,10 @@ public class Files {
         }
     }
 
+    public static String read(String path) {
+        return String.join(System.lineSeparator(), readAllLines(path));
+    }
+
     public static boolean exists(String path) {
         return new File(path).exists();
     }

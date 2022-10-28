@@ -1,6 +1,7 @@
 package com.github.wnebyte.minecraft.world;
 
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import org.joml.Vector2i;
@@ -80,6 +81,12 @@ public class Chunk {
 
     public static final int DEPTH = 16;
 
+    private static final float MIN_BIOME_HEIGHT = 55.0f;
+
+    private static final float MAX_BIOME_HEIGHT = 145.0f;
+
+    private static final int OCEAN_LEVEL = 85;
+
     //   v4 ----------- v5
     //   /|            /|      Axis orientation
     //  / |           / |
@@ -90,7 +97,7 @@ public class Chunk {
     // |/           | /      z
     // v2 --------- v3
 
-    private static final Formatter<Chunk> FILEPATH_FORMATTER = chunk ->
+    private static final Formatter<Chunk> FILENAME_FORMATTER = chunk ->
             String.format("chunk-%d-%d", chunk.chunkCoordX, chunk.chunkCoordZ);
 
     /*
@@ -119,6 +126,10 @@ public class Chunk {
 
     private final String path;
 
+    private final TerrainGenerator generator;
+
+    private final Random rand;
+
     // References to neighbouring chunks
     private volatile Chunk cXN, cXP, cZN, cZP, cYN, cYP;
 
@@ -139,7 +150,9 @@ public class Chunk {
         this.map = map;
         this.subchunks = subchunks;
         this.state = new AtomicReference<>(State.UNLOADED);
-        this.path = Assets.DIR + "/data/world/" + FILEPATH_FORMATTER.format(this);
+        this.path = Assets.DIR + "/data/world/" + FILENAME_FORMATTER.format(this);
+        this.generator = TerrainGenerator.getInstance();
+        this.rand = new Random();
         this.data = new byte[Chunk.WIDTH * Chunk.HEIGHT * Chunk.DEPTH];
     }
 
@@ -163,13 +176,16 @@ public class Chunk {
      */
     public Block getBlock(int i, int j, int k) {
         int index = toIndex(i, j, k);
-        byte id = data[index];
-        return BlockMap.getBlock(id);
+        return getBlock(index);
     }
 
-    public Block getBlock(Vector3f pos) {
-        Vector3i index = Chunk.world2Index3D(pos, chunkCoords);
-        return getBlock(index.x, index.y, index.z);
+    public Block getBlock(Vector3i ivec3) {
+        return getBlock(ivec3.x, ivec3.y, ivec3.z);
+    }
+
+    public Block getBlock(Vector3f vec3f) {
+        Vector3i ivec3 = Chunk.world2Index3D(vec3f, chunkCoords);
+        return getBlock(ivec3);
     }
 
     public void setBlock(Block b, int i, int j, int k) {
@@ -212,33 +228,106 @@ public class Chunk {
         }
     }
 
-    private final float minBiomeHeight = 55.0f;
-
-    private final float maxBiomeHeight = 145.0f;
-
-    private final int oceanLevel = 85;
-
     public void generateTerrain() {
         for (int z = 0; z < Chunk.DEPTH; z++) {
-            int maxHeight = 50;
-            int stoneHeight = maxHeight - 3;
-
             for (int x = 0; x < Chunk.WIDTH; x++) {
+                int maxHeight = generator.getHeight(x + chunkPosX, z + chunkPosZ, MIN_BIOME_HEIGHT, MAX_BIOME_HEIGHT);
+                int stoneHeight = maxHeight - 3;
+
                 for (int y = 0; y < Chunk.HEIGHT; y++) {
                     if (y == 0) {
-                        setBlock(BlockMap.getBlock(7), x, y, z); // 7, aka BEDROCK
+                        // 7, aka BEDROCK
+                        setBlock(BlockMap.getBlock(7), x, y, z);
                     }
                     else if (y < stoneHeight) {
-                        setBlock(BlockMap.getBlock(6), x, y, z); // 6, aka STONE
+                        // 6, aka STONE
+                        setBlock(BlockMap.getBlock(6), x, y, z);
                     }
                     else if (y < maxHeight) {
-                        setBlock(BlockMap.getBlock(4), x, y, z); // 4, aka DIRT
+                        // 4, aka DIRT
+                        setBlock(BlockMap.getBlock(4), x, y, z);
                     }
                     else if (y == maxHeight) {
-                        setBlock(BlockMap.getBlock(2), x, y, z); // 2, aka GRASS
+                        if (maxHeight < OCEAN_LEVEL + 2) {
+                            // 3, aka SAND
+                            setBlock(BlockMap.getBlock(3), x, y, z);
+                        }
+                        else {
+                            // 2, aka GRASS
+                            setBlock(BlockMap.getBlock(2), x, y, z);
+                        }
+                    }
+                    else if (y >= MIN_BIOME_HEIGHT && y < OCEAN_LEVEL) {
+                        // 19, aka WATER
+                        setBlock(BlockMap.getBlock(19), x, y, z);
                     }
                     else {
-                        setBlock(BlockMap.getBlock(1), x, y, z); // 1, aka AIR
+                        // 1, aka AIR
+                        setBlock(BlockMap.getBlock(1), x, y, z);
+                    }
+                }
+            }
+        }
+    }
+
+    private void generateDecorations() {
+        for (int z = 0; z < Chunk.DEPTH; z++) {
+            for (int x = 0; x < Chunk.WIDTH; x++) {
+                int num = (rand.nextInt(Short.MAX_VALUE) % 100);
+                boolean generateTree = num > 98;
+
+                if (generateTree) {
+                    int y = generator.getHeight(x + chunkPosX, z + chunkPosZ, MIN_BIOME_HEIGHT, MAX_BIOME_HEIGHT) + 1;
+
+                    if (y > OCEAN_LEVEL + 2) {
+                        // generate a tree
+                        int treeHeight = (rand.nextInt(Short.MAX_VALUE) % 3) + 3;
+                        int leavesBottomY = JMath.clamp(treeHeight - 3, 3, Chunk.HEIGHT - 1);
+                        int leavesTopY = treeHeight + 1;
+                        if (generateTree && (y + 1 + leavesTopY < Chunk.HEIGHT)) {
+                            for (int treeY = 0; treeY <= treeHeight; treeY++) {
+                                // OAK LOG
+                                setBlock(BlockMap.getBlock(8), x, treeY + y, z);
+                            }
+
+                            int ringLevel = 0;
+                            for (int leavesY = leavesBottomY + y; leavesY <= leavesTopY + y; leavesY++) {
+                                int leafRadius = (leavesY == leavesTopY) ? 2 : 1;
+
+                                for (int leavesZ = z - leafRadius; leavesZ <= z + leafRadius; leavesZ++) {
+                                    for (int leavesX = x - leafRadius; leavesX <= x + leafRadius; leavesX++) {
+                                        if (JMath.inRange(leavesX, 0, Chunk.WIDTH) &&
+                                                JMath.inRange(leavesZ, 0, Chunk.DEPTH)) {
+                                            // OAK LEAVES
+                                            setBlock(BlockMap.getBlock(9), leavesX, leavesY, leavesZ);
+                                        }
+                                        /*
+                                        else if (leavesX < 0) {
+                                            if (cXN != null) {
+                                                cXN.setBlock(BlockMap.getBlock(9), Chunk.WIDTH - leavesX, leavesY, leavesZ);
+                                            }
+                                        }
+                                        else if (leavesX >= Chunk.WIDTH) {
+                                            if (cXP != null) {
+                                                cXP.setBlock(BlockMap.getBlock(9), leavesX - Chunk.WIDTH, leavesY, leavesZ);
+                                            }
+                                        }
+                                        else if (leavesZ < 0) {
+                                            if (cZN != null) {
+                                                cZN.setBlock(BlockMap.getBlock(9), leavesX, leavesY, Chunk.DEPTH - leavesZ);
+                                            }
+                                        }
+                                        else if (leavesZ >= Chunk.DEPTH) {
+                                            if (cZP != null) {
+                                                cZP.setBlock(BlockMap.getBlock(9), leavesX, leavesY, leavesZ - Chunk.DEPTH);
+                                            }
+                                        }
+                                         */
+                                    }
+                                }
+                                ringLevel++;
+                            }
+                        }
                     }
                 }
             }
@@ -268,6 +357,7 @@ public class Chunk {
             deserialize();
         } else {
             generateTerrain();
+            generateDecorations();
         }
         state.set(State.LOADED);
     }

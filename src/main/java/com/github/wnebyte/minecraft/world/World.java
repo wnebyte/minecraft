@@ -1,13 +1,12 @@
 package com.github.wnebyte.minecraft.world;
 
-import java.util.Random;
 import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Random;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
-import org.joml.Vector4f;
 import com.github.wnebyte.minecraft.core.*;
 import com.github.wnebyte.minecraft.physics.Physics;
 import com.github.wnebyte.minecraft.physics.RaycastInfo;
@@ -23,11 +22,11 @@ public class World {
     ###########################
     */
 
-    public static final int CHUNK_CAPACITY = 500;
+    public static final int CHUNK_RADIUS = 12;
 
-    public static final int CHUNK_RADIUS = 5;
+    public static final int CHUNK_CAPACITY = (int)((CHUNK_RADIUS * 2) * (CHUNK_RADIUS * 2) * 1.5f);
 
-    public static final int SPAWN_CHUNK_SIZE = 9 * 9;
+    public static final int SPAWN_CHUNK_AREA = 9 * 9;
 
     /*
     ###########################
@@ -85,13 +84,12 @@ public class World {
         this.renderer = renderer;
         this.skybox = new Skybox(camera);
         this.physics = new Physics(renderer, map);
-        this.sun = Prefabs.createSun(400, 80f, 50f, 10f, new Vector4f(1f, 1f, 1f, 1f));
+       // this.sun = Prefabs.createSun(400, 80f, 50f, 10f, new Vector4f(1f, 1f, 1f, 1f));
         GameObject go = new GameObject("Camera");
         go.addComponent(camera);
         go.addComponent(new Transform());
         this.gameObjects = new ArrayList<>();
         this.gameObjects.add(go);
-        this.gameObjects.add(sun);
         this.rand = new Random();
     }
 
@@ -111,7 +109,7 @@ public class World {
             go.start();
             renderer.add(go);
         }
-        camera.setPosition(new Vector3f(SPAWN_CHUNK_SIZE / 2.0f, 51, SPAWN_CHUNK_SIZE / 2.0f));
+        camera.setPosition(new Vector3f(SPAWN_CHUNK_AREA / 2.0f, 140, SPAWN_CHUNK_AREA / 2.0f));
         chunkManager.loadSpawnChunks();
     }
 

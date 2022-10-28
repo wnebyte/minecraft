@@ -12,14 +12,13 @@ import com.github.wnebyte.minecraft.components.Text2D;
 import com.github.wnebyte.minecraft.util.Assets;
 import com.github.wnebyte.minecraft.util.BlockMap;
 import com.github.wnebyte.minecraft.util.TexturePacker;
+import com.github.wnebyte.minecraft.util.TerrainGenerator;
 import static org.lwjgl.glfw.GLFW.*;
 import static com.github.wnebyte.minecraft.core.KeyListener.isKeyPressed;
 
 public class Scene {
 
     private Camera camera;
-
-    private Frustrum frustrum;
 
     private Renderer renderer;
 
@@ -49,21 +48,23 @@ public class Scene {
                 Camera.DEFAULT_ZOOM,
                 Camera.DEFAULT_Z_NEAR,
                 10_000f);
-        this.frustrum = new Frustrum();
         this.renderer = new Renderer(camera);
         this.world = new World(camera, renderer);
     }
 
     private void loadResources() {
         TexturePacker.pack(
-                Assets.DIR     + "/images/blocks",
+                    Assets.DIR + "/images/blocks",
                 Assets.DIR + "/config/textureFormat.json",
                 Assets.DIR + "/images/generated/packedTextures.png",
                 false, 32, 32);
         BlockMap.load(
                 Assets.DIR + "/config/textureFormat.json",
-                Assets.DIR  + "/config/blockFormat.json");
+                 Assets.DIR + "/config/blockFormat.json");
         BlockMap.bufferTexCoords();
+        TerrainGenerator.init(
+                Assets.DIR + "/config/terrainNoise.json",
+                (int)System.currentTimeMillis());
     }
 
     public void start() {
@@ -155,9 +156,5 @@ public class Scene {
 
     public Camera getCamera() {
         return camera;
-    }
-
-    public Frustrum getFrustrum() {
-        return frustrum;
     }
 }

@@ -193,6 +193,9 @@ public class JMath {
         vec.y = yPrime;
     }
 
+    public static float mapRange(float val, float inMin, float inMax, float outMin, float outMax) {
+        return (val - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+    }
 
     public static Vector3f ceil(Vector3f vec) {
         Vector3f v = new Vector3f();
@@ -238,18 +241,6 @@ public class JMath {
         return v;
     }
 
-    public static void compareAndSet(Vector3f vec, float comparable, float val) {
-        if (vec.x == comparable) {
-            vec.x = val;
-        }
-        if (vec.y == comparable) {
-            vec.y = val;
-        }
-        if (vec.z == comparable) {
-            vec.z = val;
-        }
-    }
-
     public static boolean compare(float x, float y) {
         return Math.abs(x - y) <= Float.MIN_VALUE * Math.max(1.0f, Math.max(Math.abs(x), Math.abs(y)));
     }
@@ -273,5 +264,13 @@ public class JMath {
 
     public static boolean compare(Vector2f vec1, Vector2f vec2) {
         return compare(vec1.x, vec2.x) && compare(vec1.y, vec2.y);
+    }
+
+    public static boolean inRange(int val, int min, int max) {
+        return (min <= val && val < max);
+    }
+
+    public static boolean inRange(float val, float min, float max) {
+        return (min <= val && val < max);
     }
 }

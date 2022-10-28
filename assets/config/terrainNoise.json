@@ -1,0 +1,57 @@
+[
+  {
+    "id": 0,
+    "weight": 1.0,
+    "noiseType": "OpenSimplex2",
+    "frequency": 0.005,
+    "fractalType": "FBm",
+    "octaves": 4,
+    "lacunarity": 1.6,
+    "gain": 0.50,
+    "weightedStrength": 0.00
+  },
+  {
+    "id": 1,
+    "weight": 0.2,
+    "noiseType": "OpenSimplex2",
+    "frequency": 0.02,
+    "fractalType": "FBm",
+    "octaves": 4,
+    "lacunarity": 1.6,
+    "gain": 0.50,
+    "weightedStrength": 0.00
+  },
+  {
+    "id": 2,
+    "weight": 0.03,
+    "noiseType": "OpenSimplex2",
+    "frequency": 0.1,
+    "fractalType": "FBm",
+    "octaves": 4,
+    "lacunarity": 1.6,
+    "gain": 0.50,
+    "weightedStrength": 0.00
+  },
+  {
+    "id": 3,
+    "weight": 0.0,
+    "noiseType": "OpenSimplex2",
+    "frequency": 0.015,
+    "fractalType": "FBm",
+    "octaves": 4,
+    "lacunarity": 2.0,
+    "gain": 0.50,
+    "weightedStrength": 0.00
+  },
+  {
+    "id": 4,
+    "weight": 0.0,
+    "noiseType": "OpenSimplex2",
+    "frequency": 0.004,
+    "fractalType": "FBm",
+    "octaves": 4,
+    "lacunarity": 2.0,
+    "gain": 0.50,
+    "weightedStrength": 0.00
+  }
+]

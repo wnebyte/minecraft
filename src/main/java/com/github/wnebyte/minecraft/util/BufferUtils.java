@@ -1,21 +1,49 @@
 package com.github.wnebyte.minecraft.util;
 
-import java.nio.FloatBuffer;
-import org.joml.Vector3f;
+import java.nio.IntBuffer;
+import java.util.Comparator;
 
 public class BufferUtils {
 
-    private void sort(FloatBuffer buffer, Vector3f pos) {
-        int capacity = buffer.capacity();
-        for (int i = 0; i < capacity; i += 5) {
-            float x = buffer.get(i), y = buffer.get(i + 1), z = buffer.get(i + 2);
-
-        }
+    public static int binarySearch(IntBuffer buffer, int key) {
+        return binarySearch(buffer, key, Integer::compare);
     }
 
-    private void swap(FloatBuffer buffer, int i, int j) {
-        float tmp = buffer.get(i);
-        buffer.put(i, buffer.get(j));
-        buffer.put(j, tmp);
+    public static int binarySearch(IntBuffer buffer, int fromIndex, int toIndex, int key) {
+        return binarySearch(buffer, fromIndex, toIndex, key, Integer::compare);
+    }
+
+    public static int binarySearch(IntBuffer buffer, int key, Comparator<? super Integer> c) {
+        return binarySearch(buffer, 0, buffer.capacity(), key, c);
+    }
+
+    public static int binarySearch(IntBuffer buffer, int fromIndex, int toIndex, int key, Comparator<? super Integer> c) {
+        rangeCheck(buffer.capacity(), fromIndex, toIndex);
+        int mid = (fromIndex + toIndex) / 2;
+
+        while (fromIndex <= toIndex) {
+            if (c.compare(buffer.get(mid), key) == 0) {
+                return mid;
+            }
+            else if (c.compare(buffer.get(mid), key) < 0) {
+                fromIndex = mid + 1;
+            }
+            else {
+                toIndex = mid - 1;
+            }
+            mid = (fromIndex + toIndex) / 2;
+        }
+
+        return -1;
+    }
+
+    public static boolean rangeCheck(int capacity, int fromIndex, int toIndex) {
+        if (fromIndex > toIndex) {
+            throw new IllegalArgumentException("");
+        }
+        if (fromIndex < 0 || toIndex > capacity) {
+            throw new IndexOutOfBoundsException("");
+        }
+        return true;
     }
 }

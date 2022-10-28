@@ -2,6 +2,8 @@ package com.github.wnebyte.minecraft.renderer;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.Comparator;
+import com.github.wnebyte.minecraft.util.BufferUtils;
 import com.github.wnebyte.minecraft.util.DebugStats;
 
 public class VertexBuffer {
@@ -96,7 +98,7 @@ public class VertexBuffer {
         DebugStats.vertexMemUsed += (long)STRIDE_BYTES * 6;
     }
 
-    public void append(int index, int position, int uv, byte face) {
+    public void put(int index, int position, int uv, byte face) {
         int shared = compress(position, uv, face);
         boolean overwrite = (data.get(index) != 0);
         data.put(index + 0, shared | 0); // TR
@@ -109,6 +111,22 @@ public class VertexBuffer {
             size += STRIDE * 6;
             DebugStats.vertexMemUsed += (long)STRIDE_BYTES * 6;
         }
+    }
+
+    public int binarySearch(int key) {
+        return BufferUtils.binarySearch(data, key);
+    }
+
+    public int binarySearch(int fromIndex, int toIndex, int key) {
+        return BufferUtils.binarySearch(data, fromIndex, toIndex, key);
+    }
+
+    public int binarySearch(int key, Comparator<? super Integer> c) {
+        return BufferUtils.binarySearch(data, key, c);
+    }
+
+    public int binarySearch(int fromIndex, int toIndex, int key, Comparator<? super Integer> c) {
+        return BufferUtils.binarySearch(data, fromIndex, toIndex, key, c);
     }
 
     public int size() {
