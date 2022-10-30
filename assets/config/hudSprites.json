@@ -1,0 +1,93 @@
+{
+  "path": "C:/users/ralle/dev/java/minecraft/assets/images/spritesheets/hudSprites.png",
+  "sprites": [
+    {
+      "name": "buttonRegular",
+      "start": {
+        "x": 0,
+        "y": 0
+      },
+      "size": {
+        "x": 272,
+        "y": 32
+      }
+    },
+    {
+      "name": "buttonHover",
+      "start": {
+        "x": 0,
+        "y": 33
+      },
+      "size": {
+        "x": 272,
+        "y": 32
+      }
+    },
+    {
+      "name": "buttonClick",
+      "start": {
+        "x": 0,
+        "y": 66
+      },
+      "size": {
+        "x": 272,
+        "y": 32
+      }
+    },
+    {
+      "name": "title",
+      "start": {
+        "x": 0,
+        "y": 100
+      },
+      "size": {
+        "x": 88,
+        "y": 19
+      }
+    },
+    {
+      "name": "blockCursor",
+      "start": {
+        "x": 0,
+        "y": 128
+      },
+      "size": {
+        "x": 16,
+        "y": 16
+      }
+    },
+    {
+      "name": "selectedInventorySlot",
+      "start": {
+        "x": 0,
+        "y": 144
+      },
+      "size": {
+        "x": 32,
+        "y": 32
+      }
+    },
+    {
+      "name": "regularInventorySlot",
+      "start": {
+        "x": 0,
+        "y": 176
+      },
+      "size": {
+        "x": 32,
+        "y": 32
+      }
+    },
+    {
+      "name": "inventoryHud",
+      "start": {
+        "x": 276,
+        "y": 0
+      },
+      "size": {
+        "x": 216,
+        "y": 194
+      }
+    }
+  ]
+}

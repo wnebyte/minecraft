@@ -16,7 +16,7 @@ import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
 import static org.lwjgl.opengl.GL30.*;
 
-public class Line2DBatch implements Batch<Line2D> {
+public class Line2DBatchRenderer implements Batch<Line2D> {
 
     private static final int MAX_LINES = 3000;
 
@@ -46,7 +46,7 @@ public class Line2DBatch implements Batch<Line2D> {
 
     private boolean started;
 
-    public Line2DBatch(Camera camera) {
+    public Line2DBatchRenderer(Camera camera) {
         this.camera = camera;
         this.lines = new ArrayList<>(MAX_LINES);
         this.vertexArray = new float[MAX_LINES * 6 * 2];

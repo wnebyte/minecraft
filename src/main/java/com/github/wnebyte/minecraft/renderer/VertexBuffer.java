@@ -5,7 +5,6 @@ import java.nio.IntBuffer;
 import java.util.Comparator;
 import com.github.wnebyte.minecraft.util.BufferUtils;
 import com.github.wnebyte.minecraft.util.DebugStats;
-import com.github.wnebyte.minecraft.world.FaceType;
 
 public class VertexBuffer {
 

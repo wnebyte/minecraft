@@ -10,6 +10,8 @@ import com.github.wnebyte.minecraft.components.Text2D;
 import com.github.wnebyte.minecraft.components.BoxRenderer;
 import com.github.wnebyte.minecraft.util.JMath;
 
+import static org.lwjgl.opengl.GL11.*;
+
 public class Renderer {
 
     /*
@@ -54,15 +56,13 @@ public class Renderer {
 
     private final Camera camera;
 
-    private final List<Batch<BoxRenderer>> batches;
+    private final List<Batch<BoxRenderer>> boxBatches;
 
     private final List<Batch<Line2D>> line2DBatches;
 
     private final List<Batch<Line3D>> line3DBatches;
 
-    private final List<Text2D> texts;
-
-    private final TextRenderBatch textBatch;
+    private final List<Vertex2DBatchRenderer> vertex2DBatches;
 
     /*
     ###########################
@@ -72,11 +72,10 @@ public class Renderer {
 
     private Renderer(Camera camera) {
         this.camera = camera;
-        this.batches = new ArrayList<>();
+        this.boxBatches = new ArrayList<>();
         this.line2DBatches = new ArrayList<>();
         this.line3DBatches = new ArrayList<>();
-        this.texts = new ArrayList<>();
-        this.textBatch = new TextRenderBatch(camera);
+        this.vertex2DBatches = new ArrayList<>();
     }
 
     /*
@@ -94,17 +93,17 @@ public class Renderer {
 
     public void add(BoxRenderer box) {
         boolean added = false;
-        for (Batch<BoxRenderer> batch : batches) {
+        for (Batch<BoxRenderer> batch : boxBatches) {
             if (batch.add(box)) {
                 added = true;
                 break;
             }
         }
         if (!added) {
-            Batch<BoxRenderer> batch = new BoxRendererBatch(camera, 100);
+            Batch<BoxRenderer> batch = new BoxBatchRenderer(camera, 100);
             batch.start();
             batch.add(box);
-            batches.add(batch);
+            boxBatches.add(batch);
         }
     }
 
@@ -117,7 +116,7 @@ public class Renderer {
             }
         }
         if (!added) {
-            Batch<Line3D> batch = new Line3DBatch(camera);
+            Batch<Line3D> batch = new Line3DBatchRenderer(camera);
             batch.start();
             batch.add(line);
             line3DBatches.add(batch);
@@ -235,7 +234,7 @@ public class Renderer {
             }
         }
         if (!added) {
-            Batch<Line2D> batch = new Line2DBatch(camera);
+            Batch<Line2D> batch = new Line2DBatchRenderer(camera);
             batch.start();
             batch.add(line);
             line2DBatches.add(batch);
@@ -277,55 +276,99 @@ public class Renderer {
         addLine2D(vertices[2], vertices[3], color, ftl);
     }
 
-
-    public void addText2D(Text2D text2D) {
-        if (!textBatch.isStarted()) {
-            textBatch.start();
+    public void drawText2D(Text2D text2D) {
+        boolean added = false;
+        for (Vertex2DBatchRenderer batch : vertex2DBatches) {
+            if (batch.addText2D(text2D)) {
+                added = true;
+                break;
+            }
         }
-        texts.add(text2D);
+        if (!added) {
+            Vertex2DBatchRenderer batch = new Vertex2DBatchRenderer(camera);
+            batch.start();
+            batch.addText2D(text2D);
+            vertex2DBatches.add(batch);
+        }
+    }
+
+    public void drawQuad2D(float x, float y, float width, float height, float scale, int rgb) {
+        boolean added = false;
+        for (Vertex2DBatchRenderer batch : vertex2DBatches) {
+            if (batch.addQuad(x, y, width, height, scale, null, null, rgb)) {
+                added = true;
+                break;
+            }
+        }
+        if (!added) {
+            Vertex2DBatchRenderer batch = new Vertex2DBatchRenderer(camera);
+            batch.start();
+            batch.addQuad(x, y, width, height, scale, null, null, rgb);
+            vertex2DBatches.add(batch);
+        }
+    }
+
+    public void drawTexturedQuad2D(float x, float y, float width, float height, float scale, Sprite sprite, int rgb) {
+        boolean added = false;
+        for (Vertex2DBatchRenderer batch : vertex2DBatches) {
+            if (batch.addQuad(x, y, width, height, scale, sprite.getTexture(), sprite.getTexCoords(), rgb)) {
+                added = true;
+                break;
+            }
+        }
+        if (!added) {
+            Vertex2DBatchRenderer batch = new Vertex2DBatchRenderer(camera);
+            batch.start();
+            batch.addQuad(x, y, width, height, scale, sprite.getTexture(), sprite.getTexCoords(), rgb);
+            vertex2DBatches.add(batch);
+        }
     }
 
     public void render() {
-        for (int i = 0; i < batches.size(); i++) {
-            Batch<BoxRenderer> batch = batches.get(i);
-            batch.render();
+        // set render states
+        glDisable(GL_CULL_FACE);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        // 2D
+        for (int i = 0; i < vertex2DBatches.size(); i++) {
+            Vertex2DBatchRenderer batch = vertex2DBatches.get(i);
+            batch.flush();
         }
         for (int i = 0; i < line2DBatches.size(); i++) {
             Batch<Line2D> batch = line2DBatches.get(i);
             batch.render();
         }
+
+        // 3D
         for (int i = 0; i < line3DBatches.size(); i++) {
             Batch<Line3D> batch = line3DBatches.get(i);
             batch.render();
         }
-        if (!texts.isEmpty()) {
-            for (int i = 0; i < texts.size(); i++) {
-                Text2D text = texts.get(i);
-                textBatch.addText2D(text);
-            }
-            textBatch.flush();
+        for (int i = 0; i < boxBatches.size(); i++) {
+            Batch<BoxRenderer> batch = boxBatches.get(i);
+            batch.render();
         }
+
     }
 
     public void destroy() {
-        for (int i = 0; i < batches.size(); i++) {
-            Batch<BoxRenderer> batch = batches.get(i);
-            batch.destroy();
-        }
         for (int i = 0; i < line2DBatches.size(); i++) {
             Batch<Line2D> batch = line2DBatches.get(i);
+            batch.destroy();
+        }
+        for (int i = 0; i < vertex2DBatches.size(); i++) {
+            Vertex2DBatchRenderer batch = vertex2DBatches.get(i);
             batch.destroy();
         }
         for (int i = 0; i < line3DBatches.size(); i++) {
             Batch<Line3D> batch = line3DBatches.get(i);
             batch.destroy();
         }
-        textBatch.destroy();
-    }
-
-    public void clearText2D() {
-        textBatch.flush();
-        texts.clear();
+        for (int i = 0; i < boxBatches.size(); i++) {
+            Batch<BoxRenderer> batch = boxBatches.get(i);
+            batch.destroy();
+        }
     }
 
     public void clearLines3D() {

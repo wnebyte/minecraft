@@ -22,7 +22,7 @@ public class BoxRenderer extends Component {
     @Override
     public void update(float dt) {
         if (!transform.equals(gameObject.transform)) {
-            gameObject.transform.copyTo(transform);
+            transform = Transform.copy(gameObject.transform);
             dirty = true;
         }
     }

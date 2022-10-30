@@ -7,7 +7,9 @@ import java.util.HashMap;
 import java.util.Collection;
 import com.github.wnebyte.minecraft.fonts.SFont;
 import com.github.wnebyte.minecraft.renderer.Shader;
+import com.github.wnebyte.minecraft.renderer.Spritesheet;
 import com.github.wnebyte.minecraft.renderer.Texture;
+import static org.lwjgl.opengl.GL11.*;
 
 public class Assets {
 
@@ -16,6 +18,8 @@ public class Assets {
     private static final Map<String, Shader> shaders = new HashMap<>();
 
     private static final Map<String, Texture> textures = new HashMap<>();
+
+    private static final Map<String, Spritesheet> spritesheets = new HashMap<>();
 
     private static final Map<Integer, Texture> texturesById = new HashMap<>();
 
@@ -68,6 +72,44 @@ public class Assets {
 
     public static Texture getTexture(int id) {
         return texturesById.get(id);
+    }
+
+    public static Spritesheet getSpritesheet(String path) {
+        File file = new File(path.toLowerCase(Locale.ROOT));
+        assert file.exists() :
+                String.format("Error: (Assets) Spritesheet: '%s' does not exist", file.getAbsolutePath());
+
+        if (spritesheets.containsKey(file.getAbsolutePath())) {
+            return spritesheets.get(file.getAbsolutePath());
+        } else {
+            assert false :
+                    String.format("Error: (Assets) Spritesheet: '%s' has not been added", file.getAbsolutePath());
+            return null;
+        }
+    }
+
+    public static void addSpritesheet(String path, Spritesheet spritesheet) {
+        File file = new File(path.toLowerCase(Locale.ROOT));
+        assert file.exists() :
+                String.format("Error: (Assets) Spritesheet: '%s' does not exist", file.getAbsolutePath());
+        if (!spritesheets.containsKey(file.getAbsolutePath())) {
+            spritesheets.put(file.getAbsolutePath(), spritesheet);
+        }
+    }
+
+    public static void loadSpritesheet(String path) {
+        assert Files.exists(path) : "Path does not exist";
+        String json = Files.read(path);
+        Spritesheet.Configuration conf = Settings.GSON.fromJson(json, Spritesheet.Configuration.class);
+        Texture texture = new Texture(conf.getPath(), new Texture.Configuration.Builder()
+                .setTarget(GL_TEXTURE_2D)
+                .addParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+                .addParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+                .addParameter(GL_TEXTURE_WRAP_S, GL_NONE)
+                .addParameter(GL_TEXTURE_WRAP_T, GL_NONE)
+                .build());
+        Spritesheet spritesheet = new Spritesheet(texture, conf);
+        Assets.addSpritesheet(texture.getPath(), spritesheet);
     }
 
     public static SFont getFont(String path, int fontSize) {

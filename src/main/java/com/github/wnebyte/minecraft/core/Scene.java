@@ -2,6 +2,8 @@ package com.github.wnebyte.minecraft.core;
 
 import java.util.List;
 import java.util.ArrayList;
+
+import com.github.wnebyte.minecraft.util.*;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
@@ -9,10 +11,7 @@ import com.github.wnebyte.minecraft.world.World;
 import com.github.wnebyte.minecraft.world.Chunk;
 import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.components.Text2D;
-import com.github.wnebyte.minecraft.util.Assets;
-import com.github.wnebyte.minecraft.util.BlockMap;
-import com.github.wnebyte.minecraft.util.TexturePacker;
-import com.github.wnebyte.minecraft.util.TerrainGenerator;
+
 import static org.lwjgl.glfw.GLFW.*;
 import static com.github.wnebyte.minecraft.core.KeyListener.isKeyPressed;
 
@@ -35,6 +34,8 @@ public class Scene {
     private List<Float> frames = new ArrayList<>();
 
     private float fps = 0.0f;
+
+    private Spritesheet hudSpritesheet;
 
     public Scene() {
         this.camera = new Camera(
@@ -66,6 +67,9 @@ public class Scene {
         TerrainGenerator.load(
                 Assets.DIR + "/config/terrainNoise.json",
                 (int)System.currentTimeMillis());
+        Assets.loadSpritesheet(
+                Assets.DIR + "/config/hudSprites.json");
+        hudSpritesheet = Assets.getSpritesheet(Assets.DIR + "/images/spritesheets/hudSprites.png");
     }
 
     public void start() {
@@ -76,25 +80,24 @@ public class Scene {
     public void update(float dt) {
         debounce -= dt;
         world.update(dt);
-        renderer.clearText2D();
 
         // camera position label
         Vector3f origin = new Vector3f(camera.getPosition());
         Text2D text = new Text2D(
                 String.format("%.0f, %.0f, %.0f", origin.x, origin.y, origin.z),
                 -3.0f + 0.05f, 1.2f, 0.005f, 0x0000);
-        renderer.addText2D(text);
+        renderer.drawText2D(text);
 
         // chunk coords label
         Vector2i v = Chunk.toChunkCoords(origin);
         Text2D stext = new Text2D(
                 String.format("%d, %d", v.x, v.y),
                 -3.0f + 0.05f, 1.1f, 0.005f, 0x0000);
-        renderer.addText2D(stext);
+        renderer.drawText2D(stext);
 
         // fps label
         frames.add(dt);
-        renderer.addText2D(new Text2D(
+        renderer.drawText2D(new Text2D(
                 String.format("%.1f", fps),
                 -3.0f + 0.05f, 1.0f, 0.005f, 0x0000));
 
@@ -116,6 +119,9 @@ public class Scene {
                 new Vector2f(crosshairHalfSize,  0.0f),
                 new Vector3f(0f, 0f, 0f),
                 1);
+
+        Sprite sprite = hudSpritesheet.getSprite(6);
+        renderer.drawTexturedQuad2D(-3.0f + 0.05f, 0.6f, 32, 32, 0.005f, sprite, 0xFFFF);
     }
 
     public void render() {

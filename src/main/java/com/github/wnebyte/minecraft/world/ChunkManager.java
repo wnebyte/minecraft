@@ -315,7 +315,7 @@ public class ChunkManager {
         ScreenRenderer.render();
         compositeShader.detach();
 
-       // glDepthFunc(GL_LESS);
+        glDepthFunc(GL_LESS);
     }
 
     public void destroy() {

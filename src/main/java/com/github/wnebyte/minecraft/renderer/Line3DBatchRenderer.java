@@ -10,7 +10,7 @@ import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
 import static org.lwjgl.opengl.GL30.*;
 
-public class Line3DBatch implements Batch<Line3D> {
+public class Line3DBatchRenderer implements Batch<Line3D> {
 
     private static final int MAX_LINES = 3000;
 
@@ -40,7 +40,7 @@ public class Line3DBatch implements Batch<Line3D> {
 
     private boolean started;
 
-    public Line3DBatch(Camera camera) {
+    public Line3DBatchRenderer(Camera camera) {
         this.camera = camera;
         this.lines = new ArrayList<>(MAX_LINES);
         this.vertexArray = new float[MAX_LINES * 6 * 2];

@@ -12,7 +12,7 @@ import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
 import static org.lwjgl.opengl.GL30.*;
 
-public class BoxRendererBatch implements Batch<BoxRenderer> {
+public class BoxBatchRenderer implements Batch<BoxRenderer> {
 
     /*
     ###########################
@@ -119,11 +119,11 @@ public class BoxRendererBatch implements Batch<BoxRenderer> {
     ###########################
     */
 
-    public BoxRendererBatch(Camera camera) {
+    public BoxBatchRenderer(Camera camera) {
         this(camera, DEFAULT_MAX_BATCH_SIZE);
     }
 
-    public BoxRendererBatch(Camera camera, int maxBatchSize) {
+    public BoxBatchRenderer(Camera camera, int maxBatchSize) {
         this.camera = camera;
         this.maxBatchSize = maxBatchSize;
         this.boxes = new BoxRenderer[maxBatchSize];

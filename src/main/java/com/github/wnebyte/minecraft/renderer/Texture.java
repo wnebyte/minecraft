@@ -259,7 +259,7 @@ public class Texture {
         this.path = path;
 
         // Generate texture on GPU
-        id = glGenTextures();
+        this.id = glGenTextures();
         glBindTexture(target, id);
 
         // Set the texture parameters
@@ -285,6 +285,44 @@ public class Texture {
             } else if (channels.get(0) == 4) {
                 glTexImage2D(target, 0, GL_RGBA, this.width, this.height,
                         0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+            } else {
+                assert false : "Error: (Texture) Unknown number of channels '" + channels.get(0) + "'.";
+            }
+        } else {
+            assert false : "Error: (Texture) Could not load image '" + path + "'.";
+        }
+
+        stbi_image_free(image);
+    }
+
+    public Texture(String path, Configuration conf) {
+        this.target = conf.getTarget();
+        this.path = path;
+        this.id = glGenTextures();
+        glBindTexture(target, id);
+
+        if (conf.hasParameters()) {
+            for (Parameter param : conf.getParameters()) {
+                glTexParameteri(target, param.getName(), param.getValue());
+            }
+        }
+
+        IntBuffer width = BufferUtils.createIntBuffer(1);
+        IntBuffer height = BufferUtils.createIntBuffer(1);
+        IntBuffer channels = BufferUtils.createIntBuffer(1);
+        stbi_set_flip_vertically_on_load(false);
+        ByteBuffer image = stbi_load(path, width, height, channels, 0);
+
+        if (image != null) {
+            this.width = width.get(0);
+            this.height = height.get(0);
+
+            if (channels.get(0) == 3) {
+                glTexImage2D(target, conf.getLevel(), GL_RGB, this.width, this.height,
+                        conf.getBorder(), GL_RGB, GL_UNSIGNED_BYTE, image);
+            } else if (channels.get(0) == 4) {
+                glTexImage2D(target, 0, GL_RGBA, this.width, this.height,
+                        conf.getBorder(), GL_RGBA, GL_UNSIGNED_BYTE, image);
             } else {
                 assert false : "Error: (Texture) Unknown number of channels '" + channels.get(0) + "'.";
             }
@@ -354,6 +392,8 @@ public class Texture {
         glTexImage2D(target, conf.getLevel(), conf.getInternalFormat(), width, height,
                 conf.getBorder(), conf.getFormat(), conf.getType(), 0);
     }
+
+
 
     /*
     ###########################

@@ -1,9 +1,65 @@
 package com.github.wnebyte.minecraft.renderer;
 
-import java.util.Arrays;
 import org.joml.Vector2f;
 
 public class Sprite {
+
+    public static class Configuration {
+
+        private String name;
+
+        private Vector2f start;
+
+        private Vector2f size;
+
+        public Configuration(Vector2f start, Vector2f size) {
+            this(null, start, size);
+        }
+
+        public Configuration(String name, Vector2f start, Vector2f size) {
+            this.name = name;
+            this.start = start;
+            this.size = size;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Vector2f getStart() {
+            return start;
+        }
+
+        public Vector2f getSize() {
+            return size;
+        }
+
+        public static class Builder {
+
+            private String name;
+
+            private Vector2f start, size;
+
+            public Builder setName(String name) {
+                this.name = name;
+                return this;
+            }
+
+            public Builder setStart(Vector2f start) {
+                this.start = start;
+                return this;
+            }
+
+            public Builder setSize(Vector2f size) {
+                this.size = size;
+                return this;
+            }
+
+            public Configuration build() {
+                return new Configuration(name, start, size);
+            }
+        }
+    }
 
     private Texture texture;
 
@@ -76,9 +132,15 @@ public class Sprite {
 
     @Override
     public String toString() {
+        String uvString = String.format(
+                "TR: [x: %.2f, y: %.2f], BR: [x: %.2f, y: %.2f], BL: [x: %.2f, y: %.2f], TL: [x: %.2f, y: %.2f]",
+                texCoords[0].x, texCoords[0].y,
+                texCoords[1].x, texCoords[1].y,
+                texCoords[2].x, texCoords[2].y,
+                texCoords[3].x, texCoords[3].y);
         return String.format(
-                "Sprite[id: %d, texture :%s, texCords: %s, width: %f, height: %f]",
-                getTexId(), texture, Arrays.toString(texCoords), width, height
+                "Sprite[id: %d, texture :%s, texCords: [%s], width: %f, height: %f]",
+                getTexId(), texture, uvString, width, height
         );
     }
 }
