@@ -7,7 +7,6 @@ import org.joml.Vector2f;
 import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.fonts.SFont;
 import com.github.wnebyte.minecraft.fonts.CharInfo;
-import com.github.wnebyte.minecraft.components.Text2D;
 import com.github.wnebyte.minecraft.util.Assets;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
@@ -145,11 +144,11 @@ public class Vertex2DBatchRenderer {
     }
 
     public boolean addText2D(Text2D text2D) {
-        if (size <= BATCH_SIZE - text2D.getText().length()) {
+        if (size >= BATCH_SIZE - (text2D.getText().length() * 4)) {
+            return false;
+        } else {
             addText(text2D.getText(), text2D.getX(), text2D.getY(), text2D.getScale(), text2D.getRGB());
             return true;
-        } else {
-            return false;
         }
     }
 
@@ -243,7 +242,6 @@ public class Vertex2DBatchRenderer {
     public boolean addQuad(float x, float y, float width, float height, float scale, Texture texture, Vector2f[] uvs, int rgb) {
         // if we have no more room - flush and start with a fresh batch
         if (size >= BATCH_SIZE - 4) {
-            flush();
             return false;
         }
 
@@ -310,6 +308,8 @@ public class Vertex2DBatchRenderer {
 
         return true;
     }
+
+
 
     private int[] genIndices() {
         // 3 indices per triangle

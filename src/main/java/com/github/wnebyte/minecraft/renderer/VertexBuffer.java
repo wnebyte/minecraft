@@ -14,12 +14,19 @@ public class VertexBuffer {
     ###########################
     */
 
+
+    /*
     static int compress(int position, int uv, byte face, byte vertex) {
         return (position << 16) | (uv << 6) | (face << 3) | vertex;
     }
+     */
 
     static int compress(int position, int uv, byte face) {
         return (position << 16) | (uv << 6) | (face << 3);
+    }
+
+    static int compress(int position, int uv, byte face, byte colorByBiome) {
+        return (position << 16) | (uv << 6) | (face << 3) | (colorByBiome << 2);
     }
 
     /*
@@ -36,7 +43,7 @@ public class VertexBuffer {
 
     public static final int STRIDE_BYTES = STRIDE * Integer.BYTES;
 
-    public static final int VERTEX_CAPACITY = 8000;
+    public static final int VERTEX_CAPACITY = 8200;
 
     public static final int POSITION_BITMASK = 0xFFFF0000;
 
@@ -44,7 +51,9 @@ public class VertexBuffer {
 
     public static final int FACE_BITMASK = 0x38;
 
-    public static final int VERTEX_BITMASK = 0x7;
+    public static final int COLOR_BY_BIOME_BITMASK = 0x4;
+
+    public static final int VERTEX_BITMASK = 0x3;
 
     /*
     ###########################
@@ -82,12 +91,12 @@ public class VertexBuffer {
     // position index - 16 bits
     // uv index       - 10 bits
     // face index     - 3 bits
-    // vertex index   - 3 bits
+    // colorByBiome   - 1 bit
+    // vertex index   - 2 bits
     // TR, TL, BL, BR, TR, BL
-    public void append(int position, int uv, byte face) {
-        // Todo: FRONT, LEFT, and RIGHT facing textures are upside-down
+    public void append(int position, int uv, byte face, boolean colorByBiome) {
         assert (size <= capacity() - 6) : String.format("Error: (VertexBuffer) Overflow: %d", size);
-        int shared = compress(position, uv, face);
+        int shared = compress(position, uv, face, (byte)(colorByBiome ? 1 : 0));
         data.put(shared | 0); // TR
         data.put(shared | 3); // TL
         data.put(shared | 2); // BL
@@ -96,21 +105,6 @@ public class VertexBuffer {
         data.put(shared | 2); // BL
         size += STRIDE * 6;
         DebugStats.vertexMemUsed += (long)STRIDE_BYTES * 6;
-    }
-
-    public void put(int index, int position, int uv, byte face) {
-        int shared = compress(position, uv, face);
-        boolean overwrite = (data.get(index) != 0);
-        data.put(index + 0, shared | 0); // TR
-        data.put(index + 1, shared | 3); // TL
-        data.put(index + 2, shared | 2); // BL
-        data.put(index + 3, shared | 1); // BR
-        data.put(index + 4, shared | 0); // TR
-        data.put(index + 5, shared | 2); // BL
-        if (!overwrite) {
-            size += STRIDE * 6;
-            DebugStats.vertexMemUsed += (long)STRIDE_BYTES * 6;
-        }
     }
 
     public int binarySearch(int key) {

@@ -2,16 +2,15 @@ package com.github.wnebyte.minecraft.core;
 
 import java.util.List;
 import java.util.ArrayList;
-
-import com.github.wnebyte.minecraft.util.*;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.world.World;
 import com.github.wnebyte.minecraft.world.Chunk;
 import com.github.wnebyte.minecraft.renderer.*;
-import com.github.wnebyte.minecraft.components.Text2D;
-
+import com.github.wnebyte.minecraft.renderer.Text2D;
+import com.github.wnebyte.minecraft.components.Inventory;
+import com.github.wnebyte.minecraft.util.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static com.github.wnebyte.minecraft.core.KeyListener.isKeyPressed;
 
@@ -120,8 +119,20 @@ public class Scene {
                 new Vector3f(0f, 0f, 0f),
                 1);
 
-        Sprite sprite = hudSpritesheet.getSprite(6);
-        renderer.drawTexturedQuad2D(-3.0f + 0.05f, 0.6f, 32, 32, 0.005f, sprite, 0xFFFF);
+        hud();
+    }
+
+    private Inventory inventory = new Inventory();
+
+    private void hud() {
+        Sprite selSprite = hudSpritesheet.getSprite(5);
+        Sprite regSprite = hudSpritesheet.getSprite(6);
+        float xStart = ((24 * 0.005f) * 10) / 2;
+        for (int i = 0; i < Inventory.NUM_SLOTS; i++) {
+            Sprite sprite = inventory.isSlotSelected(i) ? selSprite : regSprite;
+            renderer.drawTexturedQuad2D(-xStart, -1.4f, 24, 24, 0.005f, sprite, 0xFFFF);
+            xStart -= (24 * 0.005f);
+        }
     }
 
     public void render() {

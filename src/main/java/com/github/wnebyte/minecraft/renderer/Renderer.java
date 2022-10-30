@@ -6,7 +6,6 @@ import org.joml.Vector2f;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.core.GameObject;
-import com.github.wnebyte.minecraft.components.Text2D;
 import com.github.wnebyte.minecraft.components.BoxRenderer;
 import com.github.wnebyte.minecraft.util.JMath;
 
@@ -64,6 +63,8 @@ public class Renderer {
 
     private final List<Vertex2DBatchRenderer> vertex2DBatches;
 
+    private final List<Vertex2DBatchRenderer> vertex2DTextBatches;
+
     /*
     ###########################
     #       CONSTRUCTORS      #
@@ -76,6 +77,7 @@ public class Renderer {
         this.line2DBatches = new ArrayList<>();
         this.line3DBatches = new ArrayList<>();
         this.vertex2DBatches = new ArrayList<>();
+        this.vertex2DTextBatches = new ArrayList<>();
     }
 
     /*
@@ -278,7 +280,7 @@ public class Renderer {
 
     public void drawText2D(Text2D text2D) {
         boolean added = false;
-        for (Vertex2DBatchRenderer batch : vertex2DBatches) {
+        for (Vertex2DBatchRenderer batch : vertex2DTextBatches) {
             if (batch.addText2D(text2D)) {
                 added = true;
                 break;
@@ -288,7 +290,7 @@ public class Renderer {
             Vertex2DBatchRenderer batch = new Vertex2DBatchRenderer(camera);
             batch.start();
             batch.addText2D(text2D);
-            vertex2DBatches.add(batch);
+            vertex2DTextBatches.add(batch);
         }
     }
 
@@ -329,6 +331,14 @@ public class Renderer {
         glDisable(GL_CULL_FACE);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        // 2D blendable
+        for (int i = 0; i < vertex2DTextBatches.size(); i++) {
+            Vertex2DBatchRenderer batch = vertex2DTextBatches.get(i);
+            batch.flush();
+        }
+
+        glDisable(GL_BLEND);
 
         // 2D
         for (int i = 0; i < vertex2DBatches.size(); i++) {

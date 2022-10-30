@@ -65,9 +65,12 @@ public class BlockMap {
             JsonObject jsonObject = e.getAsJsonObject();
             byte id = jsonObject.get("id").getAsByte();
             String name = jsonObject.get("name").getAsString();
-            boolean solid = jsonObject.get("isSolid").getAsBoolean();
-            boolean transparent = jsonObject.get("isTransparent").getAsBoolean();
-            boolean blendable = jsonObject.get("isBlendable").getAsBoolean();
+            boolean solid = jsonObject.get("solid").getAsBoolean();
+            boolean transparent = jsonObject.get("transparent").getAsBoolean();
+            boolean blendable = jsonObject.get("blendable").getAsBoolean();
+            boolean colorSideByBiome = jsonObject.get("colorSideByBiome").getAsBoolean();
+            boolean colorTopByBiome = jsonObject.get("colorTopByBiome").getAsBoolean();
+            boolean colorBottomByBiome = jsonObject.get("colorBottomByBiome").getAsBoolean();
             String side = jsonObject.get("side").getAsString();
             String top = jsonObject.get("top").getAsString();
             String bottom = jsonObject.get("bottom").getAsString();
@@ -80,9 +83,12 @@ public class BlockMap {
                     .setSideTextureFormat(sideTextureFormat)
                     .setTopTextureFormat(topTextureFormat)
                     .setBottomTextureFormat(bottomTextureForamt)
-                    .setIsSolid(solid)
-                    .setIsTransparent(transparent)
-                    .setIsBlendable(blendable)
+                    .setSolid(solid)
+                    .setTransparent(transparent)
+                    .setBlendable(blendable)
+                    .setColorSideByBiome(colorSideByBiome)
+                    .setColorTopByBiome(colorTopByBiome)
+                    .setColorBottomByBiome(colorBottomByBiome)
                     .build();
             blocks.put(id, block);
             nameToId.put(name.toLowerCase(Locale.ROOT), id);

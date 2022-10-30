@@ -476,7 +476,7 @@ public class Chunk {
     }
 
     private void appendFace(VertexBuffer buffer, Block b, int access, FaceType face) {
-        buffer.append(access, b.getTexCoordsIndex(face), (byte)face.ordinal());
+        buffer.append(access, b.getTexCoordsIndex(face), (byte)face.ordinal(), b.getColorByBiome(face));
     }
 
     private boolean visibleFaceXN(Block b, int i, int j, int k) {

@@ -12,6 +12,7 @@ out struct Face {
     vec3 bl;
     vec3 br;
 } face;
+out vec3 fColor;
 flat out uint vertex;
 
 uniform mat4 uView;
@@ -52,7 +53,8 @@ const Face BOTTOM = { 5, VERTS[INDICES[5][1]], VERTS[INDICES[5][0]], VERTS[INDIC
 #define POSITION_BITMASK uint(0xFFFF0000)
 #define UV_BITMASK uint(0xFFC0)
 #define FACE_BITMASK uint(0x38)
-#define VERTEX_BITMASK uint(0x7)
+#define COLOR_BY_BIOME_BITMASK uint(0x4)
+#define VERTEX_BITMASK uint(0x3)
 
 void extractPosition(in uint data, out vec3 pos)
 {
@@ -96,6 +98,11 @@ void extractFace(in uint data, out Face face)
         face = BOTTOM;
         break;
     }
+}
+
+void extractColorByBiome(in uint data, out bool colorByBiome)
+{
+    colorByBiome = bool((data & COLOR_BY_BIOME_BITMASK) >> 2);
 }
 
 void extractVertex(in uint data, out uint vertex)
@@ -144,6 +151,14 @@ void main()
     normalizeVertex(face, vertex);
     extractTexCoords(aData, uv);
 
+    bool colorByBiome;
+    extractColorByBiome(aData, colorByBiome);
+    fColor = vec3(1, 1, 1);
+    if (colorByBiome)
+    {
+        fColor = vec3(109.0 / 255.0, 184.0 / 255.0, 79.0 / 255.0);
+    }
+
     float xOffset = float(aChunkPos.x) * 16.0;
     float zOffset = float(aChunkPos.y) * 16.0;
     gl_Position = uProjection * uView * vec4(pos.x + xOffset, pos.y, pos.z + zOffset, 1.0);
@@ -160,6 +175,7 @@ in struct Face {
     vec3 bl;
     vec3 br;
 } face;
+in vec3 fColor;
 flat in uint vertex;
 
 out vec4 color;
@@ -193,5 +209,10 @@ void getNormal(in Face face, out vec3 normal)
 
 void main()
 {
-    color = texture(uTexture, uv);
+    color = vec4(fColor, 1.0) * texture(uTexture, uv);
+
+    if (color.a < 0.3) {
+        discard;
+    }
+
 }

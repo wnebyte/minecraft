@@ -31,9 +31,16 @@ public class Block {
 
     private boolean blendable;
 
+    private boolean colorSideByBiome;
+
+    private boolean colorTopByBiome;
+
+    private boolean colorBottomByBiome;
+
     public Block(byte id, String name,
                  TextureFormat sideTextureFormat, TextureFormat topTextureFormat, TextureFormat bottomTextureFormat,
-                 boolean solid, boolean transparent, boolean blendable) {
+                 boolean solid, boolean transparent, boolean blendable,
+                 boolean colorSideByBiome, boolean colorTopByBiome, boolean colorBottomByBiome) {
         this.id = id;
         this.name = name;
         this.sideTextureFormat = sideTextureFormat;
@@ -42,6 +49,9 @@ public class Block {
         this.solid = solid;
         this.transparent = transparent;
         this.blendable = blendable;
+        this.colorSideByBiome = colorSideByBiome;
+        this.colorTopByBiome = colorTopByBiome;
+        this.colorBottomByBiome = colorBottomByBiome;
     }
 
     public int getTexCoordsIndex(FaceType face) {
@@ -52,6 +62,17 @@ public class Block {
                 return getBottomTextureFormat().getId();
             default:
                 return getSideTextureFormat().getId();
+        }
+    }
+
+    public boolean getColorByBiome(FaceType face) {
+        switch (face) {
+            case TOP:
+                return colorTopByBiome;
+            case BOTTOM:
+                return colorBottomByBiome;
+            default:
+                return colorSideByBiome;
         }
     }
 
@@ -87,17 +108,25 @@ public class Block {
         return blendable;
     }
 
+    public boolean isColorSideByBiome() {
+        return colorSideByBiome;
+    }
+
+    public boolean isColorTopByBiome() {
+        return colorTopByBiome;
+    }
+
+    public boolean isColorBottomByBiome() {
+        return colorBottomByBiome;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null) return false;
         if (o == this) return true;
         if (!(o instanceof Block)) return false;
         Block block = (Block) o;
-        return Objects.equals(this.id, block.id) &&
-                Objects.equals(this.name, block.name) &&
-                Objects.equals(this.sideTextureFormat, block.sideTextureFormat) &&
-                Objects.equals(this.topTextureFormat, block.topTextureFormat) &&
-                Objects.equals(this.bottomTextureFormat, block.bottomTextureFormat);
+        return Objects.equals(this.id, block.id);
     }
 
     @Override
@@ -105,11 +134,7 @@ public class Block {
         int result = 27;
         return 3 *
                 result +
-                Objects.hashCode(this.id) +
-                Objects.hashCode(this.name) +
-                Objects.hashCode(this.sideTextureFormat) +
-                Objects.hashCode(this.topTextureFormat) +
-                Objects.hashCode(this.bottomTextureFormat);
+                Objects.hashCode(this.id);
     }
 
     @Override
@@ -127,6 +152,8 @@ public class Block {
         private TextureFormat sideTextureFormat, topTextureFormat, bottomTextureFormat;
 
         private boolean solid, transparent, blendable;
+
+        private boolean colorSideByBiome, colorTopByBiome, colorBottomByBiome;
 
         public Builder setId(byte id) {
             this.id = id;
@@ -153,24 +180,39 @@ public class Block {
             return this;
         }
 
-        public Builder setIsSolid(boolean value) {
+        public Builder setSolid(boolean value) {
             this.solid = value;
             return this;
         }
 
-        public Builder setIsTransparent(boolean value) {
+        public Builder setTransparent(boolean value) {
             this.transparent = value;
             return this;
         }
 
-        public Builder setIsBlendable(boolean value) {
+        public Builder setBlendable(boolean value) {
             this.blendable = value;
+            return this;
+        }
+
+        public Builder setColorSideByBiome(boolean value) {
+            this.colorSideByBiome = value;
+            return this;
+        }
+
+        public Builder setColorTopByBiome(boolean value) {
+            this.colorTopByBiome = value;
+            return this;
+        }
+
+        public Builder setColorBottomByBiome(boolean value) {
+            this.colorBottomByBiome = value;
             return this;
         }
 
         public Block build() {
             return new Block(id, name, sideTextureFormat, topTextureFormat, bottomTextureFormat,
-                    solid, transparent, blendable);
+                    solid, transparent, blendable, colorSideByBiome, colorTopByBiome, colorBottomByBiome);
         }
     }
 }
