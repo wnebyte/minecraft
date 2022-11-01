@@ -7,13 +7,13 @@ import com.github.wnebyte.minecraft.renderer.DrawCommand;
 
 public class DrawCommandBuffer {
 
-    private DrawCommand[] drawCommands;
+    private final DrawCommand[] drawCommands;
 
-    private Vector2i[] chunkCoords;
+    private final Vector2i[] chunkCoords;
+
+    private final int capacity;
 
     private int size;
-
-    private int capacity;
 
     public DrawCommandBuffer(int capacity) {
         this.capacity = capacity;
@@ -44,15 +44,15 @@ public class DrawCommandBuffer {
     }
 
     public int[] getDrawCommands() {
-        int[] data = new int[DrawCommand.SIZE * size];
+        int[] data = new int[4 * size];
         int index = 0;
         for (int i = 0; i < size; i++) {
             DrawCommand drawCommand = drawCommands[i];
-            data[index + 0] = drawCommand.vertexCount;
-            data[index + 1] = drawCommand.instanceCount;
-            data[index + 2] = drawCommand.first;
-            data[index + 3] = drawCommand.baseInstance;
-            index += DrawCommand.SIZE;
+            data[index + 0] = drawCommand.getVertexCount();
+            data[index + 1] = drawCommand.getInstanceCount();
+            data[index + 2] = drawCommand.getFirst();
+            data[index + 3] = drawCommand.getBaseInstance();
+            index += 4;
         }
         return data;
     }

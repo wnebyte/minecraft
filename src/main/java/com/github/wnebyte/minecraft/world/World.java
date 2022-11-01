@@ -54,16 +54,6 @@ public class World {
 
     private float debounce = debounceTime;
 
-    private float raycastDebounceTime = 0.0f;
-
-    private float raycastDebounce = raycastDebounceTime;
-
-    private float placeBlockDebounceTime = 0.2f;
-
-    private float placeBlockDebounce = placeBlockDebounceTime;
-
-    private Vector3f block;
-
     private Vector3f lastCameraPos;
 
     /*
@@ -99,14 +89,10 @@ public class World {
     */
 
     public void start(Scene scene) {
-        // start chunk manager
         chunkManager.start();
-        // start skybox
         skybox.start();
-        // start game objects
         for (GameObject go : gameObjects) {
             go.start(scene);
-            renderer.add(go);
         }
         camera.setPosition(new Vector3f(CHUNK_SPAWN_AREA / 2.0f, 140, CHUNK_SPAWN_AREA / 2.0f));
         chunkManager.loadSpawnChunks();
@@ -120,13 +106,10 @@ public class World {
      */
     public void update(float dt) {
         debounce -= dt;
-        raycastDebounce -= dt;
-        placeBlockDebounce -= dt;
 
         // set skybox blend value
         time += (dt / 6);
         float blend = JMath.clamp((time / 1440), 0.0f, 1.0f);
-        if (time == 1.0f) time = 0.0f;
         skybox.setBlend(blend);
 
         // update game objects
@@ -158,9 +141,7 @@ public class World {
     }
 
     public void render() {
-        // render skybox
         skybox.render();
-        // render chunks
         chunkManager.render();
     }
 

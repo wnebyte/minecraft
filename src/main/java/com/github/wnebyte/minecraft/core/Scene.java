@@ -8,7 +8,6 @@ import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.world.World;
 import com.github.wnebyte.minecraft.world.Chunk;
 import com.github.wnebyte.minecraft.renderer.*;
-import com.github.wnebyte.minecraft.renderer.Text2D;
 import com.github.wnebyte.minecraft.components.Inventory;
 import com.github.wnebyte.minecraft.util.*;
 import static org.lwjgl.glfw.GLFW.*;
@@ -36,6 +35,8 @@ public class Scene {
 
     private Spritesheet hudSpritesheet;
 
+    private Inventory inventory = new Inventory();
+
     public Scene() {
         this.camera = new Camera(
                 new Vector3f(0.0f, 0.0f, 3.0f),  // position
@@ -48,7 +49,6 @@ public class Scene {
                 Camera.DEFAULT_ZOOM,
                 Camera.DEFAULT_Z_NEAR,
                 10_000f);
-        Renderer.initialize(camera);
         this.renderer = Renderer.getInstance();
         this.world = new World(camera);
     }
@@ -81,24 +81,22 @@ public class Scene {
         world.update(dt);
 
         // camera position label
-        Vector3f origin = new Vector3f(camera.getPosition());
-        Text2D text = new Text2D(
-                String.format("%.0f, %.0f, %.0f", origin.x, origin.y, origin.z),
-                -3.0f + 0.05f, 1.2f, 0.005f, 0x0000);
-        renderer.drawText2D(text);
+        Vector3f pos = new Vector3f(camera.getPosition());
+        renderer.drawString(
+                String.format("%.0f, %.0f, %.0f", pos.x, pos.y, pos.z),
+                -3.0f + 0.05f, 1.2f, -5, 0.005f, 0x0000);
 
         // chunk coords label
-        Vector2i v = Chunk.toChunkCoords(origin);
-        Text2D stext = new Text2D(
+        Vector2i v = Chunk.toChunkCoords(pos);
+        renderer.drawString(
                 String.format("%d, %d", v.x, v.y),
-                -3.0f + 0.05f, 1.1f, 0.005f, 0x0000);
-        renderer.drawText2D(stext);
+                -3.0f + 0.05f, 1.1f, -5, 0.005f, 0x0000);
 
         // fps label
         frames.add(dt);
-        renderer.drawText2D(new Text2D(
+        renderer.drawString(
                 String.format("%.1f", fps),
-                -3.0f + 0.05f, 1.0f, 0.005f, 0x0000));
+                -3.0f + 0.05f, 1.0f, -5, 0.005f, 0x0000);
 
         if (debounce <= 0) {
             float sum = frames.stream().reduce(0.0f, Float::sum);
@@ -108,36 +106,35 @@ public class Scene {
         }
 
         // crosshair
-        renderer.addLine2D(
+        renderer.drawLine2D(
                 new Vector2f(0.0f, -crosshairHalfSize),
                 new Vector2f(0.0f, crosshairHalfSize),
-                new Vector3f(0f, 0f, 0f),
-                1);
-        renderer.addLine2D(
+                0,
+                new Vector3f(0f, 0f, 0f));
+        renderer.drawLine2D(
                 new Vector2f(-crosshairHalfSize, 0.0f),
                 new Vector2f(crosshairHalfSize,  0.0f),
-                new Vector3f(0f, 0f, 0f),
-                1);
+                0,
+                new Vector3f(0f, 0f, 0f));
 
-        hud();
+        // hud
+        drawHUD();
     }
 
-    private Inventory inventory = new Inventory();
-
-    private void hud() {
+    private void drawHUD() {
         Sprite selSprite = hudSpritesheet.getSprite(5);
         Sprite regSprite = hudSpritesheet.getSprite(6);
-        float xStart = ((24 * 0.005f) * 10) / 2;
+        float xStart = ((32 * 0.005f) * 10) / 2;
         for (int i = 0; i < Inventory.NUM_SLOTS; i++) {
             Sprite sprite = inventory.isSlotSelected(i) ? selSprite : regSprite;
-            renderer.drawTexturedQuad2D(-xStart, -1.4f, 24, 24, 0.005f, sprite, 0xFFFF);
-            xStart -= (24 * 0.005f);
+            renderer.drawTexturedQuad2D(-xStart, -1.4f, 0, sprite, 0.005f, 0xBBCCAF);
+            xStart -= (32 * 0.005f);
         }
     }
 
     public void render() {
         world.render();
-        renderer.render();
+        renderer.render(camera);
     }
 
     public void destroy() {

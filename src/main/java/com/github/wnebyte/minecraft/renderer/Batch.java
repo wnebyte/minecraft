@@ -1,18 +1,16 @@
 package com.github.wnebyte.minecraft.renderer;
 
+import com.github.wnebyte.minecraft.core.Camera;
+
 public interface Batch<T> {
 
     void start();
 
-    void render();
+    void render(Camera camera);
 
     void destroy();
 
     boolean add(T element);
 
-    boolean remove(T element);
-
-    void clear();
-
-    boolean hasSpace();
+    int zIndex();
 }

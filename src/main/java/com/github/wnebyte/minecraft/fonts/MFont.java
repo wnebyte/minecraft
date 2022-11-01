@@ -7,7 +7,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import com.github.wnebyte.minecraft.renderer.Texture;
 
-public class SFont {
+public class MFont {
 
     public static Font registerFont(String path) {
         try {
@@ -33,7 +33,7 @@ public class SFont {
 
     private Texture texture = null;
 
-    public SFont(String path, int fontSize) {
+    public MFont(String path, int fontSize) {
         this.path = path;
         this.fontSize = fontSize;
         this.characters = new HashMap<>();

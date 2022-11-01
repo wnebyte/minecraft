@@ -11,22 +11,10 @@ public class Line3D {
 
     private Vector3f color;
 
-    private int ftl;
-
     public Line3D(Vector3f start, Vector3f end, Vector3f color) {
-        this(start, end, color, Integer.MAX_VALUE);
-    }
-
-    public Line3D(Vector3f start, Vector3f end, Vector3f color, int ftl) {
         this.start = start;
         this.end = end;
         this.color = color;
-        this.ftl = ftl;
-    }
-
-    public int beginFrame() {
-        ftl--;
-        return ftl;
     }
 
     public Vector3f getStart() {
@@ -53,10 +41,6 @@ public class Line3D {
         this.color = color;
     }
 
-    public int getFtl() {
-        return ftl;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (o == null) return false;
@@ -65,8 +49,7 @@ public class Line3D {
         Line3D line3D = (Line3D) o;
         return Objects.equals(line3D.start, this.start) &&
                 Objects.equals(line3D.end, this.end) &&
-                Objects.equals(line3D.color, this.color) &&
-                Objects.equals(line3D.ftl, this.ftl);
+                Objects.equals(line3D.color, this.color);
     }
 
     @Override
@@ -76,7 +59,6 @@ public class Line3D {
                 result +
                 Objects.hashCode(this.start) +
                 Objects.hashCode(this.end) +
-                Objects.hashCode(this.color) +
-                Objects.hashCode(this.ftl);
+                Objects.hashCode(this.color);
     }
 }

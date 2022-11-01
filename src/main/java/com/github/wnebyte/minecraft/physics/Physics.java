@@ -1,11 +1,11 @@
 package com.github.wnebyte.minecraft.physics;
 
+import com.github.wnebyte.minecraft.renderer.Renderer;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.core.GameObject;
 import com.github.wnebyte.minecraft.core.Transform;
 import com.github.wnebyte.minecraft.world.Map;
 import com.github.wnebyte.minecraft.world.Block;
-import com.github.wnebyte.minecraft.renderer.Renderer;
 import com.github.wnebyte.minecraft.physics.components.Rigidbody;
 import com.github.wnebyte.minecraft.physics.components.BoxCollider;
 import com.github.wnebyte.minecraft.util.JMath;

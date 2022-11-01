@@ -1,8 +1,6 @@
 package com.github.wnebyte.minecraft.renderer;
 
-import java.util.List;
-import java.util.ArrayList;
-
+import java.util.Arrays;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.core.Camera;
@@ -18,9 +16,7 @@ import static org.lwjgl.opengl.GL30.*;
 
 public class Line2DBatchRenderer implements Batch<Line2D> {
 
-    private static final int MAX_LINES = 3000;
-
-    private static final int POS_SIZE = 3;
+    private static final int POS_SIZE = 2;
 
     private static final int COLOR_SIZE = 3;
 
@@ -32,25 +28,27 @@ public class Line2DBatchRenderer implements Batch<Line2D> {
 
     private static final int STRIDE_BYTES = STRIDE * Float.BYTES;
 
-    private int vboID;
+    private static final int MAX_LINES = 3000;
 
     private int vaoID;
 
-    private List<Line2D> lines;
+    private int vboID;
 
-    private float[] vertexArray;
+    private float[] data;
 
-    private Camera camera;
+    private int size;
+
+    private int zIndex;
 
     private Shader shader;
 
     private boolean started;
 
-    public Line2DBatchRenderer(Camera camera) {
-        this.camera = camera;
-        this.lines = new ArrayList<>(MAX_LINES);
-        this.vertexArray = new float[MAX_LINES * 6 * 2];
+    public Line2DBatchRenderer(int zIndex) {
+        this.zIndex = zIndex;
+        this.data = new float[MAX_LINES * 2 * STRIDE];
         this.shader = Assets.getShader(Assets.DIR + "/shaders/line2D.glsl");
+        this.size = 0;
     }
 
     @Override
@@ -60,7 +58,7 @@ public class Line2DBatchRenderer implements Batch<Line2D> {
 
         vboID = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, vboID);
-        glBufferData(GL_ARRAY_BUFFER, (long)vertexArray.length * Float.BYTES, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, MAX_LINES * 2 * STRIDE_BYTES, GL_DYNAMIC_DRAW);
 
         glVertexAttribPointer(0, POS_SIZE, GL_FLOAT, false, STRIDE_BYTES, POS_OFFSET);
         glEnableVertexAttribArray(0);
@@ -72,87 +70,68 @@ public class Line2DBatchRenderer implements Batch<Line2D> {
         started = true;
     }
 
-    private void begin() {
-        if (!started) {
-            start();
-        }
-        for (int i = 0; i < lines.size(); i++) {
-            Line2D line = lines.get(i);
-            if (line.beginFrame() < 0) {
-                lines.remove(i);
-                i--;
-            }
-        }
-    }
-
     @Override
-    public void render() {
-        if (lines.isEmpty()) {
+    public void render(Camera camera) {
+        if (size <= 0) {
             return;
         }
-
         if (!started) {
             start();
         }
-        int index = 0;
-        for (Line2D line : lines) {
-            for (int i = 0; i < 2; i++) {
-                Vector2f pos = (i == 0) ? line.getStart() : line.getEnd();
-                Vector3f color = line.getColor();
-
-                vertexArray[index + 0] = pos.x;
-                vertexArray[index + 1] = pos.y;
-                vertexArray[index + 2] = 0.0f;
-
-                vertexArray[index + 3] = color.x;
-                vertexArray[index + 4] = color.y;
-                vertexArray[index + 5] = color.z;
-
-                index += STRIDE;
-            }
-        }
-
         glBindBuffer(GL_ARRAY_BUFFER, vboID);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, vertexArray);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, data);
 
         shader.use();
-        shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrixHUD());
+        shader.uploadInt(Shader.Z_INDEX, zIndex);
         shader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrixHUD());
+        shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrixHUD());
 
         glBindVertexArray(vaoID);
-        glDrawArrays(GL_LINES, 0, lines.size());
+        glDrawArrays(GL_LINES, 0, size * 2);
         glBindVertexArray(0);
 
+        // Reset batch for use on the next draw call
+        Arrays.fill(data, 0, size * 2 * STRIDE, 0.0f);
+        size = 0;
         shader.detach();
     }
 
     @Override
-    public void destroy() {
-        glDeleteVertexArrays(vaoID);
-        glDeleteBuffers(vboID);
-    }
-
-    @Override
-    public boolean add(Line2D element) {
-        if (hasSpace()) {
-            lines.add(element);
-            return true;
+    public boolean add(Line2D line) {
+        if (line.getZIndex() != zIndex || atCapacity()) {
+            return false;
         }
-        return false;
+        int index = size * 2 * STRIDE;
+        loadVertexProperties(index, line);
+        size++;
+        return true;
+    }
+
+    private void loadVertexProperties(int index, Line2D line) {
+        for (int i = 0; i < 2; i++) {
+            Vector2f position = (i == 0) ? line.getStart() : line.getEnd();
+            Vector3f color = line.getColor();
+            data[index + 0] = position.x;
+            data[index + 1] = position.y;
+            data[index + 2] = color.x;
+            data[index + 3] = color.y;
+            data[index + 4] = color.z;
+            index += STRIDE;
+        }
+    }
+
+    public boolean atCapacity() {
+        return (size >= MAX_LINES);
     }
 
     @Override
-    public boolean remove(Line2D element) {
-        return lines.remove(element);
+    public void destroy() {
+        glDeleteBuffers(vboID);
+        glDeleteVertexArrays(vaoID);
     }
 
     @Override
-    public boolean hasSpace() {
-        return (lines.size() < MAX_LINES);
-    }
-
-    @Override
-    public void clear() {
-        lines.clear();
+    public int zIndex() {
+        return zIndex;
     }
 }

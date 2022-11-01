@@ -1,5 +1,5 @@
 #type vertex
-#version 330 core
+#version 460 core
 layout (location=0) in vec2 aPos;
 layout (location=1) in vec3 aColor;
 layout (location=2) in vec2 aTexCoords;
@@ -9,6 +9,7 @@ out vec3 fColor;
 out vec2 fTexCoords;
 out float fTexId;
 
+uniform int zIndex;
 uniform mat4 uProjection;
 
 void main()
@@ -16,11 +17,11 @@ void main()
     fTexId = aTexId;
     fTexCoords = aTexCoords;
     fColor = aColor;
-    gl_Position = uProjection * vec4(aPos, -5, 1);
+    gl_Position = uProjection * vec4(aPos, zIndex, 1);
 }
 
 #type fragment
-#version 330 core
+#version 460 core
 #define NUM_TEXTURES 8
 in vec3 fColor;
 in vec2 fTexCoords;

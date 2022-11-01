@@ -10,24 +10,15 @@ public class Line2D {
 
     private Vector2f end;
 
+    private int zIndex;
+
     private Vector3f color;
 
-    private int ftl;
-
-    public Line2D(Vector2f start, Vector2f end, Vector3f color) {
-        this(start, end, color, Integer.MAX_VALUE);
-    }
-
-    public Line2D(Vector2f start, Vector2f end, Vector3f color, int ftl) {
+    public Line2D(Vector2f start, Vector2f end, int zIndex, Vector3f color) {
         this.start = start;
+        this.zIndex = zIndex;
         this.end = end;
         this.color = color;
-        this.ftl = ftl;
-    }
-
-    public int beginFrame() {
-        ftl--;
-        return ftl;
     }
 
     public Vector2f getStart() {
@@ -46,16 +37,16 @@ public class Line2D {
         this.end = end;
     }
 
+    public int getZIndex() {
+        return zIndex;
+    }
+
     public Vector3f getColor() {
         return color;
     }
 
     public void setColor(Vector3f color) {
         this.color = color;
-    }
-
-    public int getFtl() {
-        return ftl;
     }
 
     @Override
@@ -66,8 +57,8 @@ public class Line2D {
         Line2D line2D = (Line2D) o;
         return Objects.equals(line2D.start, this.start) &&
                 Objects.equals(line2D.end, this.end) &&
-                Objects.equals(line2D.color, this.color) &&
-                Objects.equals(line2D.ftl, this.ftl);
+                Objects.equals(line2D.zIndex, this.zIndex) &&
+                Objects.equals(line2D.color, this.color);
     }
 
     @Override
@@ -77,7 +68,7 @@ public class Line2D {
                 result +
                 Objects.hashCode(this.start) +
                 Objects.hashCode(this.end) +
-                Objects.hashCode(this.color) +
-                Objects.hashCode(this.ftl);
+                Objects.hashCode(this.zIndex) +
+                Objects.hashCode(this.color);
     }
 }

@@ -8,13 +8,13 @@ public class DrawCommand {
 
     public static final int SIZE_BYTES = SIZE * Integer.BYTES;
 
-    public int vertexCount;
+    private int vertexCount;
 
-    public int instanceCount;
+    private int instanceCount;
 
-    public int first;
+    private int first;
 
-    public int baseInstance;
+    private int baseInstance;
 
     public DrawCommand() {
         this(0, 0, 0, 0);

@@ -12,7 +12,7 @@ import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
 import static org.lwjgl.opengl.GL30.*;
 
-public class BoxBatchRenderer implements Batch<BoxRenderer> {
+public class BoxBatchRenderer implements EntityBatch<BoxRenderer> {
 
     /*
     ###########################
@@ -156,7 +156,7 @@ public class BoxBatchRenderer implements Batch<BoxRenderer> {
     }
 
     @Override
-    public void render() {
+    public void render(Camera camera) {
         if (!started) {
             start();
         }
@@ -197,6 +197,11 @@ public class BoxBatchRenderer implements Batch<BoxRenderer> {
         size++;
         loadVertexProperties(index);
         return true;
+    }
+
+    @Override
+    public int zIndex() {
+        return 0;
     }
 
     /**
@@ -270,7 +275,6 @@ public class BoxBatchRenderer implements Batch<BoxRenderer> {
         return maxBatchSize;
     }
 
-    @Override
     public boolean hasSpace() {
         return (size < maxBatchSize);
     }

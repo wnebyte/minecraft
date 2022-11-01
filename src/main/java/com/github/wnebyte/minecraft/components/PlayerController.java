@@ -60,9 +60,8 @@ public class PlayerController extends Component {
 
         if (raycast.isHit()) {
             info = raycast;
-            renderer.clearLines3D();
-            renderer.addBox3D(info.getBlockCenter(), info.getBlockSize(), 0f,
-                    new Vector3f(1f, 1f, 1f), 60 * 5);
+            renderer.drawBox3D(info.getBlockCenter(), info.getBlockSize(), 0f,
+                    new Vector3f(1f, 1f, 1f));
         }
 
         // destroy block

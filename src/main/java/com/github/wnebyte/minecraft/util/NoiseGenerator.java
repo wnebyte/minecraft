@@ -2,18 +2,18 @@ package com.github.wnebyte.minecraft.util;
 
 import java.util.Objects;
 
-public class Generator {
+public class NoiseGenerator {
 
     private final FastNoiseLite fnlState;
 
     private final float weight;
 
-    public Generator(FastNoiseLite fnlState, float weight) {
+    public NoiseGenerator(FastNoiseLite fnlState, float weight) {
         this.fnlState = fnlState;
         this.weight = weight;
     }
 
-    public Generator(FnlState fnlState, int seed) {
+    public NoiseGenerator(FnlState fnlState, int seed) {
         this.fnlState = new FastNoiseLite(seed);
         this.fnlState.SetNoiseType(fnlState.getNoiseType());
         this.fnlState.SetFrequency(fnlState.getFrequency());
@@ -41,10 +41,10 @@ public class Generator {
     public boolean equals(Object o) {
         if (o == null) return false;
         if (o == this) return true;
-        if (!(o instanceof Generator)) return false;
-        Generator generator = (Generator) o;
-        return Objects.equals(generator.fnlState, this.fnlState) &&
-                Objects.equals(generator.weight, this.weight);
+        if (!(o instanceof NoiseGenerator)) return false;
+        NoiseGenerator noiseGenerator = (NoiseGenerator) o;
+        return Objects.equals(noiseGenerator.fnlState, this.fnlState) &&
+                Objects.equals(noiseGenerator.weight, this.weight);
     }
 
     @Override

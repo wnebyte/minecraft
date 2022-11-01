@@ -5,7 +5,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Collection;
-import com.github.wnebyte.minecraft.fonts.SFont;
+import com.github.wnebyte.minecraft.fonts.MFont;
 import com.github.wnebyte.minecraft.renderer.Shader;
 import com.github.wnebyte.minecraft.renderer.Spritesheet;
 import com.github.wnebyte.minecraft.renderer.Texture;
@@ -23,7 +23,7 @@ public class Assets {
 
     private static final Map<Integer, Texture> texturesById = new HashMap<>();
 
-    private static final Map<String, SFont> fonts = new HashMap<>();
+    private static final Map<String, MFont> fonts = new HashMap<>();
 
     /**
      * Lazily initializes (if necessary) and returns the <code>Shader</code> located at
@@ -112,7 +112,7 @@ public class Assets {
         Assets.addSpritesheet(texture.getPath(), spritesheet);
     }
 
-    public static SFont getFont(String path, int fontSize) {
+    public static MFont getFont(String path, int fontSize) {
         File file = new File(path.toLowerCase(Locale.ROOT));
         assert file.exists() :
                 String.format("Error: (Assets) Font: '%s' does not exist", file.getAbsolutePath());
@@ -120,7 +120,7 @@ public class Assets {
         if (fonts.containsKey(file.getAbsolutePath())) {
             return fonts.get(file.getAbsolutePath());
         } else {
-            SFont font = new SFont(file.getAbsolutePath(), fontSize);
+            MFont font = new MFont(file.getAbsolutePath(), fontSize);
             font.generateBitmap();
             fonts.put(file.getAbsolutePath(), font);
             return font;

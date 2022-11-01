@@ -9,8 +9,8 @@ public class TerrainGenerator {
     */
 
     public static TerrainGenerator getInstance() {
-        if (instance != null) {
-            return instance;
+        if (TerrainGenerator.instance != null) {
+            return TerrainGenerator.instance;
         } else {
             throw new IllegalStateException(
                     "TerrainGenerator has not been initialized."
@@ -19,26 +19,25 @@ public class TerrainGenerator {
     }
 
     public static void load(String terrainNoiseConfig, int seed) {
-        if (instance != null) {
+        if (TerrainGenerator.instance != null) {
             throw new IllegalStateException(
                     "TerrainGenerator has already been initialized."
             );
         }
-        assert Files.exists(terrainNoiseConfig) : "The config file does not exist.";
+        assert Files.exists(terrainNoiseConfig) : "The terrainNoiseConfig file does not exist.";
         String json = Files.read(terrainNoiseConfig);
-
         FnlState[] fnlStates = Settings.GSON.fromJson(json, FnlState[].class);
-        assert (fnlStates.length > 0) : "Generators is empty";
-        Generator[] generators = new Generator[fnlStates.length];
+        assert (fnlStates.length > 0) : "The terrainNoiseConfig is empty";
+        NoiseGenerator[] noiseGenerators = new NoiseGenerator[fnlStates.length];
 
         for (int i = 0; i < fnlStates.length; i++) {
             FnlState fnlState = fnlStates[i];
             int newSeed = seed + (i * 7);
-            Generator generator = new Generator(fnlState, newSeed);
-            generators[i] = generator;
+            NoiseGenerator noiseGenerator = new NoiseGenerator(fnlState, newSeed);
+            noiseGenerators[i] = noiseGenerator;
         }
 
-        instance = new TerrainGenerator(generators, seed);
+        TerrainGenerator.instance = new TerrainGenerator(noiseGenerators, seed);
     }
 
     /*
@@ -55,7 +54,7 @@ public class TerrainGenerator {
     ###########################
     */
 
-    private final Generator[] generators;
+    private final NoiseGenerator[] noiseGenerators;
 
     private final int seed;
 
@@ -65,8 +64,8 @@ public class TerrainGenerator {
     ###########################
     */
 
-    private TerrainGenerator(Generator[] generators, int seed) {
-        this.generators = generators;
+    private TerrainGenerator(NoiseGenerator[] noiseGenerators, int seed) {
+        this.noiseGenerators = noiseGenerators;
         this.seed = seed;
     }
 
@@ -81,13 +80,13 @@ public class TerrainGenerator {
         return (int)JMath.mapRange(normalizedHeight, 0.0f, 1.0f, min, max);
     }
 
-    public float getNormalizedHeight(int x, int z) {
+    private float getNormalizedHeight(int x, int z) {
         float blendedNoise = 0.0f;
         float weightSum = 0.0f;
 
-        for (Generator generator : generators) {
-            float noise = generator.getNoise(x, z);
-            float weight = generator.getWeight();
+        for (NoiseGenerator noiseGenerator : noiseGenerators) {
+            float noise = noiseGenerator.getNoise(x, z);
+            float weight = noiseGenerator.getWeight();
             blendedNoise += noise * weight;
             weightSum += weight;
         }

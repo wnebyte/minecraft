@@ -1,19 +1,25 @@
 package com.github.wnebyte.minecraft.renderer;
 
-import java.util.List;
-import java.util.Arrays;
-import java.util.ArrayList;
+import java.util.*;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.core.Camera;
-import com.github.wnebyte.minecraft.fonts.SFont;
-import com.github.wnebyte.minecraft.fonts.CharInfo;
 import com.github.wnebyte.minecraft.util.Assets;
+import com.github.wnebyte.minecraft.util.CapacitySet;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
 import static org.lwjgl.opengl.GL30.*;
 
-public class Vertex2DBatchRenderer {
+public class Vertex2DBatchRenderer implements Batch<Vertex2D> {
+
+    private static int[] genIndices() {
+        int[] elements = new int[BATCH_SIZE * 3];
+        for (int i = 0; i < elements.length; i++) {
+            elements[i] = INDICES[(i % 6)] + ((i / 6) * 4);
+        }
+        return elements;
+    }
 
     private static final int POS_SIZE = 2;
 
@@ -44,34 +50,31 @@ public class Vertex2DBatchRenderer {
             1, 2, 3
     };
 
-    private float[] data;
-
     private int vaoID;
 
     private int vboID;
 
     private int size;
 
-    private Shader shader;
-
-    private SFont font;
-
-    private Camera camera;
-
-    private List<Texture> textures;
-
     private boolean started;
 
-    public Vertex2DBatchRenderer(Camera camera) {
-        this.camera = camera;
+    private final float[] data;
+
+    private final Shader shader;
+
+    private final CapacitySet<Integer> textures;
+
+    private final int zIndex;
+
+    public Vertex2DBatchRenderer(int zIndex) {
+        this.zIndex = zIndex;
         this.data = new float[BATCH_SIZE * STRIDE];
         this.shader = Assets.getShader(Assets.DIR + "/shaders/vertex2D.glsl");
-        this.font = Assets.getFont(Assets.DIR + "/fonts/Minecraft.ttf", 16);
-        this.textures = new ArrayList<>(TEX_SLOTS.length);
-        this.textures.add(this.font.getTexture());
+        this.textures = new CapacitySet<>(TEX_SLOTS.length);
         this.size = 0;
     }
 
+    @Override
     public void start() {
         // Generate and bind a Vertex Array Object
         vaoID = glGenVertexArrays();
@@ -104,7 +107,8 @@ public class Vertex2DBatchRenderer {
         started = true;
     }
 
-    public void flush() {
+    @Override
+    public void render(Camera camera) {
         if (size <= 0) {
             return;
         }
@@ -118,11 +122,13 @@ public class Vertex2DBatchRenderer {
 
         // Draw the buffer that we just uploaded
         shader.use();
+        shader.uploadInt(Shader.Z_INDEX, zIndex);
         shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrixHUD());
-        for (int i = 0; i < textures.size(); i++) {
-            Texture texture = textures.get(i);
+        int i = 0;
+        for (int texId : textures) {
             glActiveTexture(GL_TEXTURE0 + i);
-            texture.bind();
+            glBindTexture(GL_TEXTURE_2D, texId);
+            i++;
         }
         shader.uploadIntArray(Shader.U_TEXTURES, TEX_SLOTS);
 
@@ -132,199 +138,54 @@ public class Vertex2DBatchRenderer {
         // Reset batch for use on the next draw call
         Arrays.fill(data, 0, size * STRIDE, 0.0f);
         size = 0;
-        for (Texture texture : textures) {
-            texture.unbind();
+        for (int texId : textures) {
+            glBindTexture(GL_TEXTURE_2D, 0);
         }
         shader.detach();
     }
 
+    @Override
+    public boolean add(Vertex2D vertex) {
+        if (vertex.getZIndex() != zIndex || atCapacity(vertex)) {
+            return false;
+        }
+        int index = size * STRIDE;
+        loadVertexProperties(index, vertex);
+        size++;
+        return true;
+    }
+
+    private void loadVertexProperties(int index, Vertex2D vertex) {
+        Vector2f position = vertex.getPosition();
+        Vector3f color = vertex.getColor();
+        Vector2f uv = vertex.getTexCoords();
+        int texId = vertex.getTexId();
+        data[index + 0] = position.x;
+        data[index + 1] = position.y;
+        data[index + 2] = color.x;
+        data[index + 3] = color.y;
+        data[index + 4] = color.z;
+        data[index + 5] = uv.x;
+        data[index + 6] = uv.y;
+        data[index + 7] = textures.indexOf(texId);
+    }
+
+    private boolean atCapacity(Vertex2D element) {
+        return (size >= BATCH_SIZE || atTexCapacity(element));
+    }
+
+    private boolean atTexCapacity(Vertex2D element) {
+        return (!(element.getTexId() == -1) && !(textures.add(element.getTexId())));
+    }
+
+    @Override
     public void destroy() {
         glDeleteBuffers(vboID);
         glDeleteVertexArrays(vaoID);
     }
 
-    public boolean addText2D(Text2D text2D) {
-        if (size >= BATCH_SIZE - (text2D.getText().length() * 4)) {
-            return false;
-        } else {
-            addText(text2D.getText(), text2D.getX(), text2D.getY(), text2D.getScale(), text2D.getRGB());
-            return true;
-        }
-    }
-
-    private void addText(String text, float x, float y, float scale, int rgb) {
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-
-            CharInfo info = font.getCharacter(c);
-            if (info.getWidth() == 0) {
-                System.err.printf("Warning: (Vertex2DBatchRenderer) Unknown char: '%c'%n", c);
-                continue;
-            }
-
-            addCharacter(info, x, y, scale, rgb);
-            x += info.getWidth() * scale;
-        }
-    }
-
-    private void addCharacter(CharInfo info, float x, float y, float scale, int rgb) {
-        // if we have no more room - flush and start with a fresh batch
-        if (size >= BATCH_SIZE - 4) {
-            flush();
-        }
-
-        // char info
-        int width = info.getWidth();
-        int height = info.getHeight();
-        Vector2f[] uvs = info.getTexCoords();
-
-        // position
-        float x0 = x;
-        float y0 = y;
-        float x1 = x + scale * width;
-        float y1 = y + scale * height;
-
-        // color
-        float r = (float)((rgb >> 16) & 0xFF) / 255.0f;
-        float g = (float)((rgb >> 8)  & 0xFF) / 255.0f;
-        float b = (float)((rgb >> 0)  & 0xFF) / 255.0f;
-
-        // tex coords
-        float ux0 = uvs[0].x;
-        float uy0 = uvs[0].y;
-        float ux1 = uvs[1].x;
-        float uy1 = uvs[1].y;
-
-        // load vertex properties
-        int offset = size * STRIDE;
-        data[offset + 0] = x1;
-        data[offset + 1] = y0;
-        data[offset + 2] = r;
-        data[offset + 3] = g;
-        data[offset + 4] = b;
-        data[offset + 5] = ux1;
-        data[offset + 6] = uy0;
-        data[offset + 7] = 0;
-        offset += STRIDE;
-
-        data[offset + 0] = x1;
-        data[offset + 1] = y1;
-        data[offset + 2] = r;
-        data[offset + 3] = g;
-        data[offset + 4] = b;
-        data[offset + 5] = ux1;
-        data[offset + 6] = uy1;
-        data[offset + 7] = 0;
-        offset += STRIDE;
-
-        data[offset + 0] = x0;
-        data[offset + 1] = y1;
-        data[offset + 2] = r;
-        data[offset + 3] = g;
-        data[offset + 4] = b;
-        data[offset + 5] = ux0;
-        data[offset + 6] = uy1;
-        data[offset + 7] = 0;
-        offset += STRIDE;
-
-        data[offset + 0] = x0;
-        data[offset + 1] = y0;
-        data[offset + 2] = r;
-        data[offset + 3] = g;
-        data[offset + 4] = b;
-        data[offset + 5] = ux0;
-        data[offset + 6] = uy0;
-        data[offset + 7] = 0;
-
-        size += 4;
-    }
-
-    public boolean addQuad(float x, float y, float width, float height, float scale, Texture texture, Vector2f[] uvs, int rgb) {
-        // if we have no more room - flush and start with a fresh batch
-        if (size >= BATCH_SIZE - 4) {
-            return false;
-        }
-
-        if (texture != null && !textures.contains(texture)) {
-            textures.add(texture);
-        }
-
-        // position
-        float x0 = x;
-        float y0 = y;
-        float x1 = x + scale * width;
-        float y1 = y + scale * height;
-
-        // color
-        float r = (float)((rgb >> 16) & 0xFF) / 255.0f;
-        float g = (float)((rgb >> 8)  & 0xFF) / 255.0f;
-        float b = (float)((rgb >> 0)  & 0xFF) / 255.0f;
-
-        // texId
-        int texId = (textures == null) ? -1 : textures.indexOf(texture);
-
-        // load vertex properties
-        int offset = size * STRIDE;
-        data[offset + 0] = x1;
-        data[offset + 1] = y0;
-        data[offset + 2] = r;
-        data[offset + 3] = g;
-        data[offset + 4] = b;
-        data[offset + 5] = (uvs != null && uvs.length >= 3) ? uvs[0].x : 1.0f;
-        data[offset + 6] = (uvs != null && uvs.length >= 3) ? uvs[0].y : 0.0f;
-        data[offset + 7] = texId;
-        offset += STRIDE;
-
-        data[offset + 0] = x1;
-        data[offset + 1] = y1;
-        data[offset + 2] = r;
-        data[offset + 3] = g;
-        data[offset + 4] = b;
-        data[offset + 5] = (uvs != null && uvs.length >= 3) ? uvs[1].x : 1.0f;
-        data[offset + 6] = (uvs != null && uvs.length >= 3) ? uvs[1].y : 1.0f;
-        data[offset + 7] = texId;
-        offset += STRIDE;
-
-        data[offset + 0] = x0;
-        data[offset + 1] = y1;
-        data[offset + 2] = r;
-        data[offset + 3] = g;
-        data[offset + 4] = b;
-        data[offset + 5] = (uvs != null && uvs.length >= 3) ? uvs[2].x : 0.0f;
-        data[offset + 6] = (uvs != null && uvs.length >= 3) ? uvs[2].y : 1.0f;
-        data[offset + 7] = texId;
-        offset += STRIDE;
-
-        data[offset + 0] = x0;
-        data[offset + 1] = y0;
-        data[offset + 2] = r;
-        data[offset + 3] = g;
-        data[offset + 4] = b;
-        data[offset + 5] = (uvs != null && uvs.length >= 3) ? uvs[3].x : 0.0f;
-        data[offset + 6] = (uvs != null && uvs.length >= 3) ? uvs[3].y : 0.0f;
-        data[offset + 7] = texId;
-
-        size += 4;
-
-        return true;
-    }
-
-
-
-    private int[] genIndices() {
-        // 3 indices per triangle
-        int[] elements = new int[BATCH_SIZE * 3];
-        for (int i = 0; i < elements.length; i++) {
-            elements[i] = INDICES[(i % 6)] + ((i / 6) * 4);
-        }
-        return elements;
-    }
-
-    public boolean isStarted() {
-        return started;
-    }
-
-    public int size() {
-        return size;
+    @Override
+    public int zIndex() {
+        return zIndex;
     }
 }

@@ -30,6 +30,8 @@ public class Shader {
 
     public static final String SCREEN = "screen";
 
+    public static final String Z_INDEX = "zIndex";
+
     public static final String U_DAY_CUBEMAP = "uDayCubemap";
 
     public static final String U_NIGHT_CUBEMAP = "uNightCubemap";
