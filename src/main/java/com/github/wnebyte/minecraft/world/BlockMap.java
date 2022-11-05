@@ -15,8 +15,6 @@ import com.github.wnebyte.minecraft.core.Transform;
 import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.util.*;
 import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL30.GL_R8;
-import static org.lwjgl.opengl.GL30C.GL_COLOR_ATTACHMENT0;
 import static org.lwjgl.opengl.GL30C.GL_R32F;
 import static org.lwjgl.opengl.GL31C.GL_TEXTURE_BUFFER;
 import static org.lwjgl.opengl.GL31C.glTexBuffer;
