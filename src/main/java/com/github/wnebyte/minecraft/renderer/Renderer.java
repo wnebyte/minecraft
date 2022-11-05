@@ -3,11 +3,12 @@ package com.github.wnebyte.minecraft.renderer;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Comparator;
+import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.core.Camera;
-import com.github.wnebyte.minecraft.fonts.MFont;
-import com.github.wnebyte.minecraft.fonts.CharInfo;
+import com.github.wnebyte.minecraft.renderer.fonts.JFont;
+import com.github.wnebyte.minecraft.renderer.fonts.CharInfo;
 import com.github.wnebyte.minecraft.util.Assets;
 import com.github.wnebyte.minecraft.util.JMath;
 import static org.lwjgl.opengl.GL11.*;
@@ -19,6 +20,10 @@ public class Renderer {
     #        UTILITIES        #
     ###########################
     */
+
+    public static Renderer newInstance() {
+        return new Renderer();
+    }
 
     public static Renderer getInstance() {
         if (Renderer.instance == null) {
@@ -51,11 +56,15 @@ public class Renderer {
 
     private final List<Batch<Vertex2D>> vertex2DBatches;
 
+    private final List<Batch<Vertex3D>> vertex3DBatches;
+
+    private final List<Batch<Cube3D>> cubeBatches;
+
     private final List<Batch<?>> batches;
 
     private final List<Batch<?>> blendableBatches;
 
-    private final MFont font;
+    private final JFont font;
 
     /*
     ###########################
@@ -68,8 +77,10 @@ public class Renderer {
         this.line3DBatches = new ArrayList<>();
         this.vertex2DBatches = new ArrayList<>();
         this.vertex2DBlendableBatches = new ArrayList<>();
+        this.vertex3DBatches = new ArrayList<>();
         this.batches = new ArrayList<>();
         this.blendableBatches = new ArrayList<>();
+        this.cubeBatches = new ArrayList<>();
         this.font = Assets.getFont(Assets.DIR + "/fonts/Minecraft.ttf", 16);
     }
 
@@ -153,16 +164,6 @@ public class Renderer {
         drawLine3D(vertices[3], vertices[2], color);
     }
 
-    //   v4 ----------- v5
-    //   /|            /|      Axis orientation
-    //  / |           / |
-    // v0 --------- v1  |      y
-    // |  |         |   |      |
-    // |  v6 -------|-- v7     +--- x
-    // | /          |  /      /
-    // |/           | /      z
-    // v2 --------- v3
-
     public void drawLine2D(Line2D line) {
         boolean added = false;
         for (Batch<Line2D> batch : line2DBatches) {
@@ -184,7 +185,7 @@ public class Renderer {
         drawLine2D(new Line2D(start, end, zIndex, color));
     }
 
-    public void drawBox2D(Vector2f center, Vector2f dimensions, int zIndex, Vector3f color, float rotation) {
+    public void drawBox2D(Vector2f center, Vector2f dimensions, int zIndex, float rotation, Vector3f color) {
         Vector2f min = new Vector2f(center).sub(new Vector2f(dimensions).mul(0.5f));
         Vector2f max = new Vector2f(center).add(new Vector2f(dimensions).mul(0.5f));
 
@@ -207,12 +208,8 @@ public class Renderer {
         drawLine2D(vertices[2], vertices[3], zIndex, color);
     }
 
-    public void drawVertex2D(Vertex2D vertex) {
-        drawVertex2D(vertex, false);
-    }
-
-    public void drawVertex2D(Vertex2D vertex, boolean blendable) {
-        List<Batch<Vertex2D>> vBatches = blendable ? vertex2DBlendableBatches : vertex2DBatches;
+    public void drawVertex2D(Vertex2D vertex, boolean blend) {
+        List<Batch<Vertex2D>> vBatches = blend ? vertex2DBlendableBatches : vertex2DBatches;
         boolean added = false;
         for (Batch<Vertex2D> batch : vBatches) {
             if (batch.add(vertex)) {
@@ -225,11 +222,19 @@ public class Renderer {
             batch.start();
             batch.add(vertex);
             vBatches.add(batch);
-            addBatch(batch, blendable);
+            addBatch(batch, blend);
         }
     }
 
-    public void drawQuad2D(float x, float y, int z, int width, int height, float scale, int rgb) {
+    public void drawVertex2D(Vertex2D vertex) {
+        drawVertex2D(vertex, false);
+    }
+
+    public void drawQuad2D(float x, float y, int z, float width, float height, int rgb) {
+        drawQuad2D(x, y, z, width, height, 1.0f, rgb);
+    }
+
+    public void drawQuad2D(float x, float y, int z, float width, float height, float scale, int rgb) {
         // position
         float x0 = x;
         float y0 = y;
@@ -252,10 +257,20 @@ public class Renderer {
         }
     }
 
-    public void drawTexturedQuad2D(float x, float y, int z, Sprite sprite, float scale, int rgb) {
+    public void drawTexture2D(float x, float y, int z, Sprite sprite, float scale, int rgb) {
+        drawTexture2D(x, y, z, sprite, scale, rgb, false);
+    }
+
+    public void drawTexture2D(float x, float y, int z, Sprite sprite, float scale, int rgb, boolean blend) {
+        drawTexture2D(x, y, z, sprite.getWidth(), sprite.getHeight(), sprite, scale, rgb, blend);
+    }
+
+    public void drawTexture2D(float x, float y, int z, float width, float height, Sprite sprite, int rgb, boolean blend) {
+        drawTexture2D(x, y, z, width, height, sprite, 1, rgb, blend);
+    }
+
+    public void drawTexture2D(float x, float y, int z, float width, float height, Sprite sprite, float scale, int rgb, boolean blend) {
         // sprite
-        float width = sprite.getWidth();
-        float height = sprite.getHeight();
         Vector2f[] uvs = sprite.getTexCoords();
         int texId = sprite.getTexId();
         // position
@@ -276,7 +291,7 @@ public class Renderer {
         };
 
         for (Vertex2D vertex : vertices) {
-            drawVertex2D(vertex);
+            drawVertex2D(vertex, blend);
         }
     }
 
@@ -285,7 +300,7 @@ public class Renderer {
             char c = text.charAt(i);
 
             CharInfo info = font.getCharacter(c);
-            if (info.getWidth() == 0) {
+            if (info == null) {
                 System.err.printf("Warning: (Renderer) Unknown char: '%c'%n", c);
                 continue;
             }
@@ -321,13 +336,79 @@ public class Renderer {
                 drawVertex2D(vertex, true);
             }
 
-            x += info.getWidth() * scale;
+            x += scale * width;
         }
     }
 
-    public void render(Camera camera) {
+    public void drawVertex3D(Vertex3D vertex) {
+        boolean added = false;
+        for (Batch<Vertex3D> batch : vertex3DBatches) {
+            if (batch.add(vertex)) {
+                added = true;
+                break;
+            }
+        }
+        if (!added) {
+            Batch<Vertex3D> batch = new Vertex3DBatchRenderer();
+            batch.start();
+            batch.add(vertex);
+            vertex3DBatches.add(batch);
+            addBatch(batch, false);
+        }
+    }
+
+    public void drawVertex3D(Vector3f position, Vector3f color, Vector2f texCoords, int texId) {
+        drawVertex3D(new Vertex3D(position, color, texCoords, texId));
+    }
+
+
+    //   v4 ----------- v5
+    //   /|            /|      Axis orientation
+    //  / |           / |
+    // v0 --------- v1  |      y
+    // |  |         |   |      |
+    // |  v6 -------|-- v7     +--- x
+    // | /          |  /      /
+    // |/           | /      z
+    // v2 --------- v3
+
+    public void drawCube3D(Cube3D cube) {
+        boolean added = false;
+        for (Batch<Cube3D> batch : cubeBatches) {
+            if (batch.add(cube)) {
+                added = true;
+                break;
+            }
+        }
+        if (!added) {
+            Batch<Cube3D> batch = new Cube3DBatchRenderer();
+            batch.start();
+            batch.add(cube);
+            cubeBatches.add(batch);
+        }
+    }
+
+    public void flushCube3DBatches(Matrix4f viewMatrix, Matrix4f projectionMatrix) {
+        glDisable(GL_CULL_FACE);
+        glEnable(GL_BLEND);
+        for (Batch<Cube3D> batch : cubeBatches) {
+            batch.render(viewMatrix, projectionMatrix);
+        }
+    }
+
+    public void flush(Camera camera) {
         // set render states
         glDisable(GL_CULL_FACE);
+        glDisable(GL_BLEND);
+
+        // non-blendable
+        batches.sort(COMPARATOR);
+        for (int i = 0; i < batches.size(); i++) {
+            Batch<?> batch = batches.get(i);
+            batch.render(camera);
+        }
+
+        // set render states
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -335,16 +416,6 @@ public class Renderer {
         blendableBatches.sort(COMPARATOR);
         for (int i = 0; i < blendableBatches.size(); i++) {
             Batch<?> batch = blendableBatches.get(i);
-            batch.render(camera);
-        }
-
-        // set render states
-        glDisable(GL_BLEND);
-
-        // non-blendable
-        batches.sort(COMPARATOR);
-        for (int i = 0; i < batches.size(); i++) {
-            Batch<?> batch = batches.get(i);
             batch.render(camera);
         }
     }
@@ -360,8 +431,8 @@ public class Renderer {
         }
     }
 
-    private void addBatch(Batch<?> batch, boolean blendable) {
-        if (blendable) {
+    private void addBatch(Batch<?> batch, boolean blend) {
+        if (blend) {
             blendableBatches.add(batch);
         } else {
             batches.add(batch);

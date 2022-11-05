@@ -1,102 +1,178 @@
 package com.github.wnebyte.minecraft.components;
 
+import com.github.wnebyte.minecraft.world.Item;
 import com.github.wnebyte.minecraft.core.Component;
 
 public class Inventory extends Component {
 
-    public static class Slot {
+    /**
+     * Inner class can access the first n elements of the enclosing class's array of items.
+     */
+    public class Hotbar {
 
-        private byte blockId;
+        private int size;
 
-        private int count;
+        private int selected;
 
-        public Slot(byte blockId) {
-            this(blockId, 0);
+        private Hotbar(int size) {
+            this.size = size;
+            this.selected = 0;
         }
 
-        public Slot(byte blockId, int count) {
-            this.blockId = blockId;
-            this.count = count;
+        public int size() {
+            return size;
         }
 
-        public byte getBlockId() {
-            return blockId;
+        public boolean isSelected(int index) {
+            return (index == selected);
         }
 
-        public int getCount() {
-            return count;
+        public Item getSelected() {
+            if (selected < size) {
+                return items[selected];
+            } else {
+                throw new ArrayIndexOutOfBoundsException(
+                        ""
+                );
+            }
         }
 
-        public void setCount(int count) {
-            this.count = count;
+        public Item get(int index) {
+            if (index < size) {
+                return items[index];
+            } else {
+                throw new ArrayIndexOutOfBoundsException(
+                        "Index is out of bounds."
+                );
+            }
         }
 
-        public void incrementCount() {
-            count++;
+        public void set(int index, Item item) {
+            if (index < size) {
+                items[index] = item;
+            } else {
+                throw new ArrayIndexOutOfBoundsException(
+                        "Index is out of bounds."
+                );
+            }
         }
 
-        public void decrementCount() {
-            count--;
+        public void swap(int i, int j) {
+            if (i < size && j < size) {
+                Item tmp = items[i];
+                items[i] = items[j];
+                items[j] = tmp;
+            } else {
+                throw new ArrayIndexOutOfBoundsException(
+                        "Index is out of bounds."
+                );
+            }
+        }
+
+        public void next() {
+            selected = (selected + 1) % size;
+        }
+
+        public void previous() {
+            selected = (selected + (size - 1)) % size;
         }
     }
 
-    public static final int NUM_SLOTS = 10;
+    private final Item[] items;
 
-    private final Slot[] slots = new Slot[NUM_SLOTS];
+    private final int rows, cols;
 
-    private int selectedSlot = 0;
+    private final int size;
 
-    public boolean isSlotSelected(int index) {
-        return (selectedSlot == index);
+    private final Hotbar hotbar;
+
+    public Inventory(int rows, int cols, int hotbarSize) {
+        this.rows = rows;
+        this.cols = cols;
+        this.size = (rows * cols) + hotbarSize;
+        this.items = new Item[size];
+        this.hotbar = new Hotbar(hotbarSize);
     }
 
-    public Slot getSelectedSlot() {
-        if (selectedSlot < NUM_SLOTS) {
-            return slots[selectedSlot];
+    public Item get(int index) {
+        if (rangeCheck(index)) {
+            return items[index];
         } else {
             throw new ArrayIndexOutOfBoundsException(
-                    "Index if out of bounds."
+                    "Index is out of bounds."
             );
         }
     }
 
-    public void setSelectedSlot(int index) {
-        if (index < NUM_SLOTS) {
-            selectedSlot = index;
+    public void set(int index, Item item) {
+        if (rangeCheck(index)) {
+            items[index] = item;
         } else {
             throw new ArrayIndexOutOfBoundsException(
-                    "Index if out of bounds."
+                    "Index is out of bounds."
             );
         }
     }
 
-    public Slot getSlot(int index) {
-        if (index < NUM_SLOTS) {
-            return slots[index];
+    public int indexOf(Item item) {
+        for (int i = 0; i < size; i++) {
+            Item obj = items[i];
+            if (item.equals(obj)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public void swap(int i, int j) {
+        if (rangeCheck(i, j)) {
+            Item tmp = items[i];
+            items[i] = items[j];
+            items[j] = tmp;
         } else {
             throw new ArrayIndexOutOfBoundsException(
-                    "Index if out of bounds."
+                    "Index is out of bounds."
             );
         }
     }
 
-    public void setSlot(int index, Slot slot) {
-        if (index < NUM_SLOTS) {
-            slots[index] = slot;
-        } else {
-            throw new ArrayIndexOutOfBoundsException(
-                    "Index if out of bounds."
-            );
+    public void swap(Item a, Item b) {
+        int i = indexOf(a), j = indexOf(b);
+        swap(i, j);
+    }
+
+    public void swap(int index, Item item) {
+        int j = indexOf(item);
+        if (rangeCheck(index, j)) {
+            swap(index, j);
         }
     }
 
-    public boolean slotIsEmpty(int index) {
-        if (index < NUM_SLOTS) {
-            return (slots[index] == null);
-        } else {
-            throw new ArrayIndexOutOfBoundsException(
-                    "Index if out of bounds."
-            );
+    private boolean rangeCheck(int... indices) {
+        if (indices == null) return false;
+        for (int i : indices) {
+            if (i >= 0 && i < size) {
+                continue;
+            } else {
+                return false;
+            }
         }
+        return true;
+    }
+
+    public int size() {
+        return size;
+    }
+
+    public int getRows() {
+        return rows;
+    }
+
+    public int getCols() {
+        return cols;
+    }
+
+    public Hotbar getHotbar() {
+        return hotbar;
     }
 }

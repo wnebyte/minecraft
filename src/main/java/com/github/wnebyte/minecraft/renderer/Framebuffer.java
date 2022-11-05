@@ -1,8 +1,10 @@
 package com.github.wnebyte.minecraft.renderer;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Objects;
+import org.lwjgl.BufferUtils;
 import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER;
 
@@ -116,7 +118,11 @@ public class Framebuffer {
 
     private int id;
 
-    private Configuration conf;
+    private int width, height;
+
+    private List<Texture> colorAttachments;
+
+    private Texture depthAttachment;
 
     /*
     ###########################
@@ -125,20 +131,22 @@ public class Framebuffer {
     */
 
     public Framebuffer(Configuration conf) {
-        this.conf = conf;
         this.id = glGenFramebuffers();
+        this.width = conf.getWidth();
+        this.height = conf.getHeight();
+        this.colorAttachments = conf.getColorAttachments();
+        this.depthAttachment = conf.getDepthAttachment();
         glBindFramebuffer(GL_FRAMEBUFFER, id);
 
-        if (conf.hasColorAttachments()) {
+        if (colorAttachments != null) {
             int i = 0;
-            for (Texture colorAttachment : conf.getColorAttachments()) {
+            for (Texture colorAttachment : colorAttachments) {
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i,
                         colorAttachment.getTarget(),  colorAttachment.getId(), 0);
                 i++;
             }
         }
-        if (conf.hasDepthAttachment()) {
-            Texture depthAttachment = conf.getDepthAttachment();
+        if (depthAttachment != null) {
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
                     depthAttachment.getTarget(), depthAttachment.getId(), 0);
         }
@@ -154,6 +162,32 @@ public class Framebuffer {
     #          METHODS        #
     ###########################
     */
+
+    public ByteBuffer readAllPixels(int index) {
+        assert (index < colorAttachments.size()) : "Index is out of bounds";
+        Texture texture = colorAttachments.get(index);
+        int width = texture.getWidth();
+        int height = texture.getHeight();
+        ByteBuffer pixels = BufferUtils.createByteBuffer(width * height * 4);
+        glBindFramebuffer(GL_FRAMEBUFFER, id);
+        glReadBuffer(GL_COLOR_ATTACHMENT0 + index);
+        glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, pixels);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        ByteBuffer buffer = BufferUtils.createByteBuffer(width * height * 4);
+        for (int y = height - 1; y >= 0; y--) {
+            for (int x = 0; x < width; x++) {
+                int pixIndex = (x + (y * width)) * 4;
+                int outIndex = (x + ((height - y - 1) * width)) * 4;
+                buffer.put(outIndex + 0, pixels.get(pixIndex + 3));
+                buffer.put(outIndex + 1, pixels.get(pixIndex + 2));
+                buffer.put(outIndex + 2, pixels.get(pixIndex + 1));
+                buffer.put(outIndex + 3, pixels.get(pixIndex + 0));
+            }
+        }
+
+        return buffer;
+    }
 
     // Todo: impl
     public void resize(int width, int height) {
@@ -172,12 +206,20 @@ public class Framebuffer {
         return id;
     }
 
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
     public Texture getColorAttachment(int index) {
-        return conf.getColorAttachments().get(index);
+        return colorAttachments.get(index);
     }
 
     public Texture getDepthAttachment() {
-        return conf.getDepthAttachment();
+        return depthAttachment;
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.github.wnebyte.minecraft.renderer;
 
 import java.util.Arrays;
 import org.joml.Vector3f;
+import org.joml.Matrix4f;
 import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.util.Assets;
 import static org.lwjgl.opengl.GL15.*;
@@ -29,13 +30,13 @@ public class Line3DBatchRenderer implements Batch<Line3D> {
 
     private int vboID;
 
-    private float[] data;
-
     private int size;
 
-    private Shader shader;
-
     private boolean started;
+
+    private final float[] data;
+
+    private final Shader shader;
 
     public Line3DBatchRenderer() {
         this.data = new float[MAX_LINES * 2 * STRIDE];
@@ -63,7 +64,7 @@ public class Line3DBatchRenderer implements Batch<Line3D> {
     }
 
     @Override
-    public void render(Camera camera) {
+    public void render(Matrix4f viewMatrix, Matrix4f projectionMatrix) {
         if (size <= 0) {
             return;
         }
@@ -74,8 +75,8 @@ public class Line3DBatchRenderer implements Batch<Line3D> {
         glBufferSubData(GL_ARRAY_BUFFER, 0, data);
 
         shader.use();
-        shader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
-        shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
+        shader.uploadMatrix4f(Shader.U_VIEW, viewMatrix);
+        shader.uploadMatrix4f(Shader.U_PROJECTION, projectionMatrix);
 
         glBindVertexArray(vaoID);
         glDrawArrays(GL_LINES, 0, size * 2);
@@ -85,6 +86,11 @@ public class Line3DBatchRenderer implements Batch<Line3D> {
         Arrays.fill(data, 0, size * 2 * STRIDE, 0.0f);
         size = 0;
         shader.detach();
+    }
+
+    @Override
+    public void render(Camera camera) {
+        render(camera.getViewMatrix(), camera.getProjectionMatrix());
     }
 
     @Override

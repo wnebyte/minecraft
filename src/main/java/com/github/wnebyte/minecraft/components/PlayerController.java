@@ -10,7 +10,7 @@ import com.github.wnebyte.minecraft.world.Chunk;
 import com.github.wnebyte.minecraft.renderer.Renderer;
 import com.github.wnebyte.minecraft.physics.Physics;
 import com.github.wnebyte.minecraft.physics.RaycastInfo;
-import com.github.wnebyte.minecraft.util.BlockMap;
+import com.github.wnebyte.minecraft.world.BlockMap;
 import static com.github.wnebyte.minecraft.core.MouseListener.isMouseButtonDown;
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT;

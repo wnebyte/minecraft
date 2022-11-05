@@ -1,11 +1,12 @@
 package com.github.wnebyte.minecraft.util;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Collection;
-import com.github.wnebyte.minecraft.fonts.MFont;
+import com.github.wnebyte.minecraft.renderer.fonts.JFont;
 import com.github.wnebyte.minecraft.renderer.Shader;
 import com.github.wnebyte.minecraft.renderer.Spritesheet;
 import com.github.wnebyte.minecraft.renderer.Texture;
@@ -23,7 +24,7 @@ public class Assets {
 
     private static final Map<Integer, Texture> texturesById = new HashMap<>();
 
-    private static final Map<String, MFont> fonts = new HashMap<>();
+    private static final Map<String, JFont> fonts = new HashMap<>();
 
     /**
      * Lazily initializes (if necessary) and returns the <code>Shader</code> located at
@@ -112,7 +113,7 @@ public class Assets {
         Assets.addSpritesheet(texture.getPath(), spritesheet);
     }
 
-    public static MFont getFont(String path, int fontSize) {
+    public static JFont getFont(String path, int fontSize) {
         File file = new File(path.toLowerCase(Locale.ROOT));
         assert file.exists() :
                 String.format("Error: (Assets) Font: '%s' does not exist", file.getAbsolutePath());
@@ -120,18 +121,26 @@ public class Assets {
         if (fonts.containsKey(file.getAbsolutePath())) {
             return fonts.get(file.getAbsolutePath());
         } else {
-            MFont font = new MFont(file.getAbsolutePath(), fontSize);
+            JFont font = new JFont(file.getAbsolutePath(), fontSize);
             font.generateBitmap();
             fonts.put(file.getAbsolutePath(), font);
             return font;
         }
     }
 
-    public static Collection<Shader> getShaders() {
-        return shaders.values();
+    public static Collection<Shader> getAllShaders() {
+        return Collections.unmodifiableCollection(shaders.values());
     }
 
-    public static Collection<Texture> getTextures() {
-        return textures.values();
+    public static Collection<Texture> getAllTextures() {
+        return Collections.unmodifiableCollection(textures.values());
+    }
+
+    public static Collection<JFont> getAllFonts() {
+        return Collections.unmodifiableCollection(fonts.values());
+    }
+
+    public static Collection<Spritesheet> getAllSpritesheets() {
+        return Collections.unmodifiableCollection(spritesheets.values());
     }
 }

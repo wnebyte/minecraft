@@ -113,6 +113,8 @@ public class Camera extends Component {
 
     private Frustrum frustrum;
 
+    private boolean locked;
+
     /*
     ###########################
     #       CONSTRUCTORS      #
@@ -238,6 +240,9 @@ public class Camera extends Component {
      * Processes input received from a mouse input system.
      */
     public void handleMouseMovement(float xOffset, float yOffset, boolean constrainPitch) {
+        if (locked) {
+            return;
+        }
         xOffset *= mouseSensitivity;
         yOffset *= mouseSensitivity;
         yaw     += 1.7f * xOffset;
@@ -261,6 +266,9 @@ public class Camera extends Component {
      * Processes input received from a mouse-scroll wheel event.
      */
     public void handleMouseScroll(float yOffset) {
+        if (locked) {
+            return;
+        }
         zoom -= yOffset;
         if (zoom < 1.0f) {
             zoom = 1.0f;
@@ -301,6 +309,14 @@ public class Camera extends Component {
 
     public Matrix4f getInverseView() {
         return inverseView;
+    }
+
+    public Matrix4f getInverseProjectionHUD() {
+        return inverseProjectionHUD;
+    }
+
+    public Matrix4f getInverseViewHUD() {
+        return inverseViewHUD;
     }
 
     public void setZoom(float value) {
@@ -353,6 +369,22 @@ public class Camera extends Component {
 
     public Frustrum getFrustrum() {
         return frustrum;
+    }
+
+    public void lock() {
+        this.locked = true;
+    }
+
+    public void unlock() {
+        this.locked = false;
+    }
+
+    public void setLocked(boolean value) {
+        this.locked = value;
+    }
+
+    public boolean isLocked() {
+        return locked;
     }
 
     @Override

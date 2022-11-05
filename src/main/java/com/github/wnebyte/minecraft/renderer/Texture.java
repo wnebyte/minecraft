@@ -80,15 +80,21 @@ public class Texture {
 
     public static class Configuration {
 
-        private int
-        target,
-        level,
-        internalFormat,
-        width,
-        height,
-        border,
-        format,
-        type;
+        private int target;
+
+        private int level;
+
+        private int internalFormat;
+
+        private int width;
+
+        private int height;
+
+        private int border;
+
+        private int format;
+
+        private int type;
 
         private List<Parameter> parameters;
 
@@ -140,13 +146,19 @@ public class Texture {
 
             public static final int DEFAULT_LEVEL = 0;
 
+            public static final int DEFAULT_INTERNAL_FORMAT = 0;
+
             public static final int DEFAULT_BORDER = 0;
+
+            public static final int DEFAULT_FORMAT = 0;
+
+            public static final int DEFAULT_TYPE = 0;
 
             private int target = DEFAULT_TARGET;
 
             private int level = DEFAULT_LEVEL;
 
-            private int internalFormat;
+            private int internalFormat = DEFAULT_INTERNAL_FORMAT;
 
             private int width;
 
@@ -154,9 +166,9 @@ public class Texture {
 
             private int border = DEFAULT_BORDER;
 
-            private int format;
+            private int format = DEFAULT_FORMAT;
 
-            private int type;
+            private int type = DEFAULT_TYPE;
 
             private List<Parameter> parameters = new ArrayList<>();
 

@@ -26,7 +26,6 @@ public class Spritesheet implements Iterable<Sprite> {
             return sprites;
         }
 
-
         public static class Builder {
 
             private String path;
@@ -100,10 +99,10 @@ public class Spritesheet implements Iterable<Sprite> {
             float y = spr.getStart().y;
             float spriteWidth = spr.getSize().x;
             float spriteHeight = spr.getSize().y;
+            float topY = (y + spriteHeight) / (float)texture.getHeight();
             float rightX = (x + spriteWidth) / (float)texture.getWidth();
             float leftX = x / (float)texture.getWidth();
-            float topY = y / (float)texture.getHeight();
-            float bottomY = (y + spriteHeight) / (float)texture.getHeight();
+            float bottomY = y / (float)texture.getHeight();
 
             Vector2f[] texCoords = {
                     new Vector2f(rightX, topY),

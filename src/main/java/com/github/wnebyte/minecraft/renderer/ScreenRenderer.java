@@ -8,15 +8,6 @@ import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 
 public class ScreenRenderer {
 
-    private static final float[] VERTICES = {
-            -1.0f, -1.0f,  0.0f,  0.0f,  0.0f,
-             1.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-             1.0f,  1.0f,  0.0f,  1.0f,  1.0f,
-             1.0f,  1.0f,  0.0f,  1.0f,  1.0f,
-            -1.0f,  1.0f,  0.0f,  0.0f,  1.0f,
-            -1.0f, -1.0f,  0.0f,  0.0f,  0.0f
-    };
-
     private static final int POS_SIZE = 3;
 
     private static final int UV_SIZE = 2;
@@ -29,9 +20,18 @@ public class ScreenRenderer {
 
     private static final int STRIDE_BYTES = STRIDE * Float.BYTES;
 
-    public static int vaoID;
+    private static final float[] VERTICES = {
+            -1.0f, -1.0f,  0.0f,  0.0f,  0.0f,
+             1.0f, -1.0f,  0.0f,  1.0f,  0.0f,
+             1.0f,  1.0f,  0.0f,  1.0f,  1.0f,
+             1.0f,  1.0f,  0.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f,  0.0f,  0.0f,  1.0f,
+            -1.0f, -1.0f,  0.0f,  0.0f,  0.0f
+    };
 
-    public static int vboID;
+    private static int vaoID;
+
+    private static int vboID;
 
     private static boolean started;
 

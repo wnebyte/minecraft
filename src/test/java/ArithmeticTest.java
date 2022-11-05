@@ -171,6 +171,41 @@ public class ArithmeticTest {
         addBox3D(center, dimensions);
     }
 
+    @Test
+    public void test06() {
+        for (int i = 0; i < 36; i++) {
+            int mod = (i % 6);
+            System.out.println(getFace(i));
+        }
+    }
+
+    @Test
+    public void test07() {
+        int[] items = { 1, 2, 3, 4 ,5, 6, 7, 8, 9 };
+        int[] bar = { 10, 11, 12, 13, 14, 15, 16, 17, 18 };
+        int index = 10;
+        if (index >= items.length) {
+            index = (index - items.length);
+            int i = bar[index];
+            System.out.println(i);
+        } else {
+            int i = items[index];
+            System.out.println(i);
+        }
+    }
+
+    private String getFace(int index) {
+        int mod = (index % 6);
+        switch (mod) {
+            case 4:
+                return "TOP";
+            case 5:
+                return "BOTTOM";
+            default:
+                return "SIDE";
+        }
+    }
+
     private void addBox3D(Vector3f center, Vector3f dimensions) {
         Vector3f min = new Vector3f(center).sub(new Vector3f(dimensions).mul(0.5f));
         Vector3f max = new Vector3f(center).add(new Vector3f(dimensions).mul(0.5f));

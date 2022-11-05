@@ -3,6 +3,7 @@ package com.github.wnebyte.minecraft.util;
 import java.util.Arrays;
 import java.util.Objects;
 import org.joml.Vector2f;
+import com.github.wnebyte.minecraft.renderer.Sprite;
 import com.github.wnebyte.minecraft.renderer.Texture;
 
 public class TextureFormat {
@@ -39,6 +40,13 @@ public class TextureFormat {
 
     public void setTexture(Texture texture) {
         this.texture = texture;
+    }
+
+    public Sprite getAsSprite() {
+        Sprite sprite = new Sprite();
+        sprite.setTexture(texture);
+        sprite.setTexCoords(uvs);
+        return sprite;
     }
 
     @Override

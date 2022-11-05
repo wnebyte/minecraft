@@ -56,6 +56,20 @@ public class Files {
         return new File(path).exists();
     }
 
+    public static boolean isDirectory(String path) {
+        return new File(path).isDirectory();
+    }
+
+    public static void mkdir(String path) {
+        mkdir(new File(path));
+    }
+
+    public static void mkdir(File file) {
+        if (!file.isDirectory()) {
+            file.mkdir();
+        }
+    }
+
     public static boolean compress(String path, byte[] bytes) {
         try {
             FileOutputStream fos = new FileOutputStream(path);

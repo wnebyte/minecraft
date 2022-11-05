@@ -1,0 +1,14 @@
+[
+  {
+    "id": 10000,
+    "name": "stick",
+    "icon": "stick",
+    "maxStackCount": 64
+  },
+  {
+    "id": 10001,
+    "name": "wooden_pickaxe",
+    "icon": "wooden_pickaxe",
+    "maxStackCount": 1
+  }
+]

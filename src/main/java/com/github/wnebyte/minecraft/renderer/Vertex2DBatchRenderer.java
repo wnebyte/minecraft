@@ -3,6 +3,7 @@ package com.github.wnebyte.minecraft.renderer;
 import java.util.*;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.joml.Matrix4f;
 import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.util.Assets;
 import com.github.wnebyte.minecraft.util.CapacitySet;
@@ -108,7 +109,7 @@ public class Vertex2DBatchRenderer implements Batch<Vertex2D> {
     }
 
     @Override
-    public void render(Camera camera) {
+    public void render(Matrix4f viewMatrix, Matrix4f projectionMatrix) {
         if (size <= 0) {
             return;
         }
@@ -123,7 +124,7 @@ public class Vertex2DBatchRenderer implements Batch<Vertex2D> {
         // Draw the buffer that we just uploaded
         shader.use();
         shader.uploadInt(Shader.Z_INDEX, zIndex);
-        shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrixHUD());
+        shader.uploadMatrix4f(Shader.U_PROJECTION, projectionMatrix);
         int i = 0;
         for (int texId : textures) {
             glActiveTexture(GL_TEXTURE0 + i);
@@ -134,14 +135,18 @@ public class Vertex2DBatchRenderer implements Batch<Vertex2D> {
 
         glBindVertexArray(vaoID);
         glDrawElements(GL_TRIANGLES, size * 6, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
 
         // Reset batch for use on the next draw call
         Arrays.fill(data, 0, size * STRIDE, 0.0f);
         size = 0;
-        for (int texId : textures) {
-            glBindTexture(GL_TEXTURE_2D, 0);
-        }
+        glBindTexture(GL_TEXTURE_2D, 0);
         shader.detach();
+    }
+
+    @Override
+    public void render(Camera camera) {
+        render(camera.getViewMatrixHUD(), camera.getProjectionMatrixHUD());
     }
 
     @Override

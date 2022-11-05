@@ -59,7 +59,13 @@ public class CapacitySet<E> implements Set<E> {
 
     @Override
     public boolean containsAll(Collection<?> c) {
-        return data.containsAll(c);
+        int space = capacity - size();
+        for (Object o : c) {
+            if (!contains(o)) {
+                space--;
+            }
+        }
+        return (space > 0);
     }
 
     @Override

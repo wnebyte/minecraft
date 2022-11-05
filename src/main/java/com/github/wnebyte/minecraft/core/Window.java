@@ -1,5 +1,6 @@
 package com.github.wnebyte.minecraft.core;
 
+import org.joml.Vector2f;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.glfw.GLFWErrorCallback;
@@ -183,10 +184,19 @@ public class Window {
 
     public void viewport() {
         glViewport(0, 0, width, height);
+        MouseListener.setWindowSize(new Vector2f(width, height));
     }
 
     public void setWindowShouldClose(boolean value) {
         glfwSetWindowShouldClose(glfwWindow, value);
+    }
+
+    public void setCursorMode(int mode) {
+        glfwSetInputMode(glfwWindow, GLFW_CURSOR, mode);
+    }
+
+    public void setCursorPos(double xPos, double yPos) {
+        glfwSetCursorPos(glfwWindow, xPos, yPos);
     }
 
     private void framebufferSizeCallback(long window, int width, int height) {
@@ -211,8 +221,21 @@ public class Window {
         return width;
     }
 
+    public void setWidth(int width) {
+        this.width = width;
+    }
+
     public int getHeight() {
         return height;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
+
+    public void setSize(int width, int height) {
+        this.width = width;
+        this.height = height;
     }
 
     public float getAspectRatio() {

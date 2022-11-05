@@ -22,7 +22,6 @@ public class World {
     public static final int CHUNK_RADIUS = 12;
 
     public static final int CHUNK_CAPACITY = 2 * (CHUNK_RADIUS * CHUNK_RADIUS);
-    // (int)((CHUNK_RADIUS * 2) * (CHUNK_RADIUS * 2) * 1.5f);
 
     public static final int CHUNK_SPAWN_AREA = 9 * 9;
 
@@ -71,7 +70,6 @@ public class World {
         this.skybox = new Skybox(camera);
         this.physics = new Physics(renderer, map);
         this.gameObjects = new ArrayList<>();
-       // this.sun = Prefabs.createSun(400, 80f, 50f, 10f, new Vector4f(1f, 1f, 1f, 1f));
         GameObject go = new GameObject("Camera");
         go.addComponent(camera);
         go.addComponent(new Transform());
@@ -79,7 +77,7 @@ public class World {
         GameObject player = new GameObject("Player");
         player.addComponent(new Transform());
         player.addComponent(new PlayerController(physics, map));
-        this.gameObjects.add(player);
+       // this.gameObjects.add(player);
     }
 
     /*
@@ -95,7 +93,7 @@ public class World {
             go.start(scene);
         }
         camera.setPosition(new Vector3f(CHUNK_SPAWN_AREA / 2.0f, 140, CHUNK_SPAWN_AREA / 2.0f));
-        chunkManager.loadSpawnChunks();
+       // chunkManager.loadSpawnChunks();
     }
 
     /*
@@ -142,7 +140,7 @@ public class World {
 
     public void render() {
         skybox.render();
-        chunkManager.render();
+       // chunkManager.render();
     }
 
     public void destroy() {

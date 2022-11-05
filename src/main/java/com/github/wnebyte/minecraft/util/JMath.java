@@ -101,6 +101,12 @@ public class JMath {
         return ma.mul(mb);
     }
 
+    public static Vector3f cross(Vector3f a, Vector3f b) {
+        Vector3f c = new Vector3f();
+        a.cross(b, c);
+        return c;
+    }
+
     public static Vector3f toVector3f(Vector4f vec) {
         Vector3f v = new Vector3f();
         v.x = vec.x;
@@ -122,6 +128,11 @@ public class JMath {
         v.x = vec.x;
         v.y = vec.y;
         v.z = z;
+        return v;
+    }
+
+    public static Vector2f invert(Vector2f vec) {
+        Vector2f v = new Vector2f(1.0f / vec.x, 1.0f / vec.y);
         return v;
     }
 

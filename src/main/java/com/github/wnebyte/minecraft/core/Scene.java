@@ -2,16 +2,15 @@ package com.github.wnebyte.minecraft.core;
 
 import java.util.List;
 import java.util.ArrayList;
-import org.joml.Vector2f;
-import org.joml.Vector2i;
-import org.joml.Vector3f;
-import com.github.wnebyte.minecraft.world.World;
-import com.github.wnebyte.minecraft.world.Chunk;
+import org.joml.*;
+import com.github.wnebyte.minecraft.world.*;
 import com.github.wnebyte.minecraft.renderer.*;
+import com.github.wnebyte.minecraft.ui.Hud;
 import com.github.wnebyte.minecraft.components.Inventory;
 import com.github.wnebyte.minecraft.util.*;
-import static org.lwjgl.glfw.GLFW.*;
+import static com.github.wnebyte.minecraft.core.KeyListener.isKeyBeginPress;
 import static com.github.wnebyte.minecraft.core.KeyListener.isKeyPressed;
+import static org.lwjgl.glfw.GLFW.*;
 
 public class Scene {
 
@@ -21,10 +20,6 @@ public class Scene {
 
     private World world;
 
-    private float crosshairSize = 0.10f;
-
-    private float crosshairHalfSize = crosshairSize / 2.0f;
-
     private float debounceTime = 0.75f;
 
     private float debounce = debounceTime;
@@ -33,9 +28,7 @@ public class Scene {
 
     private float fps = 0.0f;
 
-    private Spritesheet hudSpritesheet;
-
-    private Inventory inventory = new Inventory();
+    private Hud hud;
 
     public Scene() {
         this.camera = new Camera(
@@ -51,6 +44,7 @@ public class Scene {
                 10_000f);
         this.renderer = Renderer.getInstance();
         this.world = new World(camera);
+        this.hud = new Hud(camera);
     }
 
     private void loadResources() {
@@ -59,20 +53,41 @@ public class Scene {
                 Assets.DIR + "/config/textureFormat.json",
                 Assets.DIR + "/images/generated/packedTextures.png",
                 false, 32, 32);
-        BlockMap.load(
+        BlockMap.loadBlocks(
+                Assets.DIR + "/config/blockFormat.json",
                 Assets.DIR + "/config/textureFormat.json",
-                 Assets.DIR + "/config/blockFormat.json");
+                Assets.DIR + "/images/generated/packedTextures.png");
+        TexturePacker.pack(
+                    Assets.DIR + "/images/items",
+                Assets.DIR + "/config/itemTextureFormat.json",
+                Assets.DIR + "/images/generated/packedItemTextures.png",
+                false, 32, 32);
+        BlockMap.loadItems(
+                Assets.DIR + "/config/itemFormat.json",
+                Assets.DIR + "/config/itemTextureFormat.json",
+                Assets.DIR + "/images/generated/packedItemTextures.png");
+        BlockMap.generateBlockItemImages(
+                Assets.DIR + "/config/blockFormat.json",
+                Assets.DIR + "/images/generated/blockItems");
+        TexturePacker.pack(
+                Assets.DIR     + "/images/generated/blockItems",
+                Assets.DIR + "/config/blockItemTextureFormat.json",
+                Assets.DIR + "/images/generated/packedBlockItemTextures.png",
+                false, 32, 32);
+        BlockMap.loadBlockItems(
+                Assets.DIR + "/config/blockItemTextureFormat.json",
+                Assets.DIR + "/images/generated/packedBlockItemTextures.png");
         BlockMap.bufferTexCoords();
         TerrainGenerator.load(
                 Assets.DIR + "/config/terrainNoise.json",
                 (int)System.currentTimeMillis());
         Assets.loadSpritesheet(
                 Assets.DIR + "/config/hudSprites.json");
-        hudSpritesheet = Assets.getSpritesheet(Assets.DIR + "/images/spritesheets/hudSprites.png");
     }
 
     public void start() {
         loadResources();
+        hud.start();
         world.start(this);
     }
 
@@ -80,23 +95,29 @@ public class Scene {
         debounce -= dt;
         world.update(dt);
 
+        renderer.drawQuad2D(-3.0f + 0.005f, (1.2f - 0.3f) - 0.005f, -6, 1.3f, 0.4f, 0x0000);
+
         // camera position label
         Vector3f pos = new Vector3f(camera.getPosition());
         renderer.drawString(
-                String.format("%.0f, %.0f, %.0f", pos.x, pos.y, pos.z),
-                -3.0f + 0.05f, 1.2f, -5, 0.005f, 0x0000);
+                String.format("%.0f %.0f %.0f", pos.x, pos.y, pos.z),
+                -3.0f + 0.05f, 1.2f, -5, 0.0045f, 0xFFFF);
 
         // chunk coords label
         Vector2i v = Chunk.toChunkCoords(pos);
         renderer.drawString(
                 String.format("%d, %d", v.x, v.y),
-                -3.0f + 0.05f, 1.1f, -5, 0.005f, 0x0000);
+                -3.0f + 0.05f, 1.1f, -5, 0.0045f, 0xFFFF);
 
         // fps label
         frames.add(dt);
         renderer.drawString(
                 String.format("%.1f", fps),
-                -3.0f + 0.05f, 1.0f, -5, 0.005f, 0x0000);
+                -3.0f + 0.05f, 1.0f, -5, 0.0045f, 0xFFFF);
+
+        renderer.drawString(
+                "ABCDEFGHIJKLMNOPQRSTUVYWX",
+                -3.0f + 0.05f, 0.9f, -5, 0.0045f, 0xFFFF);
 
         if (debounce <= 0) {
             float sum = frames.stream().reduce(0.0f, Float::sum);
@@ -105,36 +126,12 @@ public class Scene {
             debounce = debounceTime;
         }
 
-        // crosshair
-        renderer.drawLine2D(
-                new Vector2f(0.0f, -crosshairHalfSize),
-                new Vector2f(0.0f, crosshairHalfSize),
-                0,
-                new Vector3f(0f, 0f, 0f));
-        renderer.drawLine2D(
-                new Vector2f(-crosshairHalfSize, 0.0f),
-                new Vector2f(crosshairHalfSize,  0.0f),
-                0,
-                new Vector3f(0f, 0f, 0f));
-
-        // hud
-        drawHUD();
-    }
-
-    private void drawHUD() {
-        Sprite selSprite = hudSpritesheet.getSprite(5);
-        Sprite regSprite = hudSpritesheet.getSprite(6);
-        float xStart = ((32 * 0.005f) * 10) / 2;
-        for (int i = 0; i < Inventory.NUM_SLOTS; i++) {
-            Sprite sprite = inventory.isSlotSelected(i) ? selSprite : regSprite;
-            renderer.drawTexturedQuad2D(-xStart, -1.4f, 0, sprite, 0.005f, 0xBBCCAF);
-            xStart -= (32 * 0.005f);
-        }
+        hud.update(dt);
     }
 
     public void render() {
         world.render();
-        renderer.render(camera);
+        renderer.flush(camera);
     }
 
     public void destroy() {
@@ -166,6 +163,22 @@ public class Scene {
         }
         if (isKeyPressed(GLFW_KEY_COMMA)) {
             camera.resetZoom();
+        }
+        if (isKeyBeginPress(GLFW_KEY_K)) {
+            hud.showInventory(!hud.isInventoryShowing());
+            if (hud.isInventoryShowing()) {
+                float x = Application.getWindow().getWidth() / 2.0f;
+                float y = Application.getWindow().getHeight() / 2.0f;
+                Application.getWindow().setCursorPos(x, y);
+            }
+        }
+        if (isKeyBeginPress(GLFW_KEY_RIGHT)) {
+            Inventory.Hotbar hotbar = hud.getHotbar();
+            hotbar.next();
+        }
+        if (isKeyBeginPress(GLFW_KEY_LEFT)) {
+            Inventory.Hotbar hotbar = hud.getHotbar();
+            hotbar.previous();
         }
     }
 

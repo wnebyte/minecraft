@@ -3,6 +3,7 @@ package com.github.wnebyte.minecraft.renderer;
 import java.util.Arrays;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.joml.Matrix4f;
 import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.util.Assets;
 import static org.lwjgl.opengl.GL11.GL_FLOAT;
@@ -34,15 +35,15 @@ public class Line2DBatchRenderer implements Batch<Line2D> {
 
     private int vboID;
 
-    private float[] data;
-
     private int size;
 
-    private int zIndex;
-
-    private Shader shader;
-
     private boolean started;
+
+    private final float[] data;
+
+    private final int zIndex;
+
+    private final Shader shader;
 
     public Line2DBatchRenderer(int zIndex) {
         this.zIndex = zIndex;
@@ -71,7 +72,7 @@ public class Line2DBatchRenderer implements Batch<Line2D> {
     }
 
     @Override
-    public void render(Camera camera) {
+    public void render(Matrix4f viewMatrix, Matrix4f projectionMatrix) {
         if (size <= 0) {
             return;
         }
@@ -83,8 +84,8 @@ public class Line2DBatchRenderer implements Batch<Line2D> {
 
         shader.use();
         shader.uploadInt(Shader.Z_INDEX, zIndex);
-        shader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrixHUD());
-        shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrixHUD());
+        shader.uploadMatrix4f(Shader.U_VIEW, viewMatrix);
+        shader.uploadMatrix4f(Shader.U_PROJECTION, projectionMatrix);
 
         glBindVertexArray(vaoID);
         glDrawArrays(GL_LINES, 0, size * 2);
@@ -94,6 +95,11 @@ public class Line2DBatchRenderer implements Batch<Line2D> {
         Arrays.fill(data, 0, size * 2 * STRIDE, 0.0f);
         size = 0;
         shader.detach();
+    }
+
+    @Override
+    public void render(Camera camera) {
+        render(camera.getViewMatrixHUD(), camera.getProjectionMatrixHUD());
     }
 
     @Override
