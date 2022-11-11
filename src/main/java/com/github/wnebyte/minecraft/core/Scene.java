@@ -7,10 +7,12 @@ import com.github.wnebyte.minecraft.world.*;
 import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.ui.Hud;
 import com.github.wnebyte.minecraft.components.Inventory;
+import com.github.wnebyte.minecraft.event.EventSystem;
 import com.github.wnebyte.minecraft.util.*;
 import static com.github.wnebyte.minecraft.core.KeyListener.isKeyBeginPress;
 import static com.github.wnebyte.minecraft.core.KeyListener.isKeyPressed;
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL11.*;
 
 public class Scene {
 
@@ -30,54 +32,78 @@ public class Scene {
 
     private Hud hud;
 
+    private EventSystem eventSystem;
+
     public Scene() {
-        this.camera = new Camera(
-                new Vector3f(0.0f, 0.0f, 3.0f),  // position
-                new Vector3f(0.0f, 0.0f, -1.0f), // forward
-                new Vector3f(0.0f, 1.0f, 0.0f),  // up
-                Camera.DEFAULT_YAW,
-                Camera.DEFAULT_PITCH,
-                10f,
-                Camera.DEFAULT_MOUSE_SENSITIVITY,
-                Camera.DEFAULT_ZOOM,
-                Camera.DEFAULT_Z_NEAR,
-                10_000f);
+        this.camera = new Camera.Builder()
+                .setPosition(0.0f, 0.0f, 3.0f)
+                .setMovementSpeed(10f)
+                .setZFar(10_000f)
+                .build();
         this.renderer = Renderer.getInstance();
-        this.world = new World(camera);
-        this.hud = new Hud(camera);
+        this.eventSystem = new EventSystem();
     }
 
-    private void loadResources() {
-        TexturePacker.pack(
-                    Assets.DIR + "/images/blocks",
+    protected void loadResources() {
+        TexturePacker packer = new TexturePacker(true, true);
+
+        // load blocks
+        String path = Assets.DIR + "/images/generated/packedTextures.png";
+        packer.pack(
+                Assets.DIR + "/images/blocks",
                 Assets.DIR + "/config/textureFormat.json",
-                Assets.DIR + "/images/generated/packedTextures.png",
-                false, 32, 32);
+                path, false, 32, 32);
+        Texture texture = new Texture(path, new Texture.Configuration.Builder()
+                .setTarget(GL_TEXTURE_2D)
+                .flip()
+                .addParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+                .addParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+                .build());
+        Assets.addTexture(texture);
         BlockMap.loadBlocks(
                 Assets.DIR + "/config/blockFormat.json",
                 Assets.DIR + "/config/textureFormat.json",
-                Assets.DIR + "/images/generated/packedTextures.png");
-        TexturePacker.pack(
-                    Assets.DIR + "/images/items",
+                path);
+        BlockMap.bufferTexCoords();
+
+        // load items
+        packer = new TexturePacker();
+        path = Assets.DIR + "/images/generated/packedItemTextures.png";
+        packer.pack(
+                Assets.DIR + "/images/items",
                 Assets.DIR + "/config/itemTextureFormat.json",
-                Assets.DIR + "/images/generated/packedItemTextures.png",
-                false, 32, 32);
+                path, false, 32, 32);
+        texture = new Texture(path, new Texture.Configuration.Builder()
+                .setTarget(GL_TEXTURE_2D)
+                .addParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+                .addParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+                .build());
+        Assets.addTexture(texture);
         BlockMap.loadItems(
                 Assets.DIR + "/config/itemFormat.json",
                 Assets.DIR + "/config/itemTextureFormat.json",
-                Assets.DIR + "/images/generated/packedItemTextures.png");
+                path);
+
+        // generate and load block items
+        path = Assets.DIR + "/images/generated/packedBlockItemTextures.png";
         BlockMap.generateBlockItemImages(
                 Assets.DIR + "/config/blockFormat.json",
                 Assets.DIR + "/images/generated/blockItems");
-        TexturePacker.pack(
-                Assets.DIR     + "/images/generated/blockItems",
+        packer.pack(
+                Assets.DIR + "/images/generated/blockItems",
                 Assets.DIR + "/config/blockItemTextureFormat.json",
-                Assets.DIR + "/images/generated/packedBlockItemTextures.png",
-                false, 32, 32);
+                path, false, 32, 32);
+        texture = new Texture(path, new Texture.Configuration.Builder()
+                .setTarget(GL_TEXTURE_2D)
+                .addParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+                .addParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+                .build());
+        Assets.addTexture(texture);
         BlockMap.loadBlockItems(
                 Assets.DIR + "/config/blockItemTextureFormat.json",
-                Assets.DIR + "/images/generated/packedBlockItemTextures.png");
-        BlockMap.bufferTexCoords();
+                path);
+
+        // load remaining assets
         TerrainGenerator.load(
                 Assets.DIR + "/config/terrainNoise.json",
                 (int)System.currentTimeMillis());
@@ -87,20 +113,24 @@ public class Scene {
 
     public void start() {
         loadResources();
-        hud.start();
+        world = new World(camera);
+        hud = new Hud(camera);
         world.start(this);
+        hud.start(this);
     }
 
     public void update(float dt) {
         debounce -= dt;
         world.update(dt);
 
-        renderer.drawQuad2D(-3.0f + 0.005f, (1.2f - 0.3f) - 0.005f, -6, 1.3f, 0.4f, 0x0000);
+        // draw overlay
+        renderer.drawQuad2D(-3.0f, 1.0f, -6,
+                0.5f, 0.3f, 1f, 0x0000);
 
         // camera position label
         Vector3f pos = new Vector3f(camera.getPosition());
         renderer.drawString(
-                String.format("%.0f %.0f %.0f", pos.x, pos.y, pos.z),
+                String.format("%.0f, %.0f, %.0f", pos.x, pos.y, pos.z),
                 -3.0f + 0.05f, 1.2f, -5, 0.0045f, 0xFFFF);
 
         // chunk coords label
@@ -114,10 +144,6 @@ public class Scene {
         renderer.drawString(
                 String.format("%.1f", fps),
                 -3.0f + 0.05f, 1.0f, -5, 0.0045f, 0xFFFF);
-
-        renderer.drawString(
-                "ABCDEFGHIJKLMNOPQRSTUVYWX",
-                -3.0f + 0.05f, 0.9f, -5, 0.0045f, 0xFFFF);
 
         if (debounce <= 0) {
             float sum = frames.stream().reduce(0.0f, Float::sum);
@@ -165,24 +191,71 @@ public class Scene {
             camera.resetZoom();
         }
         if (isKeyBeginPress(GLFW_KEY_K)) {
-            hud.showInventory(!hud.isInventoryShowing());
-            if (hud.isInventoryShowing()) {
+            hud.setShowInventory(!hud.isShowInventory());
+            if (hud.isShowInventory()) {
                 float x = Application.getWindow().getWidth() / 2.0f;
                 float y = Application.getWindow().getHeight() / 2.0f;
                 Application.getWindow().setCursorPos(x, y);
             }
         }
         if (isKeyBeginPress(GLFW_KEY_RIGHT)) {
-            Inventory.Hotbar hotbar = hud.getHotbar();
+            Inventory.Hotbar hotbar = hud.getInventory().getHotbar();
             hotbar.next();
         }
         if (isKeyBeginPress(GLFW_KEY_LEFT)) {
-            Inventory.Hotbar hotbar = hud.getHotbar();
+            Inventory.Hotbar hotbar = hud.getInventory().getHotbar();
             hotbar.previous();
         }
+        if (isKeyBeginPress(GLFW_KEY_P)) {
+            Application.takeScreenshot("screenshot");
+        }
+
+        hud.processInput(dt);
+    }
+
+    public World getWorld() {
+        return world;
     }
 
     public Camera getCamera() {
         return camera;
+    }
+
+    public Renderer getRenderer() {
+        return renderer;
+    }
+
+    public EventSystem getEventSystem() {
+        return eventSystem;
+    }
+
+    public void addGameObject(GameObject go) {
+        if (world != null) {
+            world.addGameObject(go);
+        }
+    }
+
+    public List<GameObject> getGameObjects() {
+        return (world != null) ? world.getGameObjects() : null;
+    }
+
+    public GameObject getGameObject(int id) {
+        return (world != null) ? world.getGameObject(id) : null;
+    }
+
+    public GameObject getGameObject(String name) {
+        return (world != null) ? world.getGameObject(name) : null;
+    }
+
+    public <T extends Component> GameObject getGameObject(Class<T> componentClass) {
+        return (world != null) ? world.getGameObject(componentClass) : null;
+    }
+
+    public <T extends Component> List<GameObject> getGameObjects(Class<T> componentClass) {
+        return (world != null) ? world.getGameObjects(componentClass) : null;
+    }
+
+    public <T extends Component> T getComponent(Class<T> componentClass) {
+        return (world != null) ? world.getComponent(componentClass) : null;
     }
 }

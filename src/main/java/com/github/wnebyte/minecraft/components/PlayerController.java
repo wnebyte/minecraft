@@ -1,16 +1,15 @@
 package com.github.wnebyte.minecraft.components;
 
 import java.util.Random;
+
+import com.github.wnebyte.minecraft.world.*;
 import org.joml.Vector3i;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.core.*;
-import com.github.wnebyte.minecraft.world.Map;
-import com.github.wnebyte.minecraft.world.Block;
-import com.github.wnebyte.minecraft.world.Chunk;
 import com.github.wnebyte.minecraft.renderer.Renderer;
 import com.github.wnebyte.minecraft.physics.Physics;
 import com.github.wnebyte.minecraft.physics.RaycastInfo;
-import com.github.wnebyte.minecraft.world.BlockMap;
+
 import static com.github.wnebyte.minecraft.core.MouseListener.isMouseButtonDown;
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT;
@@ -18,6 +17,8 @@ import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT;
 public class PlayerController extends Component {
 
     private transient Camera camera;
+
+    private transient Inventory inventory;
 
     private transient Renderer renderer;
 
@@ -37,16 +38,17 @@ public class PlayerController extends Component {
 
     private transient float placeBlockDebounce = placeBlockDebounceTime;
 
-    public PlayerController(Physics physics, Map map) {
-        this.physics = physics;
-        this.map = map;
-        this.renderer = Renderer.getInstance();
+    public PlayerController() {
         this.rand = new Random();
     }
 
     @Override
     public void start(Scene scene) {
-        camera = scene.getCamera();
+        this.camera = scene.getCamera();
+        this.renderer = scene.getRenderer();
+        this.map = scene.getWorld().getMap();
+        this.physics = scene.getWorld().getPhysics();
+        this.inventory = gameObject.getComponent(Inventory.class);
     }
 
     @Override
@@ -54,40 +56,63 @@ public class PlayerController extends Component {
         destroyBlockDebounce -= dt;
         placeBlockDebounce -= dt;
 
+        /*
         Vector3f origin = new Vector3f(camera.getPosition());
         Vector3f forward = new Vector3f(camera.getForward());
         RaycastInfo raycast = physics.raycast(origin, forward, 15f);
 
         if (raycast.isHit()) {
             info = raycast;
-            renderer.drawBox3D(info.getBlockCenter(), info.getBlockSize(), 0f,
+            renderer.drawBox3D(info.getCenter(), info.getSize(), 0f,
                     new Vector3f(1f, 1f, 1f));
         }
+         */
 
         // destroy block
         if (isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && info != null && info.isHit() &&
                 destroyBlockDebounce <= 0) {
-            Chunk chunk = map.getChunk(info.getBlockCenter());
-            if (chunk != null) {
-                Vector3i ivec3 = Chunk.world2Index3D(info.getBlockCenter(), chunk.getChunkCoords());
-                Block b = BlockMap.getBlock("air");
-                chunk.setBlock(b, ivec3.x, ivec3.y, ivec3.z, true);
+            Block b = destroyBlock();
+            if (b != null) {
+                Item item = BlockMap.getItem(b.getId());
+               // inventory.add(item);
             }
-            info = null;
-            destroyBlockDebounce = destroyBlockDebounceTime;
         }
 
         // place block
         if (isMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT) && info != null && info.isHit() &&
                 placeBlockDebounce <= 0) {
-            Chunk chunk = map.getChunk(info.getBlockCenter());
-            if (chunk != null && info.getBlockCenter().y + 1 < Chunk.HEIGHT) {
-                Vector3i ivec3 = Chunk.world2Index3D(info.getBlockCenter().add(0, 1, 0), chunk.getChunkCoords());
-                Block b = BlockMap.getBlock(rand.nextBoolean() ? 18 : 15);
-                chunk.setBlock(b, ivec3.x, ivec3.y, ivec3.z, true);
+            /*
+            Item item = inventory.getHotbar().getSelected();
+            if (item != null && item.isBlock()) {
+                Block b = BlockMap.getBlock(item.getId());
+                placeBlock(b);
+                inventory.remove(item);
             }
-            info = null;
-            placeBlockDebounce = placeBlockDebounceTime;
+
+             */
         }
+    }
+
+    private void placeBlock(Block b) {
+        Chunk chunk = map.getChunk(info.getCenter());
+        if (chunk != null && info.getCenter().y + 1 < Chunk.HEIGHT) {
+            Vector3i ivec3 = Chunk.world2Index3D(info.getCenter().add(0, 1, 0), chunk.getChunkCoords());
+            chunk.setBlock(b, ivec3.x, ivec3.y, ivec3.z, true);
+        }
+        info = null;
+        placeBlockDebounce = placeBlockDebounceTime;
+    }
+
+    private Block destroyBlock() {
+        Chunk chunk = map.getChunk(info.getCenter());
+        if (chunk != null) {
+            Vector3i ivec3 = Chunk.world2Index3D(info.getCenter(), chunk.getChunkCoords());
+            Block b = chunk.getBlock(ivec3);
+            chunk.setBlock(BlockMap.getBlock("air"), ivec3.x, ivec3.y, ivec3.z, true);
+            return Block.isAir(b) ? null : b;
+        }
+        info = null;
+        destroyBlockDebounce = destroyBlockDebounceTime;
+        return null;
     }
 }

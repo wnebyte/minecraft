@@ -1,31 +1,29 @@
 package com.github.wnebyte.minecraft.world;
 
+import java.util.*;
+import java.util.Map;
+import java.util.Collections;
 import java.io.File;
 import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.Collections;
-import java.util.Map;
 import com.google.gson.*;
-import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import com.github.wnebyte.minecraft.core.Application;
 import com.github.wnebyte.minecraft.core.Transform;
+import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.util.*;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL30C.GL_R32F;
 import static org.lwjgl.opengl.GL31C.GL_TEXTURE_BUFFER;
 import static org.lwjgl.opengl.GL31C.glTexBuffer;
-import static org.lwjgl.stb.STBImageWrite.stbi_flip_vertically_on_write;
-import static org.lwjgl.stb.STBImageWrite.stbi_write_png;
 
 public class BlockMap {
 
     private static final Map<Byte, Block> blocks = new HashMap<>();
 
-    private static final Map<Integer, Item> items = new HashMap<>();
+    private static final Map<Short, Item> items = new HashMap<>();
 
     private static final Map<String, TextureFormat> textureFormats = new HashMap<>();
 
@@ -33,7 +31,7 @@ public class BlockMap {
 
     private static final Map<String, TextureFormat> blockItemTextureFormats = new HashMap<>();
 
-    private static final Map<String, Integer> nameToId = new HashMap<>();
+    private static final Map<String, Short> dict = new HashMap<>();
 
     private static int texCoordsTextureId;
 
@@ -76,11 +74,11 @@ public class BlockMap {
     }
 
     public static Block getBlock(String name) {
-        byte id = (byte)(int)nameToId.get(name.toLowerCase(Locale.ROOT));
+        byte id = (byte)(short)dict.get(name.toLowerCase());
         return getBlock(id);
     }
 
-    public static Item getItem(int id) {
+    public static Item getItem(short id) {
         if (items.containsKey(id)) {
             return items.get(id);
         } else {
@@ -138,7 +136,7 @@ public class BlockMap {
                     .setColorBottomByBiome(colorBottomByBiome)
                     .build();
             blocks.put(id, block);
-            nameToId.put(name.toLowerCase(Locale.ROOT), (int)id);
+            dict.put(name, (short)id);
         }
     }
 
@@ -163,15 +161,19 @@ public class BlockMap {
                 continue;
             }
             JsonObject jsonObject = e.getAsJsonObject();
-            int id = jsonObject.get("id").getAsInt();
+            short id = jsonObject.get("id").getAsShort();
             String name = jsonObject.get("name").getAsString();
-            int maxStackCount = jsonObject.get("maxStackCount").getAsInt();
+            short maxStackCount = jsonObject.get("maxStackCount").getAsShort();
             TextureFormat textureFormat = itemTextureFormats.get(name);
-            Item item = new Item(id, name, maxStackCount);
-            item.setTextureFormat(textureFormat);
-            item.setIsBlock(false);
+            Item item = new Item.Builder()
+                    .setId(id)
+                    .setName(name)
+                    .setMaxStackCount(maxStackCount)
+                    .setTextureFormat(textureFormat)
+                    .setIsBlock(false)
+                    .build();
             items.put(id, item);
-            nameToId.put(name.toLowerCase(Locale.ROOT), id);
+            dict.put(name, id);
         }
     }
 
@@ -181,13 +183,20 @@ public class BlockMap {
         Texture texture = Assets.getTexture(packedTexturePath);
 
         for (TextureFormat textureFormat : tfs) {
+            Block block = getBlock(textureFormat.getName());
+            if (Block.isAir(block)) {
+                continue;
+            }
             textureFormat.setTexture(texture);
             blockItemTextureFormats.put(textureFormat.getName(), textureFormat);
-            Block block = getBlock(textureFormat.getName());
-            Item item = new Item(block.getId(), block.getName(), 64);
-            item.setTextureFormat(textureFormat);
-            item.setIsBlock(true);
-            items.put((int)block.getId(), item);
+            Item item = new Item.Builder()
+                    .setId(block.getId())
+                    .setName(block.getName())
+                    .setTextureFormat(textureFormat)
+                    .setMaxStackCount((short)64)
+                    .setIsBlock(true)
+                    .build();
+            items.put((short)block.getId(), item);
         }
     }
 
@@ -232,46 +241,47 @@ public class BlockMap {
         }
 
         Files.mkdir(outputFile);
-        Vector3f cameraPos = new Vector3f(-1.0f, 1.0f, 1.0f);
-        Vector3f cameraOrientation = new Vector3f(-35.0f, -45.0f, 0.0f);
-        Vector3f direction = new Vector3f();
-        direction.x = (float)Math.cos(Math.toRadians(cameraOrientation.y)) * (float)Math.cos(Math.toRadians(cameraOrientation.x));
-        direction.y = (float)Math.sin(Math.toRadians(cameraOrientation.x));
-        direction.z = (float)Math.sin(Math.toRadians(cameraOrientation.y)) * (float)Math.cos(Math.toRadians(cameraOrientation.x));
-        Vector3f cameraForward = direction.normalize();
-        Vector3f cameraRight = JMath.cross(cameraForward, new Vector3f(0.0f, 1.0f, 0.0f));
-        Vector3f cameraUp = JMath.cross(cameraRight, cameraForward);
-        Matrix4f viewMatrix = new Matrix4f().identity();
-        viewMatrix.lookAt(
-                cameraPos,
-                JMath.add(cameraPos, cameraForward),
-                cameraUp
-        );
-        Matrix4f projectionMatrix = new Matrix4f().identity();
-        projectionMatrix.ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 2000.0f);
-
+        float yaw = -63.70f;
+        float pitch = -44.34f;
+        float fov = 41.0f;
+        Vector3f position = new Vector3f(-2.25f, 2.36f, 3.52f);
+        float scale = 2.75f;
+        Vector4f[] rotations = {
+                new Vector4f(7.0f,  1.0f, 0.0f, 0.0f),
+                new Vector4f(19.5f, 0.0f, 1.0f, 0.0f),
+                new Vector4f(0.5f,  0.0f, 0.0f, 1.0f)
+        };
+        Camera camera = new Camera(
+                new Vector3f(position),
+                new Vector3f(0.0f, 0.0f, -1.0f),
+                new Vector3f(0.0f, 1.0f, 0.0f),
+                yaw,
+                pitch,
+                10f,
+                Camera.DEFAULT_MOUSE_SENSITIVITY,
+                fov + 2,
+                Camera.DEFAULT_Z_NEAR,
+                10_000f);
         int width = 32;
         int height = 32;
-        Texture colorAttachment = new Texture(new Texture.Configuration.Builder()
-                .setTarget(GL_TEXTURE_2D)
-                .setSize(width, height)
-                .setInternalFormat(GL_RGBA8)
-                .setFormat(GL_RGBA)
-                .setType(GL_UNSIGNED_INT_8_8_8_8)
-                .addParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-                .addParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-                .build());
-        Texture depthAttachment = new Texture(new Texture.Configuration.Builder()
-                .setTarget(GL_TEXTURE_2D)
-                .setSize(width, height)
-                .setInternalFormat(GL_DEPTH_COMPONENT)
-                .setFormat(GL_DEPTH_COMPONENT)
-                .setType(GL_FLOAT)
-                .build());
         Framebuffer framebuffer = new Framebuffer(new Framebuffer.Configuration.Builder()
                 .setSize(width, height)
-                .addColorAttachment(colorAttachment)
-                .setDepthAttachment(depthAttachment)
+                .addColorAttachment(new Texture(new Texture.Configuration.Builder()
+                        .setTarget(GL_TEXTURE_2D)
+                        .setSize(width, height)
+                        .setInternalFormat(GL_RGBA8)
+                        .setFormat(GL_RGBA)
+                        .setType(GL_UNSIGNED_INT_8_8_8_8)
+                        .addParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+                        .addParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+                        .build()))
+                .setDepthAttachment(new Texture(new Texture.Configuration.Builder()
+                        .setTarget(GL_TEXTURE_2D)
+                        .setSize(width, height)
+                        .setInternalFormat(GL_DEPTH_COMPONENT)
+                        .setFormat(GL_DEPTH_COMPONENT)
+                        .setType(GL_FLOAT)
+                        .build()))
                 .build());
         framebuffer.bind();
         glViewport(0, 0, framebuffer.getWidth(), framebuffer.getHeight());
@@ -287,17 +297,16 @@ public class BlockMap {
             glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             renderer.drawCube3D(new Cube3D(new Transform(
-                    new Vector3f(0f, 0f, 0),
-                    new Vector3f(1.5f, 1.5f, 1.5f),
-                    new Vector4f(0f, 0f, 0f, 0f)), // 25.f, 1f, 1f, 0f
+                    new Vector3f(0f, 0f, -1),
+                    new Vector3f(scale, scale, scale),
+                    rotations),
                     new Vector3f(1f, 1f, 1f),
                     sideSprite,
                     topSprite,
                     bottomSprite));
-            renderer.flushCube3DBatches(viewMatrix, projectionMatrix);
+            renderer.flushCube3DBatches(camera.getViewMatrix(), camera.getProjectionMatrix(), true);
             ByteBuffer pixels = framebuffer.readAllPixels(0);
-            stbi_flip_vertically_on_write(false);
-            stbi_write_png(path, framebuffer.getWidth(), framebuffer.getHeight(), 4, pixels, 4 * framebuffer.getWidth());
+            ImageIO.write(path, width, height, 4, pixels);
         }
 
         framebuffer.unbind();
@@ -322,5 +331,13 @@ public class BlockMap {
 
     public static Collection<TextureFormat> getAllTextureFormats() {
         return Collections.unmodifiableCollection(textureFormats.values());
+    }
+
+    public static Collection<TextureFormat> getAllItemTextureFormats() {
+        return Collections.unmodifiableCollection(itemTextureFormats.values());
+    }
+
+    public static Collection<TextureFormat> getAllBlockItemTextureFormats() {
+        return Collections.unmodifiableCollection(blockItemTextureFormats.values());
     }
 }

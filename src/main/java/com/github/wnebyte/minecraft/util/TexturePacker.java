@@ -8,26 +8,18 @@ import java.util.List;
 import java.util.ArrayList;
 import org.joml.Vector2f;
 import org.lwjgl.BufferUtils;
+import com.github.wnebyte.minecraft.renderer.TextureFormat;
 import static org.lwjgl.stb.STBImage.*;
-import static org.lwjgl.stb.STBImageWrite.stbi_flip_vertically_on_write;
 import static org.lwjgl.stb.STBImageWrite.stbi_write_png;
+import static org.lwjgl.stb.STBImageWrite.stbi_flip_vertically_on_write;
 
 public class TexturePacker {
 
-    private static class Location {
-
-        private String name;
-
-        private float x, y, width, height;
-
-        private Location(String name, int x, int y, int width, int height) {
-            this.name = name;
-            this.x = x;
-            this.y = y;
-            this.width = width;
-            this.height = height;
-        }
-    }
+    /*
+    ###########################
+    #        UTILITIES        #
+    ###########################
+    */
 
     private static class Pixel {
 
@@ -60,9 +52,89 @@ public class TexturePacker {
         return buffer;
     }
 
+    /*
+    ###########################
+    #      STATIC FIELDS      #
+    ###########################
+    */
+
+    public static final TexCoordsExtractor BOTTOM_ORIGIN_TEX_COORDS_EXTRACTOR = new TexCoordsExtractor() {
+        @Override
+        public Vector2f[] apply(float x, float y, int width, int height, int texWidth, int texHeight) {
+            float topY = (y + height) / texHeight;
+            float rightX = (x + width) / texWidth;
+            float leftX = x / texWidth;
+            float bottomY = y / texHeight;
+            return new Vector2f[]{
+                    new Vector2f(rightX, topY),
+                    new Vector2f(rightX, bottomY),
+                    new Vector2f(leftX, bottomY),
+                    new Vector2f(leftX, topY)
+            };
+        }
+    };
+
+    public static final TexCoordsExtractor TOP_ORIGIN_TEX_COORDS_EXTRACTOR = new TexCoordsExtractor() {
+        @Override
+        public Vector2f[] apply(float x, float y, int width, int height, int texWidth, int texHeight) {
+            float topY = y / texHeight;
+            float rightX = (x + width) / texWidth;
+            float leftX = x / texWidth;
+            float bottomY = (y + height) / texHeight;
+            return new Vector2f[]{
+                    new Vector2f(rightX, topY),
+                    new Vector2f(rightX, bottomY),
+                    new Vector2f(leftX, bottomY),
+                    new Vector2f(leftX, topY)
+            };
+        }
+    };
+
     private static final FilenameFilter PNG_FILTER = (dir, name) -> (name.endsWith(".png"));
 
-    public static void pack(String path, String configPath, String outputPath, boolean generateMips, int texWidth, int texHeight) {
+    /*
+    ###########################
+    #          FIELDS         #
+    ###########################
+    */
+
+    private TexCoordsExtractor extractor;
+
+    private boolean flipOnRead;
+
+    private boolean flipOnWrite;
+
+    /*
+    ###########################
+    #       CONSTRUCTORS      #
+    ###########################
+    */
+
+    public TexturePacker() {
+        this(BOTTOM_ORIGIN_TEX_COORDS_EXTRACTOR, false, false);
+    }
+
+    public TexturePacker(TexCoordsExtractor extractor) {
+        this(extractor, false, false);
+    }
+
+    public TexturePacker(boolean flipOnRead, boolean flipOnWrite) {
+        this(BOTTOM_ORIGIN_TEX_COORDS_EXTRACTOR, flipOnRead, flipOnWrite);
+    }
+
+    public TexturePacker(TexCoordsExtractor extractor, boolean flipOnRead, boolean flipOnWrite) {
+        this.extractor = extractor;
+        this.flipOnRead = flipOnRead;
+        this.flipOnWrite = flipOnWrite;
+    }
+
+    /*
+    ###########################
+    #          METHODS        #
+    ###########################
+    */
+
+    public void pack(String path, String configPath, String outputPath, boolean generateMips, int texWidth, int texHeight) {
         File dir = new File(path);
         if (Files.exists(configPath) && Files.exists(outputPath)) {
             File outputFile = new File(outputPath);
@@ -70,7 +142,7 @@ public class TexturePacker {
                 return;
             }
         }
-        List<Location> locations = new ArrayList<>();
+        List<TextureLocation> locations = new ArrayList<>();
         int numFiles = dir.listFiles(PNG_FILTER).length;
         int pngOutputWidth = (int)Math.sqrt(numFiles * texWidth * texHeight);
         int currentX = 0;
@@ -84,7 +156,7 @@ public class TexturePacker {
             IntBuffer width = BufferUtils.createIntBuffer(1);
             IntBuffer height = BufferUtils.createIntBuffer(1);
             IntBuffer channels = BufferUtils.createIntBuffer(1);
-            stbi_set_flip_vertically_on_load(false);
+            stbi_set_flip_vertically_on_load(flipOnRead);
             ByteBuffer rawPixels = stbi_load(image.getPath(), width, height, channels, 4);
 
             int w = width.get(0);
@@ -104,7 +176,7 @@ public class TexturePacker {
             }
 
             // Save the current x and current y and width and height and filename
-            locations.add(new Location(
+            locations.add(new TextureLocation(
                     image.getName().split(".png")[0],
                     currentX, currentY,
                     w, h));
@@ -128,69 +200,34 @@ public class TexturePacker {
 
         int pngOutputHeight = currentY + lineHeight;
         ByteBuffer data = toByteBuffer(pixels);
-        stbi_flip_vertically_on_write(false);
+        stbi_flip_vertically_on_write(flipOnWrite);
         stbi_write_png(outputPath, pngOutputWidth, pngOutputHeight, 4, data, pngOutputWidth * 4);
-
-        /*
-        if (generateMips) {
-            // Figure out how many mip levels we need and generate mipped versions of the files
-            int numMipLevels = (int)Math.floor(Math.log(Math.min(pngOutputWidth / texWidth, pngOutputHeight / texHeight))) + 1;
-            int[][] mipImages = new int[numMipLevels][4];
-            int[] widths = new int[numMipLevels];
-            int[] heights = new int[numMipLevels];
-            int[] texWidths = new int[numMipLevels];
-            int[] texHeights = new int[numMipLevels];
-            for (int i = 0; i < numMipLevels; i++) {
-                int newWidth = Math.max(pngOutputWidth >> (i + 1), 1);
-                int newHeight = Math.max(pngOutputHeight >> (i + 1), 1);
-                int newTexWidth = Math.max(texWidth >> (i + 1), 0);
-                int newTexHeight = Math.max(texHeight >> (i + 1), 0);
-                widths[i] = newWidth;
-                heights[i] = newHeight;
-                texWidths[i] = newTexWidth;
-                texHeights[i] = newTexHeight;
-            }
-
-            int index = 0;
-            int numTexturesPerRow = pngOutputWidth / texWidth;
-            for (File image : file.listFiles(PNG_FILTER)) {
-                IntBuffer width = BufferUtils.createIntBuffer(1);
-                IntBuffer height = BufferUtils.createIntBuffer(1);
-                IntBuffer channels = BufferUtils.createIntBuffer(1);
-                ByteBuffer rawPixels = stbi_load(image.getPath(), width, height, channels, 4);
-                int w = width.get(0);
-                int h = height.get(0);
-                h = Math.min(h, texHeight);
-
-                for (int i = 0; i < numMipLevels; i++) {
-                    int imageWidth = widths[i];
-                    int imageHeight = heights[i];
-                    int xPos = (index % numTexturesPerRow) * texWidths[i];
-                    int yPos = (index / numTexturesPerRow) * texHeights[i];
-                }
-            }
-        }
-         */
 
         TextureFormat[] textureFormats = new TextureFormat[locations.size()];
         int i = 0;
-        for (Location location : locations) {
-            Vector2f[] uvs = {
-                    // TR
-                    new Vector2f((location.x + location.width) / pngOutputWidth, location.y / pngOutputHeight),
-                    // BR
-                    new Vector2f((location.x + location.width) / pngOutputWidth, (location.y + location.height) / pngOutputHeight),
-                    // BL
-                    new Vector2f(location.x / pngOutputWidth, (location.y + location.height) / pngOutputHeight),
-                    // TL
-                    new Vector2f(location.x / pngOutputWidth, location.y / pngOutputHeight)
-            };
-            textureFormats[i] = new TextureFormat(i, location.name, uvs);
+        for (TextureLocation location : locations) {
+            Vector2f[] uvs = extractor.apply(
+                    location.getX(), location.getY(),
+                    location.getWidth(), location.getHeight(),
+                    pngOutputWidth, pngOutputHeight);
+            textureFormats[i] = new TextureFormat(i, location.getName(), uvs);
             i++;
         }
 
         // write texture formats to fs
         String json = Settings.GSON.toJson(textureFormats);
         Files.write(configPath, json);
+    }
+
+    public void setTexCoordsExtractor(TexCoordsExtractor extractor) {
+        this.extractor = extractor;
+    }
+
+    public void setFlipOnRead(boolean value) {
+        this.flipOnRead = value;
+    }
+
+    public void setFlipOnWrite(boolean value) {
+        this.flipOnWrite = value;
     }
 }

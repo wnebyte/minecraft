@@ -1,4 +1,4 @@
-package fonts;
+package renderer.fonts;
 
 import java.util.Map;
 import org.junit.Test;

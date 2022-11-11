@@ -42,6 +42,10 @@ public class Shader {
 
     public static final String U_INVERSE_VIEW = "uInverseView";
 
+    public static final String U_SUN_DIR = "uSunDir";
+
+    public static final String U_SUN_POS = "uSunPos";
+
     public static final String U_NORMAL_TEXTURE = "uNormalTexture";
 
     public static final String U_FONT_TEXTURE = "uFontTexture";

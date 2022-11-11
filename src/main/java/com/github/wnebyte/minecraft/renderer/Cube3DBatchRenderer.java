@@ -23,7 +23,7 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
     public static Vector4f[] toVector4fArray(Transform transform) {
         Vector4f[] array = new Vector4f[8];
         Matrix4f transformMatrix = null;
-        boolean isRotated = (transform.rotation.x != 0.0f);
+        boolean isRotated = (transform.rotations.length > 0);
         if (isRotated) {
             transformMatrix = transform.toMat4f();
         }
@@ -150,6 +150,8 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
 
         glVertexAttribPointer(3, TEX_ID_SIZE, GL_FLOAT, false, STRIDE_BYTES, TEX_ID_OFFSET);
         glEnableVertexAttribArray(3);
+
+        started = true;
     }
 
     @Override

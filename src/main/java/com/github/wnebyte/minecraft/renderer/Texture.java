@@ -98,6 +98,10 @@ public class Texture {
 
         private List<Parameter> parameters;
 
+        private String path;
+
+        private boolean flip;
+
         private Configuration() {}
 
         public boolean hasParameters() {
@@ -140,6 +144,14 @@ public class Texture {
             return parameters;
         }
 
+        public String getPath() {
+            return path;
+        }
+
+        public boolean isFlip() {
+            return flip;
+        }
+
         public static class Builder {
 
             public static final int DEFAULT_TARGET = GL_TEXTURE_2D;
@@ -171,6 +183,10 @@ public class Texture {
             private int type = DEFAULT_TYPE;
 
             private List<Parameter> parameters = new ArrayList<>();
+
+            private String path;
+
+            private boolean flip = false;
 
             public Builder setTarget(int value) {
                 this.target = value;
@@ -228,6 +244,16 @@ public class Texture {
                 return this;
             }
 
+            public Builder setPath(String path) {
+                this.path = path;
+                return this;
+            }
+
+            public Builder flip() {
+                this.flip = true;
+                return this;
+            }
+
             public Configuration build() {
                 Configuration conf = new Configuration();
                 conf.target = target;
@@ -239,6 +265,8 @@ public class Texture {
                 conf.format = format;
                 conf.type = type;
                 conf.parameters = parameters;
+                conf.path = path;
+                conf.flip = flip;
                 return conf;
             }
         }
@@ -322,7 +350,7 @@ public class Texture {
         IntBuffer width = BufferUtils.createIntBuffer(1);
         IntBuffer height = BufferUtils.createIntBuffer(1);
         IntBuffer channels = BufferUtils.createIntBuffer(1);
-        stbi_set_flip_vertically_on_load(false);
+        stbi_set_flip_vertically_on_load(conf.isFlip());
         ByteBuffer image = stbi_load(path, width, height, channels, 0);
 
         if (image != null) {

@@ -95,10 +95,10 @@ public class Spritesheet implements Iterable<Sprite> {
         this.sprites = new ArrayList<>(conf.getSprites().size());
 
         for (Sprite.Configuration spr : conf.getSprites()) {
-            float x = spr.getStart().x;
-            float y = spr.getStart().y;
             float spriteWidth = spr.getSize().x;
             float spriteHeight = spr.getSize().y;
+            float x = spr.getStart().x;
+            float y = spr.getStart().y;
             float topY = (y + spriteHeight) / (float)texture.getHeight();
             float rightX = (x + spriteWidth) / (float)texture.getWidth();
             float leftX = x / (float)texture.getWidth();

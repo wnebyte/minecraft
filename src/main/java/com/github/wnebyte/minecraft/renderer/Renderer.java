@@ -385,12 +385,22 @@ public class Renderer {
             batch.start();
             batch.add(cube);
             cubeBatches.add(batch);
+            addBatch(batch, true);
         }
     }
 
     public void flushCube3DBatches(Matrix4f viewMatrix, Matrix4f projectionMatrix) {
+        flushCube3DBatches(viewMatrix, projectionMatrix, false);
+    }
+
+    public void flushCube3DBatches(Matrix4f viewMatrix, Matrix4f projectionMatrix, boolean blend) {
+        // set render states
         glDisable(GL_CULL_FACE);
-        glEnable(GL_BLEND);
+        if (blend) {
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        }
+        // flush batches
         for (Batch<Cube3D> batch : cubeBatches) {
             batch.render(viewMatrix, projectionMatrix);
         }
@@ -398,7 +408,7 @@ public class Renderer {
 
     public void flush(Camera camera) {
         // set render states
-        glDisable(GL_CULL_FACE);
+        glEnable(GL_CULL_FACE);
         glDisable(GL_BLEND);
 
         // non-blendable

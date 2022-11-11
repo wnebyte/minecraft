@@ -22,8 +22,6 @@ public class Assets {
 
     private static final Map<String, Spritesheet> spritesheets = new HashMap<>();
 
-    private static final Map<Integer, Texture> texturesById = new HashMap<>();
-
     private static final Map<String, JFont> fonts = new HashMap<>();
 
     /**
@@ -50,29 +48,25 @@ public class Assets {
      * the specified <code>path</code>.
      */
     public static Texture getTexture(String path) {
-        return getTexture(path, -1);
-    }
-
-    public static Texture getTexture(String path, int id) {
-        File file = new File(path.toLowerCase(Locale.ROOT));
+        File file = new File(path);
+        path = file.getAbsolutePath().toLowerCase(Locale.ROOT);
         assert file.exists() :
-                String.format("Error: (Assets) Texture: '%s' does not exist", file.getAbsolutePath());
+                String.format("Error: (Assets) Texture: '%s' does not exist", path);
 
-        if (textures.containsKey(file.getAbsolutePath())) {
-            return textures.get(file.getAbsolutePath());
+        if (textures.containsKey(path)) {
+            return textures.get(path);
         } else {
+            assert false : "Texture with path: " + path + " has not been added";
             Texture texture = new Texture(path, true);
-            // texture.init(file.getAbsolutePath());
             textures.put(file.getAbsolutePath(), texture);
-            if (id >= 0) {
-                texturesById.put(id, texture);
-            }
             return texture;
         }
     }
 
-    public static Texture getTexture(int id) {
-        return texturesById.get(id);
+    public static void addTexture(Texture texture) {
+        File file = new File(texture.getPath());
+        String path = file.getAbsolutePath().toLowerCase(Locale.ROOT);
+        textures.put(path, texture);
     }
 
     public static Spritesheet getSpritesheet(String path) {

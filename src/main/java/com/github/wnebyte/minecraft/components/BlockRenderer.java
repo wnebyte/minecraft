@@ -3,7 +3,7 @@ package com.github.wnebyte.minecraft.components;
 import org.joml.Vector4f;
 import com.github.wnebyte.minecraft.core.Component;
 
-public class CubeRenderer extends Component {
+public class BlockRenderer extends Component {
 
     public void setDirty() {}
 

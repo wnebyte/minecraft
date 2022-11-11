@@ -5,13 +5,17 @@ import java.util.ArrayList;
 
 public class EventSystem {
 
-    private static final List<Observer> observers = new ArrayList<>();
+    private final List<Observer> observers;
 
-    public static void addObserver(Observer observer) {
+    public EventSystem() {
+        this.observers = new ArrayList<>();
+    }
+
+    public void addObserver(Observer observer) {
         observers.add(observer);
     }
 
-    public static void notify(Event event) {
+    public void notify(Event event) {
         for (Observer observer : observers) {
             observer.notify(event);
         }

@@ -19,7 +19,90 @@ public class Camera extends Component {
         LEFT,
         RIGHT,
         UP,
-        DOWN;
+        DOWN
+    }
+
+    public static class Builder {
+
+        private Vector3f position = new Vector3f();
+
+        private Vector3f forward = DEFAULT_FORWARD;
+
+        private Vector3f up = DEFAULT_UP;
+
+        private float yaw = DEFAULT_YAW;
+
+        private float pitch = DEFAULT_PITCH;
+
+        private float movementSpeed = DEFAULT_MOVEMENT_SPEED;
+
+        private float mouseSensitivity = DEFAULT_MOUSE_SENSITIVITY;
+
+        private float zoom = DEFAULT_ZOOM;
+
+        private float zNear = DEFAULT_Z_NEAR;
+
+        private float zFar = DEFAULT_Z_FAR;
+
+        public Builder setPosition(Vector3f position) {
+            this.position = position;
+            return this;
+        }
+
+        public Builder setPosition(float x, float y, float z) {
+            this.position = new Vector3f(x, y, z);
+            return this;
+        }
+
+        public Builder setForward(Vector3f forward) {
+            this.forward = forward;
+            return this;
+        }
+
+        public Builder setUp(Vector3f up) {
+            this.up = up;
+            return this;
+        }
+
+        public Builder setYaw(float yaw) {
+            this.yaw = yaw;
+            return this;
+        }
+
+        public Builder setPitch(float pitch) {
+            this.pitch = pitch;
+            return this;
+        }
+
+        public Builder setMovementSpeed(float movementSpeed) {
+            this.movementSpeed = movementSpeed;
+            return this;
+        }
+
+        public Builder setMouseSensitivity(float mouseSensitivity) {
+            this.mouseSensitivity = mouseSensitivity;
+            return this;
+        }
+
+        public Builder setZoom(float zoom) {
+            this.zoom = zoom;
+            return this;
+        }
+
+        public Builder setZNear(float zNear) {
+            this.zNear = zNear;
+            return this;
+        }
+
+        public Builder setZFar(float zFar) {
+            this.zFar = zFar;
+            return this;
+        }
+
+        public Camera build() {
+            return new Camera(position, forward, up,
+                    yaw, pitch, movementSpeed, mouseSensitivity, zoom, zNear, zFar);
+        }
     }
 
     public static Camera copy(Camera camera) {
@@ -44,6 +127,10 @@ public class Camera extends Component {
     #      STATIC FIELDS      #
     ###########################
     */
+
+    public static final Vector3f DEFAULT_FORWARD        = new Vector3f(0, 0, -1);
+
+    public static final Vector3f DEFAULT_UP             = new Vector3f(0, 1, 0);
 
     public static final float DEFAULT_YAW               = -90.0f;
 
@@ -121,13 +208,28 @@ public class Camera extends Component {
     ###########################
     */
 
+    public Camera(Vector3f positon) {
+        this(positon, new Vector3f(DEFAULT_FORWARD), new Vector3f(DEFAULT_UP));
+    }
+
     public Camera(Vector3f position, Vector3f forward, Vector3f up) {
-        this(position, forward, up, DEFAULT_YAW, DEFAULT_PITCH);
+        this(position, forward, up,
+                DEFAULT_YAW, DEFAULT_PITCH);
+    }
+
+    public Camera(Vector3f position, float yaw, float pitch) {
+        this(position, new Vector3f(DEFAULT_FORWARD), new Vector3f(DEFAULT_UP),
+                yaw, pitch);
     }
 
     public Camera(Vector3f position, Vector3f forward, Vector3f up, float yaw, float pitch) {
         this(position, forward, up,
                 yaw, pitch, DEFAULT_MOVEMENT_SPEED, DEFAULT_MOUSE_SENSITIVITY, DEFAULT_ZOOM);
+    }
+
+    public Camera(Vector3f positon, float yaw, float pitch, float movementSpeed, float mouseSensitivity, float zoom) {
+        this(positon, new Vector3f(DEFAULT_FORWARD), new Vector3f(DEFAULT_UP),
+                yaw, pitch, movementSpeed, mouseSensitivity, zoom);
     }
 
     public Camera(Vector3f position, Vector3f forward, Vector3f up,
@@ -161,6 +263,7 @@ public class Camera extends Component {
         this.inverseViewHUD = new Matrix4f();
         this.frustrum = new Frustrum();
         updateCameraVectors();
+        update(0);
     }
 
     /*
@@ -177,7 +280,7 @@ public class Camera extends Component {
         frustrum.update(vp);
     }
 
-    private void updateProjectionMatrix() {
+    public void updateProjectionMatrix() {
         projectionMatrix.identity();
         projectionMatrix.perspective(
                 (float)Math.toRadians(zoom),
@@ -185,7 +288,7 @@ public class Camera extends Component {
         projectionMatrix.invert(inverseProjection);
     }
 
-    private void updateViewMatrix() {
+    public void updateViewMatrix() {
         viewMatrix.identity();
         viewMatrix.lookAt(position, new Vector3f(position).add(forward), up);
         viewMatrix.invert(inverseView);
@@ -278,7 +381,7 @@ public class Camera extends Component {
         }
     }
 
-    private void updateCameraVectors() {
+    public void updateCameraVectors() {
         // calculate the new front vector
         Vector3f f = new Vector3f();
         f.x = (float)Math.cos(Math.toRadians(yaw)) * (float)Math.cos(Math.toRadians(pitch));
@@ -299,8 +402,18 @@ public class Camera extends Component {
         return projectionMatrix;
     }
 
+    public void setProjectionMatrix(Matrix4f projectionMatrix) {
+        this.projectionMatrix = projectionMatrix;
+        this.projectionMatrix.invert(this.inverseProjection);
+    }
+
     public Matrix4f getViewMatrix() {
         return viewMatrix;
+    }
+
+    public void setViewMatrix(Matrix4f viewMatrix) {
+        this.viewMatrix = viewMatrix;
+        this.viewMatrix.invert(this.inverseView);
     }
 
     public Matrix4f getInverseProjection() {
@@ -385,6 +498,22 @@ public class Camera extends Component {
 
     public boolean isLocked() {
         return locked;
+    }
+
+    public float getYaw() {
+        return yaw;
+    }
+
+    public void setYaw(float yaw) {
+        this.yaw = yaw;
+    }
+
+    public float getPitch() {
+        return pitch;
+    }
+
+    public void setPitch(float pitch) {
+        this.pitch = pitch;
     }
 
     @Override

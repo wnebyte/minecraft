@@ -17,7 +17,7 @@ void main()
     fColor = aColor;
     fTexCoords = aTexCoords;
     fTexId = aTexId;
-    gl_Position = uProjection * vec4(aPos, 1.0);
+    gl_Position = uProjection * uView * vec4(aPos, 1.0);
 }
 
 #type fragment

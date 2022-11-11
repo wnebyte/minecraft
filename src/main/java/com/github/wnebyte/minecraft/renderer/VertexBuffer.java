@@ -14,13 +14,6 @@ public class VertexBuffer {
     ###########################
     */
 
-
-    /*
-    static int compress(int position, int uv, byte face, byte vertex) {
-        return (position << 16) | (uv << 6) | (face << 3) | vertex;
-    }
-     */
-
     static int compress(int position, int uv, byte face) {
         return (position << 16) | (uv << 6) | (face << 3);
     }
@@ -95,7 +88,7 @@ public class VertexBuffer {
     // vertex index   - 2 bits
     // TR, TL, BL, BR, TR, BL
     public void append(int position, int uv, byte face, boolean colorByBiome) {
-        assert (size <= capacity() - 6) : String.format("Error: (VertexBuffer) Overflow: %d", size);
+        assert (size <= capacity() - 6) : String.format("Error: (VertexBuffer) Overflow: %d", size + 6);
         int shared = compress(position, uv, face, (byte)(colorByBiome ? 1 : 0));
         data.put(shared | 0); // TR
         data.put(shared | 3); // TL

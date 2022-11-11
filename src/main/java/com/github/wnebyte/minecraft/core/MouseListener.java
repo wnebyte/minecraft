@@ -1,6 +1,7 @@
 package com.github.wnebyte.minecraft.core;
 
-import org.joml.Vector2f;
+import java.util.Arrays;
+import org.joml.Vector2i;
 import org.joml.Vector4f;
 import org.joml.Matrix4f;
 import static org.lwjgl.glfw.GLFW.GLFW_PRESS;
@@ -16,15 +17,19 @@ public class MouseListener {
 
     private static final boolean[] mouseButtonPressed = new boolean[9];
 
+    private static final boolean[] mouseButtonBeginPressed = new boolean[9];
+
     private static boolean isDragging;
 
     private static int mouseButtonDown = 0;
 
     private static boolean firstMouse;
 
-    private static Vector2f windowSize;
+    public static void endFrame() {
+        Arrays.fill(mouseButtonBeginPressed, false);
+    }
 
-    public static void cursorPosCallback(long window, double x, double y) {
+    public static void cursorPosCallback(long glfwWindow, double x, double y) {
         xPos = (float)x;
         yPos = (float)y;
 
@@ -43,11 +48,13 @@ public class MouseListener {
         lastX = (float)x;
         lastY = (float)y;
 
-        Scene scene = Application.getWindow().getScene();
+        Window window = Application.getWindow();
+        Scene scene = window.getScene();
         if (scene != null) {
             Camera camera = scene.getCamera();
             if (camera != null) {
                 if (camera.isLocked()) {
+                    Vector2i windowSize = window.getSize();
                     Vector4f tmp = new Vector4f(
                             (xPos / windowSize.x) * 2.0f - 1.0f,
                             -((yPos / windowSize.y) * 2.0f - 1.0f),
@@ -65,22 +72,24 @@ public class MouseListener {
         }
     }
 
-    public static void mouseButtonCallback(long window, int button, int action, int mod) {
+    public static void mouseButtonCallback(long glfwWindow, int button, int action, int mod) {
         if (action == GLFW_PRESS) {
             mouseButtonDown++;
             if (button < mouseButtonPressed.length) {
                 mouseButtonPressed[button] = true;
+                mouseButtonBeginPressed[button] = true;
             }
         } else if (action == GLFW_RELEASE) {
             mouseButtonDown--;
             if (button < mouseButtonPressed.length) {
                 mouseButtonPressed[button] = false;
+                mouseButtonBeginPressed[button] = false;
                 isDragging = false;
             }
         }
     }
 
-    public static void scrollCallback(long window, double xOffset, double yOffset) {
+    public static void scrollCallback(long glfwWindow, double xOffset, double yOffset) {
         xScroll = xOffset;
         yScroll = yOffset;
         Scene scene = Application.getWindow().getScene();
@@ -95,6 +104,14 @@ public class MouseListener {
     public static boolean isMouseButtonDown(int button) {
         if (button < mouseButtonPressed.length) {
             return mouseButtonPressed[button];
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean isMouseButtonBeginDown(int button) {
+        if (button < mouseButtonBeginPressed.length) {
+            return mouseButtonBeginPressed[button];
         } else {
             return false;
         }
@@ -126,14 +143,5 @@ public class MouseListener {
 
     public static double getScrollY() {
         return yScroll;
-    }
-
-    public static void resetScreenPos() {
-        xScreenPos = 0.0f;
-        yScreenPos = 0.0f;
-    }
-
-    public static void setWindowSize(Vector2f windowSize) {
-        MouseListener.windowSize = windowSize;
     }
 }

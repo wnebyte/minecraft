@@ -159,9 +159,9 @@ void main()
         fColor = vec3(109.0 / 255.0, 184.0 / 255.0, 79.0 / 255.0);
     }
 
-    float xOffset = float(aChunkPos.x) * 16.0;
-    float zOffset = float(aChunkPos.y) * 16.0;
-    gl_Position = uProjection * uView * vec4(pos.x + xOffset, pos.y, pos.z + zOffset, 1.0);
+    pos.x += float(aChunkPos.x) * 16.0;
+    pos.z += float(aChunkPos.y) * 16.0;
+    gl_Position = uProjection * uView * vec4(pos, 1.0);
 }
 
 #type fragment
@@ -178,9 +178,18 @@ in struct Face {
 in vec3 fColor;
 flat in uint vertex;
 
+struct Light {
+    vec3 direction;
+    vec3 color;
+    float ambientStrength;
+};
+
+const Light light = { vec3(-45.0), vec3(1.0), 0.1 };
+
 out vec4 color;
 
 uniform sampler2D uTexture;
+uniform vec3 uSunPos;
 
 void getNormal(in Face face, out vec3 normal)
 {
@@ -209,10 +218,24 @@ void getNormal(in Face face, out vec3 normal)
 
 void main()
 {
-    color = vec4(fColor, 1.0) * texture(uTexture, uv);
+    vec4 objectColor = vec4(fColor, 1.0) * texture(uTexture, uv);
 
-    if (color.a < 0.3) {
+    if (objectColor.a < 0.3) {
         discard;
     }
 
+    vec3 normal;
+    getNormal(face, normal);
+    vec3 lightDir = normalize(-light.direction);
+
+    // ambient
+    vec3 ambient = light.ambientStrength * light.color;
+
+    // diffuse
+    float diff = max(dot(normal, lightDir), 0.0);
+    vec3 diffuse = diff * light.color;
+
+    // result
+    vec3 result = (ambient + diffuse) * vec3(objectColor);
+    color = vec4(result, 1.0);
 }

@@ -1,19 +1,18 @@
 package com.github.wnebyte.minecraft.renderer;
 
 import java.util.Arrays;
-
-import com.github.wnebyte.minecraft.components.CubeRenderer;
 import org.joml.Vector4f;
 import org.joml.Matrix4f;
 import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.core.Transform;
+import com.github.wnebyte.minecraft.components.BlockRenderer;
 import com.github.wnebyte.minecraft.util.Assets;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
 import static org.lwjgl.opengl.GL30.*;
 
-public class CubeEntityBatchRenderer implements EntityBatch<CubeRenderer> {
+public class BlockBatchRenderer implements EntityBatch<BlockRenderer> {
 
     /*
     ###########################
@@ -24,7 +23,7 @@ public class CubeEntityBatchRenderer implements EntityBatch<CubeRenderer> {
     public static Vector4f[] toVector4fArray(Transform transform) {
         Vector4f[] array = new Vector4f[8];
         Matrix4f transformMatrix = null;
-        boolean isRotated = (transform.rotation.x != 0.0f);
+        boolean isRotated = false;
         if (isRotated) {
             transformMatrix = transform.toMat4f();
         }
@@ -102,7 +101,7 @@ public class CubeEntityBatchRenderer implements EntityBatch<CubeRenderer> {
 
     private Shader shader;
 
-    private CubeRenderer[] boxes;
+    private BlockRenderer[] boxes;
 
     private float[] data;
 
@@ -120,14 +119,14 @@ public class CubeEntityBatchRenderer implements EntityBatch<CubeRenderer> {
     ###########################
     */
 
-    public CubeEntityBatchRenderer(Camera camera) {
+    public BlockBatchRenderer(Camera camera) {
         this(camera, DEFAULT_MAX_BATCH_SIZE);
     }
 
-    public CubeEntityBatchRenderer(Camera camera, int maxBatchSize) {
+    public BlockBatchRenderer(Camera camera, int maxBatchSize) {
         this.camera = camera;
         this.maxBatchSize = maxBatchSize;
-        this.boxes = new CubeRenderer[maxBatchSize];
+        this.boxes = new BlockRenderer[maxBatchSize];
         this.data = new float[maxBatchSize * STRIDE * 36];
         this.shader = Assets.getShader(Assets.DIR + "/shaders/box.glsl");
     }
@@ -196,7 +195,7 @@ public class CubeEntityBatchRenderer implements EntityBatch<CubeRenderer> {
      * otherwise <code>false</code>.
      */
     @Override
-    public boolean add(CubeRenderer element) {
+    public boolean add(BlockRenderer element) {
         if (size >= maxBatchSize) return false;
         int index = size;
         boxes[index] = element;
@@ -217,9 +216,9 @@ public class CubeEntityBatchRenderer implements EntityBatch<CubeRenderer> {
      * other <code>false</code>.
      */
     @Override
-    public boolean remove(CubeRenderer element) {
+    public boolean remove(BlockRenderer element) {
         for (int i = 0; i < size; i++) {
-            CubeRenderer b = boxes[i];
+            BlockRenderer b = boxes[i];
             if (b.equals(element)) {
                 for (int j = i; j < size - 1; j++) {
                     boxes[j] = boxes[j + 1];
@@ -235,7 +234,7 @@ public class CubeEntityBatchRenderer implements EntityBatch<CubeRenderer> {
     private boolean isDirty() {
         boolean rebuffer = false;
         for (int i = 0; i < size; i++) {
-            CubeRenderer b = boxes[i];
+            BlockRenderer b = boxes[i];
             if (b.isDirty()) {
                 loadVertexProperties(i);
                 b.setClean();
@@ -246,7 +245,7 @@ public class CubeEntityBatchRenderer implements EntityBatch<CubeRenderer> {
     }
 
     private void loadVertexProperties(int index) {
-        CubeRenderer b = boxes[index];
+        BlockRenderer b = boxes[index];
         Vector4f[] verts = toVector4fArray(b.gameObject.transform);
         Vector4f color = b.getColor();
         int offset = index * 36 * STRIDE;

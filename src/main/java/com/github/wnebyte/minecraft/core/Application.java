@@ -5,8 +5,13 @@ import java.util.concurrent.Future;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.Calendar;
+import java.nio.ByteBuffer;
+import org.lwjgl.BufferUtils;
 import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.util.Assets;
+import com.github.wnebyte.minecraft.util.AppData;
+import com.github.wnebyte.minecraft.util.ImageIO;
 import com.github.wnebyte.minecraft.util.Constants;
 import static org.lwjgl.glfw.GLFW.glfwGetTime;
 import static org.lwjgl.opengl.GL11.*;
@@ -26,7 +31,7 @@ public class Application {
             Application.app.run();
         } else {
             throw new IllegalStateException(
-                    "Application has already been launched"
+                    "Application has already been launched."
             );
         }
     }
@@ -59,6 +64,10 @@ public class Application {
 
     private float lastFrame = 0.0f;
 
+    private boolean takeScreenshot;
+
+    private String screenshotName;
+
     /*
     ###########################
     #       CONSTRUCTORS      #
@@ -86,6 +95,7 @@ public class Application {
         window.setScene(new Scene());
         ScreenRenderer.start();
         framebuffer = new Framebuffer(new Framebuffer.Configuration.Builder()
+                .setSize(window.getWidth(), window.getHeight())
                 // opaque
                 .addColorAttachment(new Texture(new Texture.Configuration.Builder()
                         .setTarget(GL_TEXTURE_2D)
@@ -170,14 +180,35 @@ public class Application {
             ScreenRenderer.render();
             shader.detach();
 
+            // reset render states
             glEnable(GL_DEPTH_TEST);
 
             window.swapBuffers();
             window.pollEvents(dt);
             KeyListener.endFrame();
+            MouseListener.endFrame();
+
+            if (takeScreenshot) {
+                int width = framebuffer.getWidth();
+                int height = framebuffer.getHeight();
+                Calendar calendar = Calendar.getInstance();
+                String time = String.format("%d-%d-%d",
+                        calendar.get(Calendar.HOUR), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND));
+                String path = AppData.SCREENSHOTS_DIR + "/" + screenshotName + "-" + time + ".png";
+                ByteBuffer pixels = BufferUtils.createByteBuffer(width * height * 4);
+                glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+                ImageIO.write(path, width, height, 4, pixels, true);
+                System.out.printf("Screenshot: '%s' was saved!%n", path);
+                takeScreenshot = false;
+            }
         }
 
         window.destroy();
+    }
+
+    public static void takeScreenshot(String name) {
+        Application.app.screenshotName = name;
+        Application.app.takeScreenshot = true;
     }
 
     public static Framebuffer getFramebuffer() {

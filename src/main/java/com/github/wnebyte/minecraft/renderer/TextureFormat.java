@@ -1,10 +1,8 @@
-package com.github.wnebyte.minecraft.util;
+package com.github.wnebyte.minecraft.renderer;
 
 import java.util.Arrays;
 import java.util.Objects;
 import org.joml.Vector2f;
-import com.github.wnebyte.minecraft.renderer.Sprite;
-import com.github.wnebyte.minecraft.renderer.Texture;
 
 public class TextureFormat {
 
@@ -73,9 +71,5 @@ public class TextureFormat {
     @Override
     public String toString() {
         return String.format("TextureFormat[id: %d, name: %s, uvs: %s]", id, name, Arrays.toString(uvs));
-    }
-
-    public String toJson() {
-        return Settings.GSON.toJson(this);
     }
 }

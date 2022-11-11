@@ -1,11 +1,11 @@
 package com.github.wnebyte.minecraft.physics;
 
-import com.github.wnebyte.minecraft.renderer.Renderer;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.core.GameObject;
 import com.github.wnebyte.minecraft.core.Transform;
 import com.github.wnebyte.minecraft.world.Map;
 import com.github.wnebyte.minecraft.world.Block;
+import com.github.wnebyte.minecraft.renderer.Renderer;
 import com.github.wnebyte.minecraft.physics.components.Rigidbody;
 import com.github.wnebyte.minecraft.physics.components.BoxCollider;
 import com.github.wnebyte.minecraft.util.JMath;
@@ -28,8 +28,8 @@ public class Physics {
 
     private World world;
 
-    public Physics(Renderer renderer, Map map) {
-        this.renderer = renderer;
+    public Physics(Map map) {
+        this.renderer = Renderer.getInstance();
         this.map = map;
         this.world = new World(gravity, map);
     }
@@ -155,9 +155,9 @@ public class Physics {
 
                 out.hit = true;
                 out.point = JMath.add(origin, JMath.mul(normal, depth));
-                out.blockCenter = JMath.add(transform.position, box.getOffset());
-                out.blockSize = box.getSize();
-                out.contactNormal = JMath.sub(out.point, out.blockCenter);
+                out.center = JMath.add(transform.position, box.getOffset());
+                out.size = box.getSize();
+                out.contactNormal = JMath.sub(out.point, out.center);
                 float maxComponent = JMath.absMax(out.contactNormal);
                 if (maxComponent == Math.abs(out.contactNormal.x)) {
                     out.contactNormal = JMath.mul(new Vector3f(1, 0, 0), Math.signum(out.contactNormal.x));

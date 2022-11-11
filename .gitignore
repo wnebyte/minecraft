@@ -34,11 +34,13 @@ out
 
 /assets/data
 
-README.md
-
 /src/main/java/com/github/wnebyte/minecraft/ui/MyGuiLayer.java
 /src/main/java/com/github/wnebyte/minecraft/ui/WidgetState.java
 /src/main/java/com/github/wnebyte/minecraft/ui/Window.java
 
 assets/images/generated/blockItems
 assets/images/generated/packedBlockItemTextures.png
+
+font.png
+
+/appdata

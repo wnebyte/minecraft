@@ -1,8 +1,11 @@
 package com.github.wnebyte.minecraft.world;
 
 import java.util.Objects;
-import com.github.wnebyte.minecraft.util.TextureFormat;
+import com.github.wnebyte.minecraft.renderer.TextureFormat;
 
+/**
+ * This class represents an unmodfiable block type.
+ */
 public class Block {
 
     /*
@@ -10,138 +13,6 @@ public class Block {
     #        UTILITIES        #
     ###########################
     */
-
-    public static boolean isAir(Block block) {
-        return (block == null || block.id == 1);
-    }
-
-    private byte id;
-
-    private String name;
-
-    private TextureFormat sideTextureFormat;
-
-    private TextureFormat topTextureFormat;
-
-    private TextureFormat bottomTextureFormat;
-
-    private boolean solid;
-
-    private boolean transparent;
-
-    private boolean blendable;
-
-    private boolean colorSideByBiome;
-
-    private boolean colorTopByBiome;
-
-    private boolean colorBottomByBiome;
-
-    public Block(byte id, String name,
-                 TextureFormat sideTextureFormat, TextureFormat topTextureFormat, TextureFormat bottomTextureFormat,
-                 boolean solid, boolean transparent, boolean blendable,
-                 boolean colorSideByBiome, boolean colorTopByBiome, boolean colorBottomByBiome) {
-        this.id = id;
-        this.name = name;
-        this.sideTextureFormat = sideTextureFormat;
-        this.topTextureFormat = topTextureFormat;
-        this.bottomTextureFormat = bottomTextureFormat;
-        this.solid = solid;
-        this.transparent = transparent;
-        this.blendable = blendable;
-        this.colorSideByBiome = colorSideByBiome;
-        this.colorTopByBiome = colorTopByBiome;
-        this.colorBottomByBiome = colorBottomByBiome;
-    }
-
-    public int getTexCoordsIndex(FaceType face) {
-        switch (face) {
-            case TOP:
-                return getTopTextureFormat().getId();
-            case BOTTOM:
-                return getBottomTextureFormat().getId();
-            default:
-                return getSideTextureFormat().getId();
-        }
-    }
-
-    public boolean getColorByBiome(FaceType face) {
-        switch (face) {
-            case TOP:
-                return colorTopByBiome;
-            case BOTTOM:
-                return colorBottomByBiome;
-            default:
-                return colorSideByBiome;
-        }
-    }
-
-    public byte getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public TextureFormat getSideTextureFormat() {
-        return sideTextureFormat;
-    }
-
-    public TextureFormat getTopTextureFormat() {
-        return topTextureFormat;
-    }
-
-    public TextureFormat getBottomTextureFormat() {
-        return bottomTextureFormat;
-    }
-
-    public boolean isSolid() {
-        return solid;
-    }
-
-    public boolean isTransparent() {
-        return transparent;
-    }
-
-    public boolean isBlendable() {
-        return blendable;
-    }
-
-    public boolean isColorSideByBiome() {
-        return colorSideByBiome;
-    }
-
-    public boolean isColorTopByBiome() {
-        return colorTopByBiome;
-    }
-
-    public boolean isColorBottomByBiome() {
-        return colorBottomByBiome;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == null) return false;
-        if (o == this) return true;
-        if (!(o instanceof Block)) return false;
-        Block block = (Block) o;
-        return Objects.equals(this.id, block.id);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = 27;
-        return 3 *
-                result +
-                Objects.hashCode(this.id);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("Block[id: %d, name: %s, side: %s, top: %s, bottom: %s]", id, name,
-                sideTextureFormat, topTextureFormat, bottomTextureFormat);
-    }
 
     public static class Builder {
 
@@ -215,4 +86,166 @@ public class Block {
                     solid, transparent, blendable, colorSideByBiome, colorTopByBiome, colorBottomByBiome);
         }
     }
+
+    public static boolean isAir(Block block) {
+        return (block == null || block.id == 1);
+    }
+
+    /*
+    ###########################
+    #          FIELDS         #
+    ###########################
+    */
+
+    private final byte id;
+
+    private final String name;
+
+    private final TextureFormat sideTextureFormat;
+
+    private final TextureFormat topTextureFormat;
+
+    private final TextureFormat bottomTextureFormat;
+
+    private final boolean solid;
+
+    private final boolean transparent;
+
+    private final boolean blendable;
+
+    private final boolean colorSideByBiome;
+
+    private final boolean colorTopByBiome;
+
+    private final boolean colorBottomByBiome;
+
+    /*
+    ###########################
+    #       CONSTRUCTORS      #
+    ###########################
+    */
+
+    public Block(byte id, String name,
+                 TextureFormat sideTextureFormat, TextureFormat topTextureFormat, TextureFormat bottomTextureFormat,
+                 boolean solid, boolean transparent, boolean blendable,
+                 boolean colorSideByBiome, boolean colorTopByBiome, boolean colorBottomByBiome) {
+        this.id = id;
+        this.name = name;
+        this.sideTextureFormat = sideTextureFormat;
+        this.topTextureFormat = topTextureFormat;
+        this.bottomTextureFormat = bottomTextureFormat;
+        this.solid = solid;
+        this.transparent = transparent;
+        this.blendable = blendable;
+        this.colorSideByBiome = colorSideByBiome;
+        this.colorTopByBiome = colorTopByBiome;
+        this.colorBottomByBiome = colorBottomByBiome;
+    }
+
+    /*
+    ###########################
+    #          METHODS        #
+    ###########################
+    */
+
+    public TextureFormat getTextureFormat(FaceType face) {
+        switch (face) {
+            case TOP:
+                return getTopTextureFormat();
+            case BOTTOM:
+                return getBottomTextureFormat();
+            default:
+                return getSideTextureFormat();
+        }
+    }
+
+    public int getTexCoordsIndex(FaceType face) {
+        switch (face) {
+            case TOP:
+                return getTopTextureFormat().getId();
+            case BOTTOM:
+                return getBottomTextureFormat().getId();
+            default:
+                return getSideTextureFormat().getId();
+        }
+    }
+
+    public boolean getColorByBiome(FaceType face) {
+        switch (face) {
+            case TOP:
+                return isColorTopByBiome();
+            case BOTTOM:
+                return isColorBottomByBiome();
+            default:
+                return isColorSideByBiome();
+        }
+    }
+
+    public byte getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public TextureFormat getSideTextureFormat() {
+        return sideTextureFormat;
+    }
+
+    public TextureFormat getTopTextureFormat() {
+        return topTextureFormat;
+    }
+
+    public TextureFormat getBottomTextureFormat() {
+        return bottomTextureFormat;
+    }
+
+    public boolean isSolid() {
+        return solid;
+    }
+
+    public boolean isTransparent() {
+        return transparent;
+    }
+
+    public boolean isBlendable() {
+        return blendable;
+    }
+
+    public boolean isColorSideByBiome() {
+        return colorSideByBiome;
+    }
+
+    public boolean isColorTopByBiome() {
+        return colorTopByBiome;
+    }
+
+    public boolean isColorBottomByBiome() {
+        return colorBottomByBiome;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null) return false;
+        if (o == this) return true;
+        if (!(o instanceof Block)) return false;
+        Block block = (Block) o;
+        return Objects.equals(this.id, block.id);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 27;
+        return 3 *
+                result +
+                Objects.hashCode(this.id);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Block[id: %d, name: %s, side: %s, top: %s, bottom: %s]", id, name,
+                sideTextureFormat, topTextureFormat, bottomTextureFormat);
+    }
+
 }

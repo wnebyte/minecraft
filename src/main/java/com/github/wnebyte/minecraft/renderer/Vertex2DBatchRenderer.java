@@ -134,7 +134,7 @@ public class Vertex2DBatchRenderer implements Batch<Vertex2D> {
         shader.uploadIntArray(Shader.U_TEXTURES, TEX_SLOTS);
 
         glBindVertexArray(vaoID);
-        glDrawElements(GL_TRIANGLES, size * 6, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, size + (size / 2), GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
 
         // Reset batch for use on the next draw call
@@ -180,7 +180,7 @@ public class Vertex2DBatchRenderer implements Batch<Vertex2D> {
     }
 
     private boolean atTexCapacity(Vertex2D element) {
-        return (!(element.getTexId() == -1) && !(textures.add(element.getTexId())));
+        return ((element.getTexId() >= 0) && !(textures.add(element.getTexId())));
     }
 
     @Override

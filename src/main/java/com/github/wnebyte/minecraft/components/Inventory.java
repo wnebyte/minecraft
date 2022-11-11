@@ -1,22 +1,68 @@
 package com.github.wnebyte.minecraft.components;
 
-import com.github.wnebyte.minecraft.world.Item;
 import com.github.wnebyte.minecraft.core.Component;
 
 public class Inventory extends Component {
+
+    public static class Item {
+
+        public static final int DEFAULT_STACK_COUNT = 1;
+
+        public static final int DEFAULT_MAX_STACK_COUNT = 1;
+
+        private final short id;
+
+        private int stackCount;
+
+        private final int maxStackCount;
+
+        public Item(short id) {
+            this(id, DEFAULT_STACK_COUNT, DEFAULT_MAX_STACK_COUNT);
+        }
+
+        public Item(short id, int maxStackCount) {
+            this(id, DEFAULT_STACK_COUNT, maxStackCount);
+        }
+
+        public Item(short id, int stackCount, int maxStackCount) {
+            this.id = id;
+            this.stackCount = stackCount;
+            this.maxStackCount = maxStackCount;
+        }
+
+        public short getId() {
+            return id;
+        }
+
+        public int getStackCount() {
+            return stackCount;
+        }
+
+        public void setStackCount(int stackCount) {
+            this.stackCount = stackCount;
+        }
+
+        public void addStackCount(int value) {
+            this.stackCount += value;
+        }
+
+        public int getMaxStackCount() {
+            return maxStackCount;
+        }
+    }
 
     /**
      * Inner class can access the first n elements of the enclosing class's array of items.
      */
     public class Hotbar {
 
-        private int size;
+        private transient int size;
 
         private int selected;
 
-        private Hotbar(int size) {
-            this.size = size;
+        private Hotbar() {
             this.selected = 0;
+            this.size = COLS;
         }
 
         public int size() {
@@ -28,17 +74,17 @@ public class Inventory extends Component {
         }
 
         public Item getSelected() {
-            if (selected < size) {
+            if (rangeCheck(selected)) {
                 return items[selected];
             } else {
                 throw new ArrayIndexOutOfBoundsException(
-                        ""
+                        "Index is out of bounds."
                 );
             }
         }
 
         public Item get(int index) {
-            if (index < size) {
+            if (rangeCheck(index)) {
                 return items[index];
             } else {
                 throw new ArrayIndexOutOfBoundsException(
@@ -48,7 +94,7 @@ public class Inventory extends Component {
         }
 
         public void set(int index, Item item) {
-            if (index < size) {
+            if (rangeCheck(index)) {
                 items[index] = item;
             } else {
                 throw new ArrayIndexOutOfBoundsException(
@@ -58,7 +104,7 @@ public class Inventory extends Component {
         }
 
         public void swap(int i, int j) {
-            if (i < size && j < size) {
+            if (rangeCheck(i, j)) {
                 Item tmp = items[i];
                 items[i] = items[j];
                 items[j] = tmp;
@@ -76,22 +122,50 @@ public class Inventory extends Component {
         public void previous() {
             selected = (selected + (size - 1)) % size;
         }
+
+        private boolean rangeCheck(int... indices) {
+            if (indices == null) return false;
+            for (int i : indices) {
+                if (i >= 0 && i < size) {
+                    continue;
+                } else {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
+
+    public static final int ROWS = 3;
+
+    public static final int COLS = 9;
+
+    public static final int HOTBAR_SIZE = COLS;
+
+    public static final int SIZE = (ROWS * COLS) + HOTBAR_SIZE;
 
     private final Item[] items;
 
-    private final int rows, cols;
+    private transient final int rows, cols;
 
-    private final int size;
+    private transient final int size;
 
     private final Hotbar hotbar;
 
-    public Inventory(int rows, int cols, int hotbarSize) {
-        this.rows = rows;
-        this.cols = cols;
-        this.size = (rows * cols) + hotbarSize;
-        this.items = new Item[size];
-        this.hotbar = new Hotbar(hotbarSize);
+    public Inventory() {
+        this.rows = ROWS;
+        this.cols = COLS;
+        this.size = SIZE;
+        this.items = new Item[SIZE];
+        this.hotbar = new Hotbar();
+    }
+
+    public void add(Item item) {
+
+    }
+
+    public void remove(Item item) {
+
     }
 
     public Item get(int index) {

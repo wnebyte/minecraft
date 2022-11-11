@@ -1,31 +1,74 @@
 package com.github.wnebyte.minecraft.world;
 
-import com.github.wnebyte.minecraft.util.TextureFormat;
-
 import java.util.Objects;
+import com.github.wnebyte.minecraft.renderer.TextureFormat;
 
+/**
+ * This class represents an unmodifiable item type.
+ */
 public class Item {
 
-    private int id;
+    public static class Builder {
 
-    private String name;
+        private short id;
 
-    private int maxStackCount;
+        private String name;
 
-    private transient int stackCount;
+        private short maxStackCount;
 
-    private transient TextureFormat textureFormat;
+        private TextureFormat textureFormat;
 
-    private transient boolean isBlock;
+        private boolean isBlock;
 
-    public Item(int id, String name, int maxStackCount) {
+        public Builder setId(short id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder setName(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder setMaxStackCount(short maxStackCount) {
+            this.maxStackCount = maxStackCount;
+            return this;
+        }
+
+        public Builder setTextureFormat(TextureFormat textureFormat) {
+            this.textureFormat = textureFormat;
+            return this;
+        }
+
+        public Builder setIsBlock(boolean value) {
+            this.isBlock = value;
+            return this;
+        }
+
+        public Item build() {
+            return new Item(id, name, maxStackCount, textureFormat, isBlock);
+        }
+    }
+
+    private final short id;
+
+    private final String name;
+
+    private final short maxStackCount;
+
+    private final TextureFormat textureFormat;
+
+    private final boolean isBlock;
+
+    public Item(short id, String name, short maxStackCount, TextureFormat textureFormat, boolean isBlock) {
         this.id = id;
         this.name = name;
         this.maxStackCount = maxStackCount;
-        this.stackCount = 1;
+        this.textureFormat = textureFormat;
+        this.isBlock = isBlock;
     }
 
-    public int getId() {
+    public short getId() {
         return id;
     }
 
@@ -33,7 +76,7 @@ public class Item {
         return name;
     }
 
-    public int getMaxStackCount() {
+    public short getMaxStackCount() {
         return maxStackCount;
     }
 
@@ -41,24 +84,8 @@ public class Item {
         return textureFormat;
     }
 
-    public void setTextureFormat(TextureFormat textureFormat) {
-        this.textureFormat = textureFormat;
-    }
-
     public boolean isBlock() {
         return isBlock;
-    }
-
-    public void setIsBlock(boolean block) {
-        this.isBlock = block;
-    }
-
-    public int getStackCount() {
-        return stackCount;
-    }
-
-    public void setStackCount(int stackCount) {
-        this.stackCount = stackCount;
     }
 
     @Override

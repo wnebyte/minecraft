@@ -1,29 +1,19 @@
 package com.github.wnebyte.minecraft.renderer;
 
+import java.util.Arrays;
 import org.joml.Vector2f;
 
 public class Sprite {
 
     public static class Configuration {
 
-        private String name;
-
         private Vector2f start;
 
         private Vector2f size;
 
         public Configuration(Vector2f start, Vector2f size) {
-            this(null, start, size);
-        }
-
-        public Configuration(String name, Vector2f start, Vector2f size) {
-            this.name = name;
             this.start = start;
             this.size = size;
-        }
-
-        public String getName() {
-            return name;
         }
 
         public Vector2f getStart() {
@@ -36,14 +26,7 @@ public class Sprite {
 
         public static class Builder {
 
-            private String name;
-
             private Vector2f start, size;
-
-            public Builder setName(String name) {
-                this.name = name;
-                return this;
-            }
 
             public Builder setStart(Vector2f start) {
                 this.start = start;
@@ -56,7 +39,7 @@ public class Sprite {
             }
 
             public Configuration build() {
-                return new Configuration(name, start, size);
+                return new Configuration(start, size);
             }
         }
     }
@@ -67,12 +50,7 @@ public class Sprite {
 
     private float height;
 
-    private Vector2f[] texCoords = new Vector2f[] {
-            new Vector2f(1, 1), // TR
-            new Vector2f(1, 0), // BR
-            new Vector2f(0, 0), // BL
-            new Vector2f(0, 1)  // TL
-    };
+    private Vector2f[] texCoords;
 
     public Sprite() {
         this(null);
@@ -80,6 +58,24 @@ public class Sprite {
 
     public Sprite(Texture texture) {
         this.texture = texture;
+        this.texCoords = new Vector2f[] {
+                new Vector2f(1, 1),
+                new Vector2f(1, 0),
+                new Vector2f(0, 0),
+                new Vector2f(0, 1)};
+    }
+
+    public void invertTexCoords() {
+        if (texCoords.length >= 4) {
+            Vector2f tr = texCoords[0];
+            Vector2f br = texCoords[1];
+            Vector2f bl = texCoords[2];
+            Vector2f tl = texCoords[3];
+            texCoords[0] = br;
+            texCoords[1] = tr;
+            texCoords[2] = tl;
+            texCoords[3] = bl;
+        }
     }
 
     public Vector2f getTexCoords(int index) {
@@ -132,15 +128,7 @@ public class Sprite {
 
     @Override
     public String toString() {
-        String uvString = String.format(
-                "TR: [x: %.2f, y: %.2f], BR: [x: %.2f, y: %.2f], BL: [x: %.2f, y: %.2f], TL: [x: %.2f, y: %.2f]",
-                texCoords[0].x, texCoords[0].y,
-                texCoords[1].x, texCoords[1].y,
-                texCoords[2].x, texCoords[2].y,
-                texCoords[3].x, texCoords[3].y);
-        return String.format(
-                "Sprite[id: %d, texture :%s, texCords: [%s], width: %f, height: %f]",
-                getTexId(), texture, uvString, width, height
-        );
+        return String.format("Sprite[texture: %s, width: %.2f, height: %.2f, texCoords: %s]",
+                texture, width, height, Arrays.toString(texCoords));
     }
 }

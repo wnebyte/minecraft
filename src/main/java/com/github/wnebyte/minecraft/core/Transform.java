@@ -1,5 +1,6 @@
 package com.github.wnebyte.minecraft.core;
 
+import java.util.Arrays;
 import java.util.Objects;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -8,7 +9,7 @@ import org.joml.Matrix4f;
 public class Transform extends Component {
 
     public static Transform copy(Transform transform) {
-        return new Transform(new Vector3f(transform.position), new Vector3f(transform.scale), transform.rotation);
+        return new Transform(new Vector3f(transform.position), new Vector3f(transform.scale), transform.rotations);
     }
 
     /*
@@ -16,8 +17,6 @@ public class Transform extends Component {
     #       STATIC FIELDS     #
     ###########################
     */
-
-    private static final Vector4f DEFAULT_ROTATION = new Vector4f(0.0f, 0.0f, 0.0f, 1.0f);
 
     /*
     ###########################
@@ -29,7 +28,7 @@ public class Transform extends Component {
 
     public final Vector3f scale;
 
-    public final Vector4f rotation;
+    public final Vector4f[] rotations;
 
     /*
     ###########################
@@ -46,13 +45,13 @@ public class Transform extends Component {
     }
 
     public Transform(Vector3f position, Vector3f scale) {
-        this(position, scale, DEFAULT_ROTATION);
+        this(position, scale, new Vector4f[]{});
     }
 
-    public Transform(Vector3f position, Vector3f scale, Vector4f rotation) {
+    public Transform(Vector3f position, Vector3f scale, Vector4f[] rotations) {
         this.position = position;
         this.scale = scale;
-        this.rotation = rotation;
+        this.rotations = rotations;
     }
 
     /*
@@ -64,7 +63,11 @@ public class Transform extends Component {
     public Matrix4f toMat4f() {
         Matrix4f transformMatrix = new Matrix4f().identity();
         transformMatrix.translate(position.x, position.y, position.z);
-        transformMatrix.rotate((float)Math.toRadians(rotation.x), rotation.y, rotation.z, rotation.w);
+        for (Vector4f rotation : rotations) {
+            if (rotation != null) {
+                transformMatrix.rotate((float)Math.toRadians(rotation.x), rotation.y, rotation.z, rotation.w);
+            }
+        }
         transformMatrix.scale(scale.x, scale.y, scale.z);
         return transformMatrix;
     }
@@ -77,8 +80,7 @@ public class Transform extends Component {
         Transform transform = (Transform) o;
         return Objects.equals(transform.position, this.position) &&
                 Objects.equals(transform.scale, this.scale) &&
-                Objects.equals(transform.rotation, this.rotation) &&
-                super.equals(transform);
+                Arrays.equals(transform.rotations, this.rotations);
     }
 
     @Override
@@ -88,14 +90,14 @@ public class Transform extends Component {
                 13 +
                 Objects.hashCode(this.position) +
                 Objects.hashCode(this.scale) +
-                Objects.hashCode(this.rotation) +
-                super.hashCode();
+                Arrays.hashCode(this.rotations);
     }
 
     @Override
     public String toString() {
         return String.format(
-                "Transform[position: %s, scale: %s, rotation: %s]", position, scale, rotation
+                "Transform[position: %s, scale: %s, rotations: %s]",
+                this.position, this.scale, Arrays.toString(this.rotations)
         );
     }
 }

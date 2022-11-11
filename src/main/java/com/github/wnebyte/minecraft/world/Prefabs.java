@@ -28,4 +28,11 @@ public class Prefabs {
         go.addComponent(bc);
         return go;
     }
+
+    public static GameObject createSun(float x, float y, float z, float scale) {
+        GameObject go = createGameObject("Sun", x, y, z, scale);
+        go.addComponent(new Transform(new Vector3f(x, y, z), new Vector3f(scale, scale, scale)));
+        go.transform = go.getComponent(Transform.class);
+        return go;
+    }
 }

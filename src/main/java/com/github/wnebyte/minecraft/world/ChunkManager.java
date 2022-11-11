@@ -6,6 +6,8 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.concurrent.Future;
 import java.nio.ByteBuffer;
+
+import org.joml.Matrix4f;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
@@ -106,7 +108,7 @@ public class ChunkManager {
         biboID = glGenBuffers();
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, biboID);
         glBufferData(GL_DRAW_INDIRECT_BUFFER,
-                (long) transparentDrawCommands.capacity() * DrawCommand.SIZE_BYTES, GL_DYNAMIC_DRAW);
+                (long)transparentDrawCommands.capacity() * DrawCommand.SIZE_BYTES, GL_DYNAMIC_DRAW);
 
         cboID = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, cboID);
@@ -124,7 +126,7 @@ public class ChunkManager {
         for (int x = 0; x < sqrt; x++) {
             for (int z = 0; z < sqrt; z++) {
                 Chunk chunk = new Chunk(x, 0, z, map, subchunks);
-                map.putChunk(chunk);
+                map.put(chunk);
                 chunk.load();
             }
         }
@@ -148,14 +150,12 @@ public class ChunkManager {
         Application.submit(() -> {
             Set<Chunk> chunks = new HashSet<>();
             List<Future<?>> futures = new ArrayList<>();
-            Future<?> future;
             for (Vector2i ivec2 : set) {
                 if (!map.contains(ivec2) && map.size() < World.CHUNK_CAPACITY) {
                     Chunk chunk = new Chunk(ivec2.x, 0, ivec2.y, map, subchunks);
-                    map.putChunk(chunk);
+                    map.put(chunk);
                     chunks.add(chunk);
-                    future = chunk.loadAsync();
-                    futures.add(future);
+                    futures.add(chunk.loadAsync());
                     for (Chunk c : chunk.getNeighbours()) {
                         if (c != null) {
                             chunks.add(c);
@@ -184,11 +184,9 @@ public class ChunkManager {
         Application.submit(() -> {
             Set<Chunk> neighbours = new HashSet<>();
             List<Future<?>> futures = new ArrayList<>();
-            Future<?> future;
             for (Chunk chunk : chunks) {
-                map.removeChunk(chunk);
-                future = chunk.unloadAsync();
-                futures.add(future);
+                map.remove(chunk);
+                futures.add(chunk.unloadAsync());
                 for (Chunk c : chunk.getNeighbours()) {
                     if (c != null) {
                         neighbours.add(c);
@@ -227,6 +225,23 @@ public class ChunkManager {
         }
     }
 
+    private void shadowPass() {
+        if (drawCommands.size() > 1) {
+            int[] bufs = {GL_NONE};
+            glDrawBuffers(bufs);
+            glReadBuffer(GL_NONE);
+            Vector3f lightPos = new Vector3f();
+            Matrix4f projectionMatrix = new Matrix4f().identity();
+            projectionMatrix.ortho(-10.0f, 10.0f, -10.0f, 10.0f, camera.getZNear(), camera.getZFar());
+            Matrix4f viewMatrix = new Matrix4f().identity();
+            viewMatrix.lookAt(
+                    new Vector3f(lightPos),
+                    new Vector3f(camera.getPosition()).add(camera.getForward()),
+                    new Vector3f(camera.getUp())
+            );
+        }
+    }
+
     public void render() {
         generateDrawCommands();
 
@@ -247,6 +262,7 @@ public class ChunkManager {
             shader.use();
             shader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
             shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
+            shader.uploadVec3f(Shader.U_SUN_POS, sunPosition);
             glActiveTexture(GL_TEXTURE0);
             texture.bind();
             shader.uploadTexture(Shader.U_TEXTURE, 0);
@@ -319,15 +335,17 @@ public class ChunkManager {
     }
 
     public void destroy() {
-        glDeleteVertexArrays(0);
         glUnmapBuffer(vboID);
         glDeleteBuffers(vboID);
         glDeleteBuffers(iboID);
         glDeleteBuffers(cboID);
         glDeleteBuffers(biboID);
+        glDeleteVertexArrays(vaoID);
     }
 
-    public Map getMap() {
-        return map;
+    private Vector3f sunPosition = new Vector3f();
+
+    public void setSunPosition(Vector3f value) {
+        this.sunPosition = value;
     }
 }

@@ -1,6 +1,6 @@
 package com.github.wnebyte.minecraft.core;
 
-import org.joml.Vector2f;
+import org.joml.Vector2i;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.glfw.GLFWErrorCallback;
@@ -17,16 +17,6 @@ public class Window {
     ###########################
     */
 
-    public static class Resolution {
-
-        public final int width, height;
-
-        public Resolution(int width, int height) {
-            this.width = width;
-            this.height = height;
-        }
-    }
-
     public static Window newInstance(String title) {
         if (Window.window == null) {
             Window.window = new Window(title);
@@ -34,16 +24,16 @@ public class Window {
             return Window.window;
         } else {
             throw new IllegalStateException(
-                    "Window has already been instantiated"
+                    "Window has already been instantiated."
             );
         }
     }
 
-    public static Resolution getResolution() {
+    public static Vector2i getResolution() {
         return getResolution(glfwGetPrimaryMonitor());
     }
 
-    public static Resolution getResolution(long monitor) {
+    public static Vector2i getResolution(long monitor) {
         int width = 0, height = 0, size = 0;
         boolean found = false;
 
@@ -62,7 +52,7 @@ public class Window {
             }
         }
 
-        return found ? new Resolution(width, height) : new Resolution(1920, 1080);
+        return found ? new Vector2i(width, height) : new Vector2i(1920, 1080);
     }
 
     /*
@@ -114,9 +104,9 @@ public class Window {
             );
         }
 
-        Resolution res = Window.getResolution(glfwGetPrimaryMonitor());
-        width = res.width;
-        height = res.height;
+        Vector2i res = Window.getResolution(glfwGetPrimaryMonitor());
+        width = res.x;
+        height = res.y;
 
         // Configure GLFW
         glfwDefaultWindowHints();
@@ -184,7 +174,6 @@ public class Window {
 
     public void viewport() {
         glViewport(0, 0, width, height);
-        MouseListener.setWindowSize(new Vector2f(width, height));
     }
 
     public void setWindowShouldClose(boolean value) {
@@ -221,21 +210,18 @@ public class Window {
         return width;
     }
 
-    public void setWidth(int width) {
-        this.width = width;
-    }
-
     public int getHeight() {
         return height;
     }
 
-    public void setHeight(int height) {
-        this.height = height;
+    public Vector2i getSize() {
+        return new Vector2i(width, height);
     }
 
     public void setSize(int width, int height) {
         this.width = width;
         this.height = height;
+        glfwSetWindowSize(glfwWindow, width, height);
     }
 
     public float getAspectRatio() {

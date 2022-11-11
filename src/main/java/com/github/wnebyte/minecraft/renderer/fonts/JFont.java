@@ -1,14 +1,12 @@
 package com.github.wnebyte.minecraft.renderer.fonts;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import com.github.wnebyte.minecraft.renderer.Texture;
-
-import javax.imageio.ImageIO;
 
 public class JFont {
 
@@ -48,19 +46,18 @@ public class JFont {
     }
 
     public Map<Integer, CharInfo> getCharacters() {
-        return characters;
+        return Collections.unmodifiableMap(characters);
     }
 
     public void generateBitmap() {
-        Font font = registerFont(path);
-        font = new Font(font.getName(), Font.PLAIN, fontSize);
+        Font font = registerFont(path).deriveFont(Font.PLAIN, fontSize);
         // create fake image to get font information
         BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = img.createGraphics();
         g2d.setFont(font);
         FontMetrics fontMetrics = g2d.getFontMetrics();
 
-        int estWidth = (int)Math.sqrt(font.getNumGlyphs()) * font.getSize() + 1;
+        float estWidth = (int)Math.sqrt(font.getNumGlyphs()) * font.getSize() + 1;
         this.width = 0;
         this.height = fontMetrics.getHeight();
         float vSpacing = 1.4f;
@@ -77,9 +74,8 @@ public class JFont {
                         .setHeight(fontMetrics.getHeight())
                         .build();
                 characters.put(i, info);
-                width = Math.max(x + info.getWidth(), width);
-
-                x += info.getWidth();
+                width = Math.max(x + info.getWidth() + 2, width);
+                x += info.getWidth() + 2.0f;
                 if (x > estWidth) {
                     x = 0;
                     y += info.getHeight() * vSpacing;
@@ -89,6 +85,7 @@ public class JFont {
         }
         height += fontMetrics.getHeight() * vSpacing;
         g2d.dispose();
+        img.flush();
 
         // create the real texture
         img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
@@ -107,11 +104,14 @@ public class JFont {
         this.texture = new Texture(img);
         this.textureId = texture.getId();
 
+        /*
         try {
             ImageIO.write(img, "png", new File("C:/Users/ralle/dev/java/minecraft/font.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
+         */
+        img.flush();
     }
 
     private RenderingHints getRenderingHints() {

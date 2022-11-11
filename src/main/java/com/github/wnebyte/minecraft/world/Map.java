@@ -17,20 +17,20 @@ public class Map implements Iterable<Chunk> {
         this.chunks = new ConcurrentHashMap<>(initialCapacity);
     }
 
-    public Chunk putChunk(Vector2i key, Chunk value) {
+    public Chunk put(Vector2i key, Chunk value) {
         return chunks.put(key, value);
     }
 
-    public Chunk putChunk(Chunk value) {
-        return putChunk(value.getChunkCoords(), value);
+    public Chunk put(Chunk value) {
+        return put(value.getChunkCoords(), value);
     }
 
-    public Chunk removeChunk(Vector2i key) {
+    public Chunk remove(Vector2i key) {
         return chunks.remove(key);
     }
 
-    public Chunk removeChunk(Chunk value) {
-        return removeChunk(value.getChunkCoords());
+    public Chunk remove(Chunk value) {
+        return remove(value.getChunkCoords());
     }
 
     public Chunk getChunk(int i, int k) {

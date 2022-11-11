@@ -140,11 +140,15 @@ public class Framebuffer {
 
         if (colorAttachments != null) {
             int i = 0;
+            int[] bufs = new int[colorAttachments.size()];
             for (Texture colorAttachment : colorAttachments) {
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i,
+                int attachment = GL_COLOR_ATTACHMENT0 + i;
+                glFramebufferTexture2D(GL_FRAMEBUFFER, attachment,
                         colorAttachment.getTarget(),  colorAttachment.getId(), 0);
+                bufs[i] = attachment;
                 i++;
             }
+            glDrawBuffers(bufs);
         }
         if (depthAttachment != null) {
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,

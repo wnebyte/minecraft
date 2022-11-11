@@ -6,9 +6,9 @@ public class RaycastInfo {
 
     public Vector3f point;
 
-    public Vector3f blockCenter;
+    public Vector3f center;
 
-    public Vector3f blockSize;
+    public Vector3f size;
 
     public Vector3f contactNormal;
 
@@ -18,12 +18,12 @@ public class RaycastInfo {
         return point;
     }
 
-    public Vector3f getBlockCenter() {
-        return blockCenter;
+    public Vector3f getCenter() {
+        return center;
     }
 
-    public Vector3f getBlockSize() {
-        return blockSize;
+    public Vector3f getSize() {
+        return size;
     }
 
     public Vector3f getContactNormal() {

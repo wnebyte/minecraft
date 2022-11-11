@@ -3,9 +3,11 @@ package com.github.wnebyte.minecraft.world;
 import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.core.*;
+import com.github.wnebyte.minecraft.components.Inventory;
 import com.github.wnebyte.minecraft.components.PlayerController;
 import com.github.wnebyte.minecraft.physics.Physics;
 import com.github.wnebyte.minecraft.renderer.*;
@@ -37,15 +39,9 @@ public class World {
 
     private ChunkManager chunkManager;
 
-    private Renderer renderer;
-
     private Skybox skybox;
 
     private Physics physics;
-
-    private GameObject sun;
-
-    private List<GameObject> gameObjects;
 
     private float time;
 
@@ -54,6 +50,10 @@ public class World {
     private float debounce = debounceTime;
 
     private Vector3f lastCameraPos;
+
+    private List<GameObject> gameObjects;
+
+    private GameObject sun;
 
     /*
     ###########################
@@ -66,18 +66,19 @@ public class World {
         this.lastCameraPos = new Vector3f(camera.getPosition());
         this.map = new Map(CHUNK_CAPACITY);
         this.chunkManager = new ChunkManager(camera, map);
-        this.renderer = Renderer.getInstance();
         this.skybox = new Skybox(camera);
-        this.physics = new Physics(renderer, map);
+        this.physics = new Physics(map);
         this.gameObjects = new ArrayList<>();
-        GameObject go = new GameObject("Camera");
-        go.addComponent(camera);
-        go.addComponent(new Transform());
-        this.gameObjects.add(go);
-        GameObject player = new GameObject("Player");
-        player.addComponent(new Transform());
-        player.addComponent(new PlayerController(physics, map));
-       // this.gameObjects.add(player);
+        GameObject cameraGo = new GameObject("Camera");
+        cameraGo.addComponent(camera);
+        gameObjects.add(cameraGo);
+        GameObject playerGo = new GameObject("Player");
+        playerGo.addComponent(new PlayerController());
+        playerGo.addComponent(new Inventory());
+        gameObjects.add(playerGo);
+        sun = Prefabs.createSun(200, 200, 200, 20f);
+        gameObjects.add(sun);
+
     }
 
     /*
@@ -87,13 +88,13 @@ public class World {
     */
 
     public void start(Scene scene) {
-        chunkManager.start();
-        skybox.start();
         for (GameObject go : gameObjects) {
             go.start(scene);
         }
+        skybox.start();
+        chunkManager.start();
         camera.setPosition(new Vector3f(CHUNK_SPAWN_AREA / 2.0f, 140, CHUNK_SPAWN_AREA / 2.0f));
-       // chunkManager.loadSpawnChunks();
+        chunkManager.loadSpawnChunks();
     }
 
     /*
@@ -109,8 +110,8 @@ public class World {
         time += (dt / 6);
         float blend = JMath.clamp((time / 1440), 0.0f, 1.0f);
         skybox.setBlend(blend);
+        chunkManager.setSunPosition(sun.transform.position);
 
-        // update game objects
         for (GameObject go : gameObjects) {
             go.update(dt);
         }
@@ -140,7 +141,7 @@ public class World {
 
     public void render() {
         skybox.render();
-       // chunkManager.render();
+        chunkManager.render();
     }
 
     public void destroy() {
@@ -151,4 +152,44 @@ public class World {
         }
     }
 
+    public Map getMap() {
+        return map;
+    }
+
+    public Physics getPhysics() {
+        return physics;
+    }
+
+    public void addGameObject(GameObject go) {
+        gameObjects.add(go);
+    }
+
+    public List<GameObject> getGameObjects() {
+        return gameObjects;
+    }
+
+    public GameObject getGameObject(int id) {
+        return gameObjects.stream().filter(go -> go.getId() == id)
+                .findFirst().orElse(null);
+    }
+
+    public GameObject getGameObject(String name) {
+        return gameObjects.stream().filter(go -> go.getName().equals(name))
+                .findFirst().orElse(null);
+    }
+
+    public <T extends Component> GameObject getGameObject(Class<T> componentClass) {
+        return gameObjects.stream().filter(go -> go.getComponent(componentClass) != null)
+                .findFirst().orElse(null);
+    }
+
+    public <T extends Component> List<GameObject> getGameObjects(Class<T> componentClass) {
+        return gameObjects.stream().filter(go -> go.getComponent(componentClass) != null)
+                .collect(Collectors.toList());
+    }
+
+    public <T extends Component> T getComponent(Class<T> componentClass) {
+        GameObject go = getGameObject(componentClass);
+        return (go != null) ? go.getComponent(componentClass) : null;
+    }
 }

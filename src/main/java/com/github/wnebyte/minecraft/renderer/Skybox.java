@@ -78,6 +78,8 @@ public class Skybox {
 
     private float blend;
 
+    private boolean started;
+
     public Skybox(Camera camera) {
         this(camera, new Cubemap(Cubemap.Type.DAY), new Cubemap(Cubemap.Type.NIGHT));
     }
@@ -99,9 +101,14 @@ public class Skybox {
 
         glVertexAttribPointer(0, POS_SIZE, GL_FLOAT, false, STRIDE_BYTES, POS_OFFSET);
         glEnableVertexAttribArray(0);
+
+        started = true;
     }
 
     public void render() {
+        if (!started) {
+            start();
+        }
         glDepthMask(false);
         shader.use();
         shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
