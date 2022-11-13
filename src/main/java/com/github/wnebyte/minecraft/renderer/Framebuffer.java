@@ -1,9 +1,9 @@
 package com.github.wnebyte.minecraft.renderer;
 
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Objects;
+import java.nio.ByteBuffer;
 import org.lwjgl.BufferUtils;
 import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER;
@@ -16,99 +16,51 @@ public class Framebuffer {
     ###########################
     */
 
-    public static class Configuration {
+    public static class Builder {
 
         private int width;
 
         private int height;
 
-        private List<Texture> colorAttachments;
+        private List<Texture> colorAttachments = new ArrayList<>();
 
         private Texture depthAttachment;
 
-        private Configuration() {}
+        public Builder setWidth(int width) {
+            this.width = width;
+            return this;
+        }
 
-        private Configuration(int width, int height, List<Texture> colorAttachments, Texture depthAttachment) {
+        public Builder setHeight(int height) {
+            this.height = height;
+            return this;
+        }
+
+        public Builder setSize(int width, int height) {
             this.width = width;
             this.height = height;
+            return this;
+        }
+
+        public Builder setColorAttachments(List<Texture> colorAttachments) {
             this.colorAttachments = colorAttachments;
+            return this;
+        }
+
+        public Builder addColorAttachment(Texture colorAttachment) {
+            this.colorAttachments.add(colorAttachment);
+            return this;
+        }
+
+        public Builder setDepthAttachment(Texture depthAttachment) {
             this.depthAttachment = depthAttachment;
+            return this;
         }
 
-        public boolean hasColorAttachments() {
-            return (colorAttachments != null) && !(colorAttachments.isEmpty());
-        }
-
-        public boolean hasDepthAttachment() {
-            return (depthAttachment != null);
-        }
-
-        public int getWidth() {
-            return width;
-        }
-
-        public int getHeight() {
-            return height;
-        }
-
-        public List<Texture> getColorAttachments() {
-            return colorAttachments;
-        }
-
-        public Texture getDepthAttachment() {
-            return depthAttachment;
-        }
-
-        public static class Builder {
-
-            private int width, height;
-
-            private List<Texture> colorAttachments = new ArrayList<>();
-
-            private Texture depthAttachment;
-
-            public Builder setWidth(int width) {
-                this.width = width;
-                return this;
-            }
-
-            public Builder setHeight(int height) {
-                this.height = height;
-                return this;
-            }
-
-            public Builder setSize(int width, int height) {
-                this.width = width;
-                this.height = height;
-                return this;
-            }
-
-            public Builder setColorAttachments(List<Texture> colorAttachments) {
-                this.colorAttachments = colorAttachments;
-                return this;
-            }
-
-            public Builder addColorAttachment(Texture colorAttachment) {
-                this.colorAttachments.add(colorAttachment);
-                return this;
-            }
-
-            public Builder setDepthAttachment(Texture depthAttachment) {
-                this.depthAttachment = depthAttachment;
-                return this;
-            }
-
-            public Configuration build() {
-                Configuration conf = new Configuration();
-                conf.width = width;
-                conf.height = height;
-                conf.colorAttachments = colorAttachments;
-                conf.depthAttachment = depthAttachment;
-                return conf;
-            }
+        public Framebuffer build() {
+            return new Framebuffer(width, height, colorAttachments, depthAttachment);
         }
     }
-
 
     /*
     ###########################
@@ -116,7 +68,7 @@ public class Framebuffer {
     ###########################
     */
 
-    private int id;
+    private final int id;
 
     private int width, height;
 
@@ -130,12 +82,16 @@ public class Framebuffer {
     ###########################
     */
 
-    public Framebuffer(Configuration conf) {
+    public Framebuffer(int width, int height, List<Texture> colorAttachments) {
+        this(width, height, colorAttachments, null);
+    }
+
+    public Framebuffer(int width, int height, List<Texture> colorAttachments, Texture depthAttachment) {
         this.id = glGenFramebuffers();
-        this.width = conf.getWidth();
-        this.height = conf.getHeight();
-        this.colorAttachments = conf.getColorAttachments();
-        this.depthAttachment = conf.getDepthAttachment();
+        this.width = width;
+        this.height = height;
+        this.colorAttachments = colorAttachments;
+        this.depthAttachment = depthAttachment;
         glBindFramebuffer(GL_FRAMEBUFFER, id);
 
         if (colorAttachments != null) {

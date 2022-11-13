@@ -31,3 +31,5 @@ A minecraft clone built using LWJGL.
 - [ ] Implement lightweight immediate mode GUI.
 - [x] Implement inventory system.
 - [ ] Implement menus.
+- [ ] Implement animations.
+- [ ] Implement a particle system.

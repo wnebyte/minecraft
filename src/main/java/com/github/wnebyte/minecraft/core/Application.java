@@ -94,7 +94,7 @@ public class Application {
         window = Window.newInstance("Minecraft");
         window.setScene(new Scene());
         ScreenRenderer.start();
-        framebuffer = new Framebuffer(new Framebuffer.Configuration.Builder()
+        framebuffer = new Framebuffer.Builder()
                 .setSize(window.getWidth(), window.getHeight())
                 // opaque
                 .addColorAttachment(new Texture(new Texture.Configuration.Builder()
@@ -134,7 +134,7 @@ public class Application {
                         .setFormat(GL_DEPTH_COMPONENT)
                         .setType(GL_FLOAT)
                         .build()))
-                .build());
+                .build();
     }
 
     private void loop() {
@@ -149,8 +149,8 @@ public class Application {
             while ((msg = messageQueue.poll()) != null) {
                 msg.run();
                 currentFrame = (float)glfwGetTime();
-                float elapsedTime = currentFrame - lastFrame;
-                if (elapsedTime >= (1f / 60f) * 0.15f) {
+                float dt = currentFrame - lastFrame;
+                if (dt >= (1f / 60f) * 0.15f) {
                     break;
                 }
             }

@@ -264,7 +264,7 @@ public class BlockMap {
                 10_000f);
         int width = 32;
         int height = 32;
-        Framebuffer framebuffer = new Framebuffer(new Framebuffer.Configuration.Builder()
+        Framebuffer framebuffer = new Framebuffer.Builder()
                 .setSize(width, height)
                 .addColorAttachment(new Texture(new Texture.Configuration.Builder()
                         .setTarget(GL_TEXTURE_2D)
@@ -282,7 +282,7 @@ public class BlockMap {
                         .setFormat(GL_DEPTH_COMPONENT)
                         .setType(GL_FLOAT)
                         .build()))
-                .build());
+                .build();
         framebuffer.bind();
         glViewport(0, 0, framebuffer.getWidth(), framebuffer.getHeight());
         Renderer renderer = Renderer.getInstance();

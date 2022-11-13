@@ -4,12 +4,11 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
-
-import com.github.wnebyte.minecraft.renderer.Subchunk;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.core.Application;
+import com.github.wnebyte.minecraft.renderer.Subchunk;
 import com.github.wnebyte.minecraft.renderer.VertexBuffer;
 import com.github.wnebyte.minecraft.util.*;
 
