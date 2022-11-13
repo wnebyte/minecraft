@@ -3,7 +3,7 @@ package com.github.wnebyte.minecraft.renderer;
 import java.util.Arrays;
 import org.joml.Vector2i;
 
-public class DrawCommandBuffer {
+public class DrawCommandBuffer implements IDrawCommandBuffer {
 
     private final DrawCommand[] drawCommands;
 
@@ -20,6 +20,7 @@ public class DrawCommandBuffer {
         this.size = 0;
     }
 
+    @Override
     public boolean add(Subchunk subchunk) {
         return add(subchunk.getFirst(), subchunk.getNumVertices(), subchunk.getChunkCoords());
     }
@@ -35,12 +36,14 @@ public class DrawCommandBuffer {
         return false;
     }
 
+    @Override
     public void reset() {
         Arrays.fill(drawCommands, 0, size, null);
         Arrays.fill(chunkCoords,  0, size, null);
         size = 0;
     }
 
+    @Override
     public int[] getDrawCommands() {
         int[] data = new int[4 * size];
         int index = 0;
@@ -55,6 +58,7 @@ public class DrawCommandBuffer {
         return data;
     }
 
+    @Override
     public int[] getChunkCoords() {
         int[] data = new int[2 * size];
         int index = 0;
@@ -67,14 +71,17 @@ public class DrawCommandBuffer {
         return data;
     }
 
+    @Override
     public int size() {
         return size;
     }
 
+    @Override
     public int capacity() {
         return capacity;
     }
 
+    @Override
     public int remaining() {
         return capacity - size;
     }

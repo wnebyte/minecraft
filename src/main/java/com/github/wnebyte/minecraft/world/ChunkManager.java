@@ -6,8 +6,6 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.concurrent.Future;
 import java.nio.ByteBuffer;
-
-import org.joml.Matrix4f;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
@@ -54,9 +52,9 @@ public class ChunkManager {
 
     private Texture texture;
 
-    private DrawCommandBuffer drawCommands;
+    private IDrawCommandBuffer drawCommands;
 
-    private DrawCommandBuffer transparentDrawCommands;
+    private IDrawCommandBuffer transparentDrawCommands;
 
     private Pool<Key, Subchunk> subchunks;
 
@@ -68,8 +66,8 @@ public class ChunkManager {
         this.transparentShader = Assets.getShader(Assets.DIR + "/shaders/transparent.glsl");
         this.compositeShader = Assets.getShader(Assets.DIR + "/shaders/composite.glsl");
         this.texture = Assets.getTexture(Assets.DIR + "/images/generated/packedTextures.png");
-        this.drawCommands = new DrawCommandBuffer(World.CHUNK_CAPACITY * 16);
-        this.transparentDrawCommands = new DrawCommandBuffer(World.CHUNK_CAPACITY * 16);
+        this.drawCommands = new FlatDrawCommandBuffer(World.CHUNK_CAPACITY * 16);
+        this.transparentDrawCommands = new FlatDrawCommandBuffer(World.CHUNK_CAPACITY * 16);
         this.subchunks = new Pool<>(2 * World.CHUNK_CAPACITY * 16);
         this.map = map;
     }
@@ -225,23 +223,6 @@ public class ChunkManager {
         }
     }
 
-    private void shadowPass() {
-        if (drawCommands.size() > 1) {
-            int[] bufs = {GL_NONE};
-            glDrawBuffers(bufs);
-            glReadBuffer(GL_NONE);
-            Vector3f lightPos = new Vector3f();
-            Matrix4f projectionMatrix = new Matrix4f().identity();
-            projectionMatrix.ortho(-10.0f, 10.0f, -10.0f, 10.0f, camera.getZNear(), camera.getZFar());
-            Matrix4f viewMatrix = new Matrix4f().identity();
-            viewMatrix.lookAt(
-                    new Vector3f(lightPos),
-                    new Vector3f(camera.getPosition()).add(camera.getForward()),
-                    new Vector3f(camera.getUp())
-            );
-        }
-    }
-
     public void render() {
         generateDrawCommands();
 
@@ -262,7 +243,6 @@ public class ChunkManager {
             shader.use();
             shader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
             shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
-            shader.uploadVec3f(Shader.U_SUN_POS, sunPosition);
             glActiveTexture(GL_TEXTURE0);
             texture.bind();
             shader.uploadTexture(Shader.U_TEXTURE, 0);
@@ -341,11 +321,5 @@ public class ChunkManager {
         glDeleteBuffers(cboID);
         glDeleteBuffers(biboID);
         glDeleteVertexArrays(vaoID);
-    }
-
-    private Vector3f sunPosition = new Vector3f();
-
-    public void setSunPosition(Vector3f value) {
-        this.sunPosition = value;
     }
 }

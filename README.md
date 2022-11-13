@@ -11,6 +11,8 @@ A minecraft clone built using LWJGL.
 
 ![image0](docs/image0.png)
 
+![image1](docs/image1.png)
+
 ## Todo
 
 - [x] Implement a meshing algorithm that makes use of face culling.
@@ -31,5 +33,5 @@ A minecraft clone built using LWJGL.
 - [ ] Implement lightweight immediate mode GUI.
 - [x] Implement inventory system.
 - [ ] Implement menus.
-- [ ] Implement animations.
+- [ ] Add animations.
 - [ ] Implement a particle system.

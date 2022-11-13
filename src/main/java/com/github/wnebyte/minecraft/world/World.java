@@ -88,11 +88,11 @@ public class World {
     */
 
     public void start(Scene scene) {
+        skybox.start();
+        chunkManager.start();
         for (GameObject go : gameObjects) {
             go.start(scene);
         }
-        skybox.start();
-        chunkManager.start();
         camera.setPosition(new Vector3f(CHUNK_SPAWN_AREA / 2.0f, 140, CHUNK_SPAWN_AREA / 2.0f));
         chunkManager.loadSpawnChunks();
     }
@@ -110,7 +110,6 @@ public class World {
         time += (dt / 6);
         float blend = JMath.clamp((time / 1440), 0.0f, 1.0f);
         skybox.setBlend(blend);
-        chunkManager.setSunPosition(sun.transform.position);
 
         for (GameObject go : gameObjects) {
             go.update(dt);
