@@ -7,8 +7,6 @@ import java.util.stream.Collectors;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.core.*;
-import com.github.wnebyte.minecraft.components.Inventory;
-import com.github.wnebyte.minecraft.components.PlayerController;
 import com.github.wnebyte.minecraft.physics.Physics;
 import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.util.*;
@@ -53,8 +51,6 @@ public class World {
 
     private List<GameObject> gameObjects;
 
-    private GameObject sun;
-
     /*
     ###########################
     #       CONSTRUCTORS      #
@@ -72,13 +68,10 @@ public class World {
         GameObject cameraGo = new GameObject("Camera");
         cameraGo.addComponent(camera);
         gameObjects.add(cameraGo);
-        GameObject playerGo = new GameObject("Player");
-        playerGo.addComponent(new PlayerController());
-        playerGo.addComponent(new Inventory());
+        GameObject playerGo = Prefabs.createPlayer(0, 0, 0, 1f);
         gameObjects.add(playerGo);
-        sun = Prefabs.createSun(200, 200, 200, 20f);
-        gameObjects.add(sun);
-
+        GameObject sunGo = Prefabs.createSun(200, 200, 200, 20f);
+        gameObjects.add(sunGo);
     }
 
     /*

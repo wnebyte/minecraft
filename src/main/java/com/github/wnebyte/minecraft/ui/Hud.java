@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.ArrayList;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 import com.github.wnebyte.minecraft.world.BlockMap;
 import com.github.wnebyte.minecraft.world.Item;
 import com.github.wnebyte.minecraft.core.Scene;
@@ -35,7 +34,6 @@ public class Hud {
 
     private static final float INVENTORY_RATIO = (INVENTORY_SIZE_PX.y / INVENTORY_SIZE_PX.x);
 
-    // 2.4
     private static final Vector2f INVENTORY_SIZE = new Vector2f(2.4f, 2.4f).mul(INVENTORY_RATIO);
 
     private static final Vector2f INVENTORY_POSITION = new Vector2f(-(INVENTORY_SIZE.x / 2.0f), -(INVENTORY_SIZE.y / 2.0f));
@@ -44,11 +42,6 @@ public class Hud {
             .mul(new Vector2f(1.0f / INVENTORY_SIZE_PX.x, 1.0f / INVENTORY_SIZE_PX.y)).mul(INVENTORY_SIZE);
 
     private static final float HOTBAR_POSITION_Y = -1.48f;
-
-    private static final Vector4f[] EQUPPED_BLOCK_ROTATIONS = {
-            new Vector4f(-7.5f, 0f, 0f, 1f),
-            new Vector4f(-2.0f, 0f, 1f, 0f),
-            new Vector4f(15.0f, 1f, 0f, 0f)};
 
     private final Vector2f[] SLOT_OFFSETS = new Vector2f[Inventory.SIZE];
 
@@ -212,8 +205,8 @@ public class Hud {
             sprite = BlockMap.getItemTextureFormat(it.getName()).getAsSprite();
         }
         Vector2f size = new Vector2f(scale * width, scale * height);
-        float xPos = x + ((scale - size.x) * 0.025f);
-        float yPos = y + ((scale - size.y) * 0.025f);
+        float xPos = x + ((scale - size.x) * 0.020f);
+        float yPos = y + ((scale - size.y) * 0.020f);
         renderer.drawTexture2D(xPos, yPos, z, size.x, size.y, sprite, 0xFFFF, true);
 
         if (item.getStackCount() > 1) {
@@ -252,25 +245,6 @@ public class Hud {
                 0,
                 color);
     }
-
-    /*
-    private void drawEquippedItem() {
-        Item item = hotbar.getSelected();
-        if (item != null && item.isBlock()) {
-            Block block = BlockMap.getBlock(item.getId());
-            Cube3D cube = new Cube3D(new Transform(
-                    new Vector3f(1.49f, -1.65f, -20),
-                    new Vector3f(1.2f, 1.2f, 1.2f),
-                    EQUPPED_BLOCK_ROTATIONS),
-                    new Vector3f(1.0f, 1.0f, 1.0f),
-                    block.getSideTextureFormat().getAsSprite(),
-                    block.getTopTextureFormat().getAsSprite(),
-                    block.getBottomTextureFormat().getAsSprite());
-            renderer.drawCube3D(cube);
-            renderer.flushCube3DBatches(camera.getViewMatrixHUD(), camera.getProjectionMatrixHUD());
-        }
-    }
-     */
 
     public void setShowHotbar(boolean value) {
         this.showHotbar = value;

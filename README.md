@@ -13,6 +13,8 @@ A minecraft clone built using LWJGL.
 
 ![image1](docs/image1.png)
 
+![image2](docs/image2.png)
+
 ## Todo
 
 - [x] Implement a meshing algorithm that makes use of face culling.
