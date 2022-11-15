@@ -257,14 +257,6 @@ public class Renderer {
         }
     }
 
-    public void drawTexture2D(float x, float y, int z, Sprite sprite, float scale, int rgb) {
-        drawTexture2D(x, y, z, sprite, scale, rgb, false);
-    }
-
-    public void drawTexture2D(float x, float y, int z, Sprite sprite, float scale, int rgb, boolean blend) {
-        drawTexture2D(x, y, z, sprite.getWidth(), sprite.getHeight(), sprite, scale, rgb, blend);
-    }
-
     public void drawTexture2D(float x, float y, int z, float width, float height, Sprite sprite, int rgb, boolean blend) {
         drawTexture2D(x, y, z, width, height, sprite, 1, rgb, blend);
     }

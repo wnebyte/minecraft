@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import org.joml.Vector2f;
 import com.github.wnebyte.minecraft.renderer.Texture;
 
 public class JFont {
@@ -30,15 +31,12 @@ public class JFont {
 
     private int width, height;
 
-    private int textureId;
-
     private Texture texture;
 
     public JFont(String path, int fontSize) {
         this.path = path;
         this.fontSize = fontSize;
         this.characters = new HashMap<>();
-        this.textureId = -1;
     }
 
     public CharInfo getCharacter(int codepoint) {
@@ -102,7 +100,6 @@ public class JFont {
         }
         g2d.dispose();
         this.texture = new Texture(img);
-        this.textureId = texture.getId();
 
         /*
         try {
@@ -130,6 +127,29 @@ public class JFont {
     }
 
     public int getTextureId() {
-        return textureId;
+        return (texture == null) ? -1 : texture.getId();
+    }
+
+    public Vector2f getSize(String text) {
+        int w = 0;
+        int h = 0;
+
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+
+            CharInfo info = getCharacter(c);
+            if (info == null) {
+                System.err.printf("Warning: (Renderer) Unknown char: '%c'%n", c);
+                continue;
+            }
+
+            int width = info.getWidth();
+            int height = info.getHeight();
+
+            w += width;
+            h = Math.max(h, height);
+        }
+
+        return new Vector2f(w, h);
     }
 }
