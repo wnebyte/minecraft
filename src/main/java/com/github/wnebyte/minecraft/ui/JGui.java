@@ -15,13 +15,14 @@ public class JGui {
 
     private static final Vector2f padding;
 
-    private static final float scale = 1.0f;
+    private static final float scale;
 
     private static final Renderer renderer;
 
     static {
         stack = new Stack<>();
         padding = new Vector2f(0.01f, 0.01f);
+        scale = 1.0f;
         renderer = Renderer.getInstance();
     }
 
@@ -33,7 +34,7 @@ public class JGui {
         float x = MouseListener.getScreenX();
         float y = MouseListener.getScreenY();
 
-        if ((x >= position.x && x <= position.x + size.x) && (y >= position.y && y <= position.y + size.y)) {
+        if ((x >= position.x && x <= position.x + size.x) && (y >= position.y - size.y && y <= position.y)) {
             if (MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT)) {
                 return WidgetState.CLICK;
             } else {
@@ -55,11 +56,7 @@ public class JGui {
     }
 
     public static void begin(float x, float y, float width, float height) {
-        begin(new Vector2f(x, y), new Vector2f(width, height));
-    }
-
-    public static void begin(Vector2f position, Vector2f size) {
-        JWindow window = new JWindow(position, size, new Vector2f(padding));
+        JWindow window = new JWindow(new Vector2f(x, y), new Vector2f(width, height), new Vector2f(padding));
         drawOverlay(window); // Todo: remove this eventually
         stack.push(window);
     }
@@ -86,11 +83,8 @@ public class JGui {
         JWindow window = stack.peek();
         Vector2f size = new Vector2f(width, height).mul(scale);
         Vector2f position = getNextElementPosition(window, size);
-        float x0 = position.x;
-        float x1 = x0 + size.x;
-        float y1 = position.y;
-        float y0 = y1 - size.y;
-        renderer.drawTexture2D(x0, y0, 0, width, height, sprite, scale, 0xFFFF, false);
+        renderer.drawTexture2D(position.x, position.y - size.y, 0, width, height,
+                sprite, scale, 0xFFFF, false);
         advanceCursorPastElement(window, size);
     }
 
@@ -99,19 +93,73 @@ public class JGui {
         JFont font = Assets.getFont(Assets.DIR + "/fonts/Minecraft.ttf", 16);
         Vector2f size = font.getSize(text).mul(scale);
         Vector2f position = getNextElementPosition(window, size);
-        float x0 = position.x;
-        float x1 = x0 + size.x;
-        float y1 = position.y;
-        float y0 = y1 - size.y;
-        renderer.drawString(text, x0, y0, 0, scale, rgb);
+        renderer.drawString(text, position.x, position.y - size.y, 0, scale, rgb);
         advanceCursorPastElement(window, size);
     }
 
+    public static boolean button(Button button) {
+        JWindow window = stack.peek();
+        Vector2f size = new Vector2f(button.getSize()).mul(scale);
+        Vector2f position = getNextElementPosition(window, size);
+        WidgetState state = mouseInAABB(position, size);
+        boolean res = false;
+        int color;
+        switch (state) {
+            case CLICK:
+                color = button.getClickColor();
+                res = true;
+                break;
+            case HOVER:
+                color = button.getHoverColor();
+                break;
+            default:
+                color = button.getDefaultColor();
+        }
+        renderer.drawQuad2D(position.x, position.y - size.y, -1, button.getWidth(), button.getHeight(),
+                scale, color);
+        // draw string
+        JFont font = Assets.getFont(Assets.DIR + "/fonts/Minecraft.ttf", 16);
+        Vector2f strSize = font.getSize(button.getText()).mul(button.getTextScale());
+        position.x += ((size.x / 2.0f) - (strSize.x / 2.0f));
+        position.y -= ((size.y / 2.0f) - (strSize.y / 2.0f));
+        renderer.drawString(button.getText(), position.x, position.y - strSize.y, 0,
+                button.getTextScale(), 0xFFFF);
+        advanceCursorPastElement(window, size);
+        return res;
+    }
+
+    public static boolean imageButton(ImageButton button) {
+        JWindow window = stack.peek();
+        Vector2f size = new Vector2f(button.getSize()).mul(scale);
+        Vector2f position = getNextElementPosition(window, size);
+        WidgetState state = mouseInAABB(position, size);
+        boolean res = false;
+        Sprite sprite;
+        switch (state) {
+            case CLICK:
+                sprite = button.getClickSprite();
+                res = true;
+                break;
+            case HOVER:
+                sprite = button.getHoverSprite();
+                break;
+            default:
+                sprite = button.getDefaultSprite();
+        }
+        renderer.drawTexture2D(position.x, position.y - size.y, -1, button.getSize().x, button.getSize().y,
+                sprite, scale, 0xFFFF, false);
+        // draw string
+        JFont font = Assets.getFont(Assets.DIR + "/fonts/Minecraft.ttf", 16);
+        Vector2f strSize = font.getSize(button.getText()).mul(button.getTextScale());
+        position.x += ((size.x / 2.0f) - (strSize.x / 2.0f));
+        position.y -= ((size.y / 2.0f) - (strSize.y / 2.0f));
+        renderer.drawString(button.getText(), position.x, position.y - strSize.y, 0,
+                button.getTextScale(), 0xFFFF);
+        advanceCursorPastElement(window, size);
+        return res;
+    }
+
     public static String input() { return null; }
-
-    public static boolean button() { return false; }
-
-    public static boolean texturedButton() { return false; }
 
     // returns the position of the next element to be layed out.
     private static Vector2f getNextElementPosition(JWindow window, Vector2f size) {
@@ -125,7 +173,7 @@ public class JGui {
         return new Vector2f(x, y);
     }
 
-    // places the cursor at the begining of the next row.
+    // advances the cursor to the begining of the next row.
     private static void advanceCursorPastElement(JWindow window, Vector2f size) {
         window.lastElementPosition = new Vector2f(window.cursor);
         window.lastElementSize = new Vector2f(size);

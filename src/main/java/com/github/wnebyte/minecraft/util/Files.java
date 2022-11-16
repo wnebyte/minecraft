@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
-import com.github.wnebyte.minecraft.world.Chunk;
 
 public class Files {
 
@@ -84,11 +83,11 @@ public class Files {
         }
     }
 
-    public static byte[] decompress(String path) {
+    public static byte[] decompress(String path, int length) {
         try {
             FileInputStream fis = new FileInputStream(path);
             InflaterInputStream iis = new InflaterInputStream(fis);
-            byte[] bytes = new byte[Chunk.WIDTH * Chunk.HEIGHT * Chunk.DEPTH];
+            byte[] bytes = new byte[length];
             byte data;
             int index = 0;
             while ((data = (byte)iis.read()) != -1) {

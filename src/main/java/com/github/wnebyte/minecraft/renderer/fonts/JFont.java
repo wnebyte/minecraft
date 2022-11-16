@@ -122,14 +122,6 @@ public class JFont {
         return rh;
     }
 
-    public Texture getTexture() {
-        return texture;
-    }
-
-    public int getTextureId() {
-        return (texture == null) ? -1 : texture.getId();
-    }
-
     public Vector2f getSize(String text) {
         int w = 0;
         int h = 0;
@@ -151,5 +143,13 @@ public class JFont {
         }
 
         return new Vector2f(w, h);
+    }
+
+    public Texture getTexture() {
+        return texture;
+    }
+
+    public int getTextureId() {
+        return (texture == null) ? -1 : texture.getId();
     }
 }

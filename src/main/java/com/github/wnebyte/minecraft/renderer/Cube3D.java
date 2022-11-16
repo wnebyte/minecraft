@@ -17,7 +17,6 @@ public class Cube3D {
 
     private Sprite bottomSprite;
 
-
     public Cube3D(Transform transform, Vector3f color, Sprite sideSprite, Sprite topSprite, Sprite bottomSprite) {
         this.transform = transform;
         this.color = color;

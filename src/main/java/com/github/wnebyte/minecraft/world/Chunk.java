@@ -82,6 +82,8 @@ public class Chunk {
 
     public static final int DEPTH = 16;
 
+    public static final int SIZE = WIDTH * HEIGHT * DEPTH;
+
     private static final float MIN_BIOME_HEIGHT = 55.0f;
 
     private static final float MAX_BIOME_HEIGHT = 145.0f;
@@ -153,8 +155,8 @@ public class Chunk {
         this.state = new AtomicReference<>(State.UNLOADED);
         this.path = Assets.DIR + "/data/world/" + FILENAME_FORMATTER.format(this);
         this.generator = TerrainGenerator.getInstance();
-        this.rand = new Random();
-        this.data = new byte[Chunk.WIDTH * Chunk.HEIGHT * Chunk.DEPTH];
+        this.rand = new Random(this.generator.getSeed());
+        this.data = new byte[Chunk.SIZE];
     }
 
     /*
@@ -341,7 +343,7 @@ public class Chunk {
 
     private void deserialize() {
         assert Files.exists(path) : "path does not exist";
-        byte[] blocks = Files.decompress(path);
+        byte[] blocks = Files.decompress(path, Chunk.SIZE);
         if (blocks != null) {
             System.arraycopy(blocks, 0, data, 0, blocks.length);
         }
