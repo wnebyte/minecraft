@@ -2,6 +2,8 @@ package com.github.wnebyte.minecraft.scenes;
 
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import com.github.wnebyte.minecraft.ui.*;
+import com.github.wnebyte.minecraft.world.BlockMap;
 import com.github.wnebyte.minecraft.core.Application;
 import com.github.wnebyte.minecraft.core.Scene;
 import com.github.wnebyte.minecraft.core.Camera;
@@ -10,9 +12,6 @@ import com.github.wnebyte.minecraft.renderer.Renderer;
 import com.github.wnebyte.minecraft.renderer.Sprite;
 import com.github.wnebyte.minecraft.renderer.Spritesheet;
 import com.github.wnebyte.minecraft.renderer.fonts.JFont;
-import com.github.wnebyte.minecraft.ui.JGui;
-import com.github.wnebyte.minecraft.ui.Button;
-import com.github.wnebyte.minecraft.ui.ImageButton;
 import com.github.wnebyte.minecraft.util.Assets;
 import static com.github.wnebyte.minecraft.core.KeyListener.isKeyBeginPress;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE;
@@ -41,11 +40,17 @@ public class JGuiTestScene extends Scene {
 
     private Sprite btnClickSprite;
 
-    private ImageButton imageButton;
+    private JImageButton imageButton;
 
-    private Button button;
+    private JButton button;
 
     private JFont font;
+
+    private boolean focused = false;
+
+    private JString string = new JString("TXT");
+
+    private JImage image;
 
     public JGuiTestScene() {
         this.camera = new Camera.Builder()
@@ -67,7 +72,7 @@ public class JGuiTestScene extends Scene {
         this.regSprite = spritesheet.getSprite(6);
         this.invSprite = spritesheet.getSprite(7);
         this.font = Assets.getFont(Assets.DIR + "/fonts/Minecraft.ttf", 16);
-        this.imageButton = new ImageButton.Builder()
+        this.imageButton = new JImageButton.Builder()
                 .setSize(0.9f, 0.2f)
                 .setDefaultSprite(btnRegSprite)
                 .setHoverSprite(btnHoverSprite)
@@ -75,13 +80,16 @@ public class JGuiTestScene extends Scene {
                 .setText("BTN")
                 .setTextScale(0.0040f)
                 .build();
-        this.button = new Button.Builder()
+        this.button = new JButton.Builder()
                 .setSize(0.9f, 0.2f)
                 .setDefaultColor(0x0000)
                 .setHoverColor(0x1111)
                 .setClickColor(0x2222)
                 .setText("BUTTON")
                 .setTextScale(0.0045f)
+                .build();
+        this.image = new JImage.Builder()
+                .setSprite(BlockMap.getTextureFormat("dirt").getAsSprite())
                 .build();
     }
 
@@ -99,10 +107,12 @@ public class JGuiTestScene extends Scene {
         float y = MouseListener.getScreenY();
         drawCursor(x, y, CROSSHAIR_HALF_SIZE, new Vector3f(0f, 0f, 0f));
         // draw gui
-        JGui.begin(-2.95f, 1.2f, 5.90f, 3.0f);
+        JGui.begin(-3.0f, 1.3f, 6.0f, 3.0f / 6f, 0xFFFFFF);
         JGui.centerNextElement();
-        JGui.button(button);
+        JGui.label("SELECT WORLD", 0.0045f, 0x000000);
         JGui.end();
+       // JGui.begin(-3.0f, -1.5f + (3.0f / 6.0f), 6.0f, 3.0f / 6.0f, 0xFFFF);
+       // JGui.end();
     }
 
     @Override

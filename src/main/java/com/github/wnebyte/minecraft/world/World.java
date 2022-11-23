@@ -2,7 +2,10 @@ package com.github.wnebyte.minecraft.world;
 
 import java.util.Set;
 import java.util.List;
+import java.util.HashSet;
 import java.util.ArrayList;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
@@ -35,21 +38,23 @@ public class World {
 
     private Map map;
 
-    private ChunkManager chunkManager;
+    private Pool<Key, Subchunk> subchunks;
+
+    private ChunkRenderer chunkRenderer;
 
     private Skybox skybox;
 
     private Physics physics;
+
+    private Vector3f lastCameraPos;
+
+    private List<GameObject> gameObjects;
 
     private float time;
 
     private float debounceTime = 0.2f;
 
     private float debounce = debounceTime;
-
-    private Vector3f lastCameraPos;
-
-    private List<GameObject> gameObjects;
 
     /*
     ###########################
@@ -61,7 +66,8 @@ public class World {
         this.camera = camera;
         this.lastCameraPos = new Vector3f(camera.getPosition());
         this.map = new Map(CHUNK_CAPACITY);
-        this.chunkManager = new ChunkManager(camera, map);
+        this.subchunks = new Pool<>(2 * World.CHUNK_CAPACITY * 16);
+        this.chunkRenderer = new ChunkRenderer(camera, subchunks);
         this.skybox = new Skybox(camera);
         this.physics = new Physics(map);
         this.gameObjects = new ArrayList<>();
@@ -82,20 +88,13 @@ public class World {
 
     public void start(Scene scene) {
         skybox.start();
-        chunkManager.start();
+        chunkRenderer.start();
         for (GameObject go : gameObjects) {
             go.start(scene);
         }
         camera.setPosition(new Vector3f(CHUNK_SPAWN_AREA / 2.0f, 140, CHUNK_SPAWN_AREA / 2.0f));
-        chunkManager.loadSpawnChunks();
     }
 
-    /*
-    0.016666667 ticks / second
-    1           tick  / minute
-    60          ticks / hour
-    1440        ticks / day
-     */
     public void update(float dt) {
         debounce -= dt;
 
@@ -114,7 +113,7 @@ public class World {
 
             Set<Chunk> chunks = map.getChunksBeyondRadius(v, CHUNK_RADIUS);
             if (chunks.size() > 0) {
-                chunkManager.unloadChunksAsync(chunks);
+                this.unloadChunksAsync(chunks);
             }
 
             Set<Vector2i> chunkCoords = map.getChunkCoordsWithinRadius(v, CHUNK_RADIUS);
@@ -123,7 +122,7 @@ public class World {
                         "Loading recently unloaded chunk";
             }
             if (chunkCoords.size() > 0) {
-                chunkManager.loadChunksAsync(chunkCoords);
+                this.loadChunksAsync(chunkCoords, null);
             }
 
             lastCameraPos.set(camera.getPosition());
@@ -131,14 +130,95 @@ public class World {
         }
     }
 
+    public void load(AtomicLong counter) {
+        Set<Vector2i> set = new HashSet<>(World.CHUNK_SPAWN_AREA);
+        int sqrt = (int)Math.sqrt(World.CHUNK_SPAWN_AREA);
+        for (int x = 0; x < sqrt; x++) {
+            for (int z = 0; z < sqrt; z++) {
+                set.add(new Vector2i(x, z));
+            }
+        }
+        this.loadChunksAsync(set, counter);
+    }
+
+    /*
+    Step 1: Deserialize all chunks
+    Step 2: Retrieve all neighbours
+    Step 3: Mesh all newly loaded chunks and their neighbours
+     */
+    private void loadChunksAsync(Set<Vector2i> set, AtomicLong counter) {
+        Application.submit(() -> {
+            Set<Chunk> chunks = new HashSet<>(set.size() * 4);
+            List<Future<Chunk>> futures = new ArrayList<>(set.size());
+            for (Vector2i ivec2 : set) {
+                if (!map.contains(ivec2) && map.size() < World.CHUNK_CAPACITY) {
+                    Chunk chunk = new Chunk(ivec2.x, 0, ivec2.y, map, subchunks);
+                    map.put(chunk);
+                    chunks.add(chunk);
+                    futures.add(chunk.loadAsync());
+                    for (Chunk c : chunk.getNeighbours()) {
+                        if (c != null) {
+                            chunks.add(c);
+                        }
+                    }
+                }
+            }
+            try {
+                for (Future<Chunk> it : futures) {
+                    Chunk chunk = it.get();
+                    if (counter != null) {
+                        counter.incrementAndGet();
+                    }
+                }
+                for (Chunk c : chunks) {
+                    assert c.isLoaded() : "Chunk is not loaded";
+                    c.meshAsync();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    /*
+    Step 1: Serialize and unmesh all chunks that need to be unloaded
+    Step 2: When Step 1 has completed; mesh all neighbours
+     */
+    // Todo: it's not necessary to wait for step 1 to complete in order to start step 2.
+    private void unloadChunksAsync(Set<Chunk> chunks) {
+        Application.submit(() -> {
+            Set<Chunk> neighbours = new HashSet<>();
+            List<Future<?>> futures = new ArrayList<>();
+            for (Chunk chunk : chunks) {
+                map.remove(chunk);
+                futures.add(chunk.unloadAsync());
+                for (Chunk c : chunk.getNeighbours()) {
+                    if (c != null) {
+                        neighbours.add(c);
+                    }
+                }
+            }
+            try {
+                for (Future<?> it : futures) it.get();
+                for (Chunk c : neighbours) {
+                    if (c.isLoaded()) {
+                        c.meshAsync();
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
     public void render() {
         skybox.render();
-        chunkManager.render();
+        chunkRenderer.render();
     }
 
     public void destroy() {
         skybox.destroy();
-        chunkManager.destroy();
+        chunkRenderer.destroy();
         for (GameObject go : gameObjects) {
             go.destroy();
         }

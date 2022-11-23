@@ -33,9 +33,14 @@ class JWindow {
     JWindow() {}
 
     JWindow(Vector2f position, Vector2f size, Vector2f cursor) {
+        this(position, size, cursor, 1);
+    }
+
+    JWindow(Vector2f position, Vector2f size, Vector2f cursor, int numCols) {
         this.position = position;
         this.size = size;
         this.cursor = cursor;
+        this.numCols = numCols;
     }
 
     /*

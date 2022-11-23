@@ -3,6 +3,8 @@ package com.github.wnebyte.minecraft.renderer;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Comparator;
+
+import com.github.wnebyte.minecraft.util.JColor;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -241,15 +243,13 @@ public class Renderer {
         float x1 = x + scale * width;
         float y1 = y + scale * height;
         // color
-        float r = (float)((rgb >> 16) & 0xFF) / 255.0f;
-        float g = (float)((rgb >> 8)  & 0xFF) / 255.0f;
-        float b = (float)((rgb >> 0)  & 0xFF) / 255.0f;
+        Vector3f color = JColor.toVec3f(rgb);
 
         Vertex2D[] vertices = {
-                new Vertex2D(new Vector2f(x1, y0), z, new Vector3f(r, g, b), new Vector2f(), -1),
-                new Vertex2D(new Vector2f(x1, y1), z, new Vector3f(r, g, b), new Vector2f(), -1),
-                new Vertex2D(new Vector2f(x0, y1), z, new Vector3f(r, g, b), new Vector2f(), -1),
-                new Vertex2D(new Vector2f(x0, y0), z, new Vector3f(r, g, b), new Vector2f(), -1)
+                new Vertex2D(new Vector2f(x1, y0), z, color, new Vector2f(), -1),
+                new Vertex2D(new Vector2f(x1, y1), z, color, new Vector2f(), -1),
+                new Vertex2D(new Vector2f(x0, y1), z, color, new Vector2f(), -1),
+                new Vertex2D(new Vector2f(x0, y0), z, color, new Vector2f(), -1)
         };
 
         for (Vertex2D vertex : vertices) {
@@ -271,15 +271,13 @@ public class Renderer {
         float x1 = x + scale * width;
         float y1 = y + scale * height;
         // color
-        float r = (float)((rgb >> 16) & 0xFF) / 255.0f;
-        float g = (float)((rgb >> 8)  & 0xFF) / 255.0f;
-        float b = (float)((rgb >> 0)  & 0xFF) / 255.0f;
+        Vector3f color = JColor.toVec3f(rgb);
 
         Vertex2D[] vertices = {
-                new Vertex2D(new Vector2f(x1, y0), z, new Vector3f(r, g, b), new Vector2f(uvs[0].x, uvs[0].y), texId),
-                new Vertex2D(new Vector2f(x1, y1), z, new Vector3f(r, g, b), new Vector2f(uvs[1].x, uvs[1].y), texId),
-                new Vertex2D(new Vector2f(x0, y1), z, new Vector3f(r, g, b), new Vector2f(uvs[2].x, uvs[2].y), texId),
-                new Vertex2D(new Vector2f(x0, y0), z, new Vector3f(r, g, b), new Vector2f(uvs[3].x, uvs[3].y), texId)
+                new Vertex2D(new Vector2f(x1, y0), z, color, new Vector2f(uvs[0].x, uvs[0].y), texId),
+                new Vertex2D(new Vector2f(x1, y1), z, color, new Vector2f(uvs[1].x, uvs[1].y), texId),
+                new Vertex2D(new Vector2f(x0, y1), z, color, new Vector2f(uvs[2].x, uvs[2].y), texId),
+                new Vertex2D(new Vector2f(x0, y0), z, color, new Vector2f(uvs[3].x, uvs[3].y), texId)
         };
 
         for (Vertex2D vertex : vertices) {
@@ -308,9 +306,7 @@ public class Renderer {
             float x1 = x + scale * width;
             float y1 = y + scale * height;
             // color
-            float r = (float)((rgb >> 16) & 0xFF) / 255.0f;
-            float g = (float)((rgb >> 8)  & 0xFF) / 255.0f;
-            float b = (float)((rgb >> 0)  & 0xFF) / 255.0f;
+            Vector3f color = JColor.toVec3f(rgb);
             // tex coords
             float ux0 = uvs[0].x;
             float uy0 = uvs[0].y;
@@ -318,10 +314,10 @@ public class Renderer {
             float uy1 = uvs[1].y;
 
             Vertex2D[] vertices = {
-                    new Vertex2D(new Vector2f(x1, y0), z, new Vector3f(r, g, b), new Vector2f(ux1, uy0), texId),
-                    new Vertex2D(new Vector2f(x1, y1), z, new Vector3f(r, g, b), new Vector2f(ux1, uy1), texId),
-                    new Vertex2D(new Vector2f(x0, y1), z, new Vector3f(r, g, b), new Vector2f(ux0, uy1), texId),
-                    new Vertex2D(new Vector2f(x0, y0), z, new Vector3f(r, g, b), new Vector2f(ux0, uy0), texId)
+                    new Vertex2D(new Vector2f(x1, y0), z, color, new Vector2f(ux1, uy0), texId),
+                    new Vertex2D(new Vector2f(x1, y1), z, color, new Vector2f(ux1, uy1), texId),
+                    new Vertex2D(new Vector2f(x0, y1), z, color, new Vector2f(ux0, uy1), texId),
+                    new Vertex2D(new Vector2f(x0, y0), z, color, new Vector2f(ux0, uy0), texId)
             };
 
             for (Vertex2D vertex : vertices) {

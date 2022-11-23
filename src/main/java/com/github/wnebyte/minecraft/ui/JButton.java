@@ -3,7 +3,7 @@ package com.github.wnebyte.minecraft.ui;
 import java.util.Objects;
 import org.joml.Vector2f;
 
-public class Button {
+public class JButton {
 
     public static class Builder {
 
@@ -62,8 +62,8 @@ public class Button {
             return this;
         }
 
-        public Button build() {
-            return new Button(width, height, defaultColor, clickColor, hoverColor, text, textScale);
+        public JButton build() {
+            return new JButton(width, height, defaultColor, clickColor, hoverColor, text, textScale);
         }
     }
 
@@ -79,7 +79,7 @@ public class Button {
 
     private float textScale;
 
-    public Button(
+    public JButton(
             float width,
             float height,
             int defaultColor,
@@ -156,8 +156,8 @@ public class Button {
     public boolean equals(Object o) {
         if (o == null) return false;
         if (o == this) return true;
-        if (!(o instanceof Button)) return false;
-        Button button = (Button) o;
+        if (!(o instanceof JButton)) return false;
+        JButton button = (JButton) o;
         return Objects.equals(button.size, this.size) &&
                 Objects.equals(button.defaultColor, this.defaultColor) &&
                 Objects.equals(button.clickColor, this.clickColor) &&

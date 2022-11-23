@@ -34,7 +34,7 @@ out vec4 color;
 void main()
 {
     int texId = int(fTexId);
-    if (texId > -1) {
+    if (texId >= 0) {
         color = vec4(fColor, 1) * texture(uTextures[texId], fTexCoords);
     } else {
         color = vec4(fColor, 1);

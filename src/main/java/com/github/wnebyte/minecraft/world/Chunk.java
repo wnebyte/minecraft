@@ -153,7 +153,7 @@ public class Chunk {
         this.map = map;
         this.subchunks = subchunks;
         this.state = new AtomicReference<>(State.UNLOADED);
-        this.path = Assets.DIR + "/data/world/" + FILENAME_FORMATTER.format(this);
+        this.path = AppData.DIR + "/world/" + FILENAME_FORMATTER.format(this);
         this.generator = TerrainGenerator.getInstance();
         this.rand = new Random(this.generator.getSeed());
         this.data = new byte[Chunk.SIZE];
@@ -369,8 +369,8 @@ public class Chunk {
         return Application.submit(this::unload);
     }
 
-    public Future<?> loadAsync() {
-        return Application.submit(this::load);
+    public Future<Chunk> loadAsync() {
+        return Application.submit(this::load, this);
     }
 
     public synchronized void unmesh() {

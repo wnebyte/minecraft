@@ -1,12 +1,6 @@
 package com.github.wnebyte.minecraft.world;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.concurrent.Future;
 import java.nio.ByteBuffer;
-import org.joml.Vector2i;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
 import com.github.wnebyte.minecraft.core.Application;
@@ -30,7 +24,7 @@ import static org.lwjgl.opengl.GL44.glBufferStorage;
 import static org.lwjgl.opengl.GL44C.GL_MAP_COHERENT_BIT;
 import static org.lwjgl.opengl.GL44C.GL_MAP_PERSISTENT_BIT;
 
-public class ChunkManager {
+public class ChunkRenderer {
 
     private int vaoID;
 
@@ -42,25 +36,23 @@ public class ChunkManager {
 
     private int cboID;
 
-    private Camera camera;
+    private final Camera camera;
 
-    private Shader shader;
+    private final Shader shader;
 
-    private Shader transparentShader;
+    private final Shader transparentShader;
 
-    private Shader compositeShader;
+    private final Shader compositeShader;
 
-    private Texture texture;
+    private final Texture texture;
 
-    private IDrawCommandBuffer drawCommands;
+    private final IDrawCommandBuffer drawCommands;
 
-    private IDrawCommandBuffer transparentDrawCommands;
+    private final IDrawCommandBuffer transparentDrawCommands;
 
-    private Pool<Key, Subchunk> subchunks;
+    private final Pool<Key, Subchunk> subchunks;
 
-    private Map map;
-
-    public ChunkManager(Camera camera, Map map) {
+    public ChunkRenderer(Camera camera, Pool<Key, Subchunk> subchunks) {
         this.camera = camera;
         this.shader = Assets.getShader(Assets.DIR + "/shaders/opaque.glsl");
         this.transparentShader = Assets.getShader(Assets.DIR + "/shaders/transparent.glsl");
@@ -68,8 +60,7 @@ public class ChunkManager {
         this.texture = Assets.getTexture(Assets.DIR + "/images/generated/packedTextures.png");
         this.drawCommands = new FlatDrawCommandBuffer(World.CHUNK_CAPACITY * 16);
         this.transparentDrawCommands = new FlatDrawCommandBuffer(World.CHUNK_CAPACITY * 16);
-        this.subchunks = new Pool<>(2 * World.CHUNK_CAPACITY * 16);
-        this.map = map;
+        this.subchunks = subchunks;
     }
 
     public void start() {
@@ -118,93 +109,7 @@ public class ChunkManager {
         glEnableVertexAttribArray(1);
     }
 
-    public void loadSpawnChunks() {
-        long startTime = System.nanoTime();
-        int sqrt = (int)Math.sqrt(World.CHUNK_SPAWN_AREA);
-        for (int x = 0; x < sqrt; x++) {
-            for (int z = 0; z < sqrt; z++) {
-                Chunk chunk = new Chunk(x, 0, z, map, subchunks);
-                map.put(chunk);
-                chunk.load();
-            }
-        }
-        for (Chunk chunk : map) {
-            chunk.mesh();
-        }
-        double time = (System.nanoTime() - startTime) * 1E-9;
-        System.out.printf("%dx%d chunks initialized in:   %.2fs%n",  sqrt, sqrt, time);
-        System.out.printf("Vertex mem used:               %.2fMB%n", DebugStats.vertexMemUsed  * 1E-6);
-        System.out.printf("Vertex mem allocated:          %.2fMB%n", DebugStats.vertexMemAlloc * 1E-6);
-        System.out.printf("Number of allocated subchunks: %d%n",     subchunks.capacity());
-        System.out.printf("Number of allocated chunks:    %d%n",     (subchunks.capacity() / 2) / 16);
-    }
-
-    /*
-    Step 1: Deserialize all chunks
-    Step 2: Retrieve all neighbours
-    Step 3: Mesh all newly loaded chunks and their neighbours
-     */
-    public void loadChunksAsync(Set<Vector2i> set) {
-        Application.submit(() -> {
-            Set<Chunk> chunks = new HashSet<>();
-            List<Future<?>> futures = new ArrayList<>();
-            for (Vector2i ivec2 : set) {
-                if (!map.contains(ivec2) && map.size() < World.CHUNK_CAPACITY) {
-                    Chunk chunk = new Chunk(ivec2.x, 0, ivec2.y, map, subchunks);
-                    map.put(chunk);
-                    chunks.add(chunk);
-                    futures.add(chunk.loadAsync());
-                    for (Chunk c : chunk.getNeighbours()) {
-                        if (c != null) {
-                            chunks.add(c);
-                        }
-                    }
-                }
-            }
-            try {
-                for (Future<?> it : futures) it.get();
-                for (Chunk c : chunks) {
-                    assert c.isLoaded() : "Chunk is not loaded";
-                    c.meshAsync();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
-    }
-
-    /*
-    Step 1: Serialize and unmesh all chunks that need to be unloaded
-    Step 2: When Step 1 has completed; mesh all neighbours
-     */
-    // Todo: it's not necessary to wait for step 1 to complete in order to start step 2.
-    public void unloadChunksAsync(Set<Chunk> chunks) {
-        Application.submit(() -> {
-            Set<Chunk> neighbours = new HashSet<>();
-            List<Future<?>> futures = new ArrayList<>();
-            for (Chunk chunk : chunks) {
-                map.remove(chunk);
-                futures.add(chunk.unloadAsync());
-                for (Chunk c : chunk.getNeighbours()) {
-                    if (c != null) {
-                        neighbours.add(c);
-                    }
-                }
-            }
-            try {
-                for (Future<?> it : futures) it.get();
-                for (Chunk c : neighbours) {
-                    if (c.isLoaded()) {
-                        c.meshAsync();
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
-    }
-
-    public void generateDrawCommands() {
+    private void generateDrawCommands() {
         for (Subchunk subchunk : subchunks) {
             if (subchunk.getState() == Subchunk.State.MESHED) {
                 float yMin = subchunk.getSubchunkLevel() * 16;
@@ -223,37 +128,40 @@ public class ChunkManager {
         }
     }
 
+    private void draw(int iboID, Shader shader, IDrawCommandBuffer drawCommandBuffer) {
+        glBindBuffer(GL_ARRAY_BUFFER, cboID);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, drawCommandBuffer.getChunkCoords());
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, iboID);
+        glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, drawCommandBuffer.getDrawCommands());
+        shader.use();
+        shader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
+        shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
+        glActiveTexture(GL_TEXTURE0);
+        texture.bind();
+        shader.uploadTexture(Shader.U_TEXTURE, 0);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_BUFFER, BlockMap.getTexCoordsTextureId());
+        shader.uploadTexture(Shader.U_TEX_COORDS_TEXTURE, 1);
+        glBindVertexArray(vaoID);
+        glMultiDrawArraysIndirect(GL_TRIANGLES, 0, drawCommandBuffer.size(), 0);
+        texture.unbind();
+        shader.detach();
+        drawCommandBuffer.reset();
+    }
+
     public void render() {
         generateDrawCommands();
 
         if (drawCommands.size() > 0) {
             // Render pass 1:
-            // set opqaue render states
+            // set opaque render states
             glEnable(GL_CULL_FACE);
             glEnable(GL_DEPTH_TEST);
             glDepthFunc(GL_LESS);
             glDepthMask(true);
             glDisable(GL_BLEND);
-
             // draw opaque geometry
-            glBindBuffer(GL_ARRAY_BUFFER, cboID);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, drawCommands.getChunkCoords());
-            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, iboID);
-            glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, drawCommands.getDrawCommands());
-            shader.use();
-            shader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
-            shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
-            glActiveTexture(GL_TEXTURE0);
-            texture.bind();
-            shader.uploadTexture(Shader.U_TEXTURE, 0);
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_BUFFER, BlockMap.getTexCoordsTextureId());
-            shader.uploadTexture(Shader.U_TEX_COORDS_TEXTURE, 1);
-            glBindVertexArray(vaoID);
-            glMultiDrawArraysIndirect(GL_TRIANGLES, 0, drawCommands.size(), 0);
-            texture.unbind();
-            shader.detach();
-            drawCommands.reset();
+            draw(iboID, shader, drawCommands);
         }
 
         if (transparentDrawCommands.size() > 0) {
@@ -265,30 +173,12 @@ public class ChunkManager {
             glBlendFunci(1, GL_ONE, GL_ONE); // accumulation blend target
             glBlendFunci(2, GL_ZERO, GL_ONE_MINUS_SRC_COLOR); // revealage blend target
             glBlendEquation(GL_FUNC_ADD);
-
+            // configure framebuffer
             glDrawBuffers(Constants.BUFS_NONE_ONE_TWO);
             glClearBufferfv(GL_COLOR, 1, Constants.ZERO_FILLER_VEC);
             glClearBufferfv(GL_COLOR, 2, Constants.ONE_FILLER_VEC);
-
             // draw transparent geometry
-            glBindBuffer(GL_ARRAY_BUFFER, cboID);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, transparentDrawCommands.getChunkCoords());
-            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, biboID);
-            glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, transparentDrawCommands.getDrawCommands());
-            transparentShader.use();
-            transparentShader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
-            transparentShader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
-            glActiveTexture(GL_TEXTURE0);
-            texture.bind();
-            transparentShader.uploadTexture(Shader.U_TEXTURE, 0);
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_BUFFER, BlockMap.getTexCoordsTextureId());
-            transparentShader.uploadTexture(Shader.U_TEX_COORDS_TEXTURE, 1);
-            glBindVertexArray(vaoID);
-            glMultiDrawArraysIndirect(GL_TRIANGLES, 0, transparentDrawCommands.size(), 0);
-            texture.unbind();
-            transparentShader.detach();
-            transparentDrawCommands.reset();
+            draw(biboID, transparentShader, transparentDrawCommands);
         }
 
         // Render pass 3:
@@ -297,6 +187,7 @@ public class ChunkManager {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+        // configure framebuffer
         glDrawBuffers(Constants.BUFS_ZERO_NONE_NONE);
 
         // draw screen quad
@@ -311,6 +202,7 @@ public class ChunkManager {
         ScreenRenderer.render();
         compositeShader.detach();
 
+        // reset render states
         glDepthFunc(GL_LESS);
     }
 

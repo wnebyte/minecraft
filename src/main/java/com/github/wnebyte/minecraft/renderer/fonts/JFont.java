@@ -29,7 +29,11 @@ public class JFont {
 
     private final Map<Integer, CharInfo> characters;
 
-    private int width, height;
+    private int fontHeight;
+
+    private int width;
+
+    private int height;
 
     private Texture texture;
 
@@ -57,7 +61,8 @@ public class JFont {
 
         float estWidth = (int)Math.sqrt(font.getNumGlyphs()) * font.getSize() + 1;
         this.width = 0;
-        this.height = fontMetrics.getHeight();
+        this.fontHeight = fontMetrics.getHeight();
+        this.height = fontHeight;
         float vSpacing = 1.4f;
         int x = 0;
         int y = (int)(height * vSpacing);
@@ -143,6 +148,10 @@ public class JFont {
         }
 
         return new Vector2f(w, h);
+    }
+
+    public int getFontHeight() {
+        return fontHeight;
     }
 
     public Texture getTexture() {

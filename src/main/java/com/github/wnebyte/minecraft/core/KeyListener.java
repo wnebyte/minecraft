@@ -10,8 +10,11 @@ public class KeyListener {
 
     private static final boolean[] keyBeginPress = new boolean[350];
 
+    private static int lastCharPressed = '\0';
+
     public static void endFrame() {
         Arrays.fill(keyBeginPress, false);
+        lastCharPressed = '\0';
     }
 
     public static void keyCallback(long window, int key, int scanCode, int action, int mods) {
@@ -24,11 +27,19 @@ public class KeyListener {
         }
     }
 
+    public static void charCallback(long window, int codepoint) {
+        lastCharPressed = codepoint;
+    }
+
     public static boolean isKeyPressed(int keyCode) {
         return keyPressed[keyCode];
     }
 
     public static boolean isKeyBeginPress(int keyCode) {
         return keyBeginPress[keyCode];
+    }
+
+    public static int getLastCharPressed() {
+        return lastCharPressed;
     }
 }

@@ -224,6 +224,9 @@ void main()
         discard;
     }
 
+    color = objectColor;
+
+    /*
     vec3 normal;
     getNormal(face, normal);
     vec3 lightDir = normalize(-light.direction);
@@ -238,4 +241,5 @@ void main()
     // result
     vec3 result = (ambient + diffuse) * vec3(objectColor);
     color = vec4(result, 1.0);
+    */
 }

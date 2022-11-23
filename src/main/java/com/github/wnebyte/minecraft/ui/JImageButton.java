@@ -4,7 +4,7 @@ import java.util.Objects;
 import org.joml.Vector2f;
 import com.github.wnebyte.minecraft.renderer.Sprite;
 
-public class ImageButton {
+public class JImageButton {
 
     public static class Builder {
 
@@ -63,8 +63,8 @@ public class ImageButton {
             return this;
         }
 
-        public ImageButton build() {
-            return new ImageButton(width, height, defaultSprite, clickSprite, hoverSprite, text, textScale);
+        public JImageButton build() {
+            return new JImageButton(width, height, defaultSprite, clickSprite, hoverSprite, text, textScale);
         }
     }
 
@@ -80,7 +80,7 @@ public class ImageButton {
 
     private float textScale;
 
-    public ImageButton(
+    public JImageButton(
             float width,
             float height,
             Sprite defaultSprite,
@@ -157,8 +157,8 @@ public class ImageButton {
     public boolean equals(Object o) {
         if (o == null) return false;
         if (o == this) return true;
-        if (!(o instanceof ImageButton)) return false;
-        ImageButton button = (ImageButton) o;
+        if (!(o instanceof JImageButton)) return false;
+        JImageButton button = (JImageButton) o;
         return Objects.equals(button.size, this.size) &&
                 Objects.equals(button.defaultSprite, this.defaultSprite) &&
                 Objects.equals(button.clickSprite, this.clickSprite) &&
@@ -183,7 +183,7 @@ public class ImageButton {
     @Override
     public String toString() {
         return String.format(
-                "ImageButton[size: %s, defaultSprite: %s, clickSprite: %s, hoverSprite: %s, text: %s, textScale: %.2f]",
+                "JImageButton[size: %s, defaultSprite: %s, clickSprite: %s, hoverSprite: %s, text: %s, textScale: %.2f]",
                 size, defaultSprite, clickSprite, hoverSprite, text, textScale);
     }
 }

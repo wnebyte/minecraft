@@ -2,11 +2,14 @@ package com.github.wnebyte.minecraft.ui;
 
 import java.util.Stack;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
+import com.github.wnebyte.minecraft.core.KeyListener;
 import com.github.wnebyte.minecraft.core.MouseListener;
 import com.github.wnebyte.minecraft.renderer.Renderer;
 import com.github.wnebyte.minecraft.renderer.Sprite;
 import com.github.wnebyte.minecraft.renderer.fonts.JFont;
 import com.github.wnebyte.minecraft.util.Assets;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_BACKSPACE;
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
 
 public class JGui {
@@ -26,10 +29,6 @@ public class JGui {
         renderer = Renderer.getInstance();
     }
 
-    private static WidgetState mouseInAABB(float x, float y, float width, float height) {
-        return mouseInAABB(new Vector2f(x, y), new Vector2f(width, height));
-    }
-
     private static WidgetState mouseInAABB(Vector2f position, Vector2f size) {
         float x = MouseListener.getScreenX();
         float y = MouseListener.getScreenY();
@@ -40,29 +39,50 @@ public class JGui {
             } else {
                 return WidgetState.HOVER;
             }
+        } else {
+            return WidgetState.DEFAULT;
         }
-
-        return WidgetState.DEFAULT;
     }
 
-    private static void drawOverlay(JWindow window) {
-        float width = window.getSize().x * scale;
-        float height = window.getSize().y * scale;
-        float x0 = window.getPosition().x;
-        float x1 = x0 + width;
-        float y1 = window.getPosition().y;
-        float y0 = y1 - height;
-        renderer.drawQuad2D(x0, y0, -5, width, height, scale, 0xFFFF);
+    private static void drawBackground(JWindow window, JImage image) {
+        Vector2f position = new Vector2f(window.getPosition());
+        Vector2f size = new Vector2f(window.getSize()).mul(scale);
+        renderer.drawTexture2D(position.x, position.y - size.y, -50,
+                window.getSize().x, window.getSize().y, image.getSprite(), scale, image.getRGB(), false);
+    }
+
+    private static void drawBackground(JWindow window, int rgb) {
+        Vector2f position = new Vector2f(window.getPosition());
+        Vector2f size = new Vector2f(window.getSize()).mul(scale);
+        renderer.drawQuad2D(position.x, position.y - size.y, -50,
+                window.getSize().x, window.getSize().y, scale, rgb);
     }
 
     public static void begin(float x, float y, float width, float height) {
         JWindow window = new JWindow(new Vector2f(x, y), new Vector2f(width, height), new Vector2f(padding));
-        drawOverlay(window); // Todo: remove this eventually
         stack.push(window);
+    }
+
+    public static void begin(float x, float y, float width, float height, JImage image) {
+        JWindow window = new JWindow(new Vector2f(x, y), new Vector2f(width, height), new Vector2f(padding));
+        stack.push(window);
+        drawBackground(window, image);
+    }
+
+    public static void begin(float x, float y, float width, float height, int rgb) {
+        JWindow window = new JWindow(new Vector2f(x, y), new Vector2f(width, height), new Vector2f(padding));
+        stack.push(window);
+        drawBackground(window, rgb);
     }
 
     public static void end() {
         stack.pop();
+    }
+
+    public static void advanceCursor(float dx, float dy) {
+        JWindow window = stack.peek();
+        window.cursor.x += dx;
+        window.cursor.y += dy;
     }
 
     public static void centerNextElement() {
@@ -73,18 +93,38 @@ public class JGui {
     public static void sameLine() {
         JWindow window = stack.peek();
         if (window.lastElementPosition == null) return;
-        float x = window.lastElementPosition.x + window.lastElementSize.x + padding.x;
-        float y = window.lastElementPosition.y;
-        window.cursor.x = x;
-        window.cursor.y = y;
+        window.cursor.x = window.lastElementPosition.x + window.lastElementSize.x + padding.x;
+        window.cursor.y = window.lastElementPosition.y;
     }
 
-    public static void image(Sprite sprite, float width, float height) {
+
+    // returns the position of the next element to be layed out.
+    private static Vector2f getNextElementPosition(JWindow window, Vector2f size) {
+        if (window.isCenterNextElement()) {
+            float width = window.size.x - window.cursor.x;
+            window.cursor.x += ((width / 2.0) - (size.x / 2.0f));
+            window.setCenterNextElement(false);
+        }
+        float x = window.position.x + window.cursor.x;
+        float y = window.position.y - window.cursor.y;
+        return new Vector2f(x, y);
+    }
+
+    // advances the cursor to the begining of the next line.
+    private static void advanceCursorPastElement(JWindow window, Vector2f size) {
+        window.lastElementPosition = new Vector2f(window.cursor);
+        window.lastElementSize = new Vector2f(size);
+        window.cursor.x = padding.x;
+        window.cursor.y += size.y + padding.y;
+    }
+    
+    public static void image(JImage image) {
         JWindow window = stack.peek();
-        Vector2f size = new Vector2f(width, height).mul(scale);
+        Vector2f size = new Vector2f(image.getSize()).mul(scale);
         Vector2f position = getNextElementPosition(window, size);
-        renderer.drawTexture2D(position.x, position.y - size.y, 0, width, height,
-                sprite, scale, 0xFFFF, false);
+        renderer.drawTexture2D(position.x, position.y - size.y, image.getZIndex(),
+                image.getWidth(), image.getHeight(),
+                image.getSprite(), scale, image.getRGB(), false);
         advanceCursorPastElement(window, size);
     }
 
@@ -97,7 +137,7 @@ public class JGui {
         advanceCursorPastElement(window, size);
     }
 
-    public static boolean button(Button button) {
+    public static boolean button(JButton button) {
         JWindow window = stack.peek();
         Vector2f size = new Vector2f(button.getSize()).mul(scale);
         Vector2f position = getNextElementPosition(window, size);
@@ -128,7 +168,7 @@ public class JGui {
         return res;
     }
 
-    public static boolean imageButton(ImageButton button) {
+    public static boolean imageButton(JImageButton button) {
         JWindow window = stack.peek();
         Vector2f size = new Vector2f(button.getSize()).mul(scale);
         Vector2f position = getNextElementPosition(window, size);
@@ -146,7 +186,7 @@ public class JGui {
             default:
                 sprite = button.getDefaultSprite();
         }
-        renderer.drawTexture2D(position.x, position.y - size.y, -1, button.getSize().x, button.getSize().y,
+        renderer.drawTexture2D(position.x, position.y - size.y, -1, button.getWidth(), button.getHeight(),
                 sprite, scale, 0xFFFF, false);
         // draw string
         JFont font = Assets.getFont(Assets.DIR + "/fonts/Minecraft.ttf", 16);
@@ -159,25 +199,66 @@ public class JGui {
         return res;
     }
 
-    public static String input() { return null; }
+    private static int maxCursorBlink = 50;
 
-    // returns the position of the next element to be layed out.
-    private static Vector2f getNextElementPosition(JWindow window, Vector2f size) {
-        if (window.isCenterNextElement()) {
-            float width = window.size.x - window.cursor.x;
-            window.cursor.x += ((width / 2.0) - (size.x / 2.0f));
-            window.setCenterNextElement(false);
+    private static int cursorBlinkTick = 0;
+
+    public static boolean input(JString string, float scale, float width, float height, boolean focused) {
+        JWindow window = stack.peek();
+        float boxPadding = 0.02f;
+        JFont font = Assets.getFont(Assets.DIR + "/fonts/Minecraft.ttf", 16);
+        float fontHeight = font.getFontHeight() * scale;
+        Vector2f size = new Vector2f(width, height).mul(JGui.scale);
+        Vector2f position = getNextElementPosition(window, size);
+        WidgetState state = mouseInAABB(position, size);
+        int color;
+        switch (state) {
+            case CLICK:
+                focused = true;
+                color = 0x000099;
+                break;
+            case HOVER:
+                color = 0x000099;
+                break;
+            default:
+                if (MouseListener.isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT)) {
+                    focused = false;
+                }
+                color = 0x000066;
         }
-        float x = window.position.x + window.cursor.x;
-        float y = window.position.y - window.cursor.y;
-        return new Vector2f(x, y);
-    }
+        // draw outline
+        renderer.drawQuad2D(position.x, position.y - size.y, -1, width, height, JGui.scale, color);
+        // draw string
+        Vector2f caretSize = font.getSize("/").mul(scale);
+        Vector2f charPosition = new Vector2f(position);
+        String text = string.get();
+        if (text != null) {
+            charPosition.x += boxPadding;
+            Vector2f strSize = font.getSize(text).mul(scale);
+            renderer.drawString(text, charPosition.x, (charPosition.y - (fontHeight / 2.0f)) - fontHeight, 0, scale, 0xFFFF);
+            charPosition.x += strSize.x;
+        }
+        // draw caret
+        if (focused) {
+            renderer.drawBox2D(new Vector2f(position.x + (size.x * 0.5f), position.y - (size.y * 0.5f)),
+                    new Vector2f(size), -1, 0, new Vector3f(0f, 0f, 0f));
+            cursorBlinkTick = (cursorBlinkTick + 1) % maxCursorBlink;
+            if (cursorBlinkTick > maxCursorBlink / 2) {
+                renderer.drawString("/", charPosition.x, (charPosition.y - (fontHeight / 2.0f)) - fontHeight, 0, scale, 0xFFFF);
+            }
 
-    // advances the cursor to the begining of the next row.
-    private static void advanceCursorPastElement(JWindow window, Vector2f size) {
-        window.lastElementPosition = new Vector2f(window.cursor);
-        window.lastElementSize = new Vector2f(size);
-        window.cursor.x = padding.x;
-        window.cursor.y += size.y + padding.y;
+            // mutate string
+            char c = (char)KeyListener.getLastCharPressed();
+            if (c != '\0') {
+                string.append(c);
+            }
+
+            if (KeyListener.isKeyBeginPress(GLFW_KEY_BACKSPACE)) {
+                string.deleteLast();
+            }
+        }
+
+        advanceCursorPastElement(window, size);
+        return focused;
     }
 }

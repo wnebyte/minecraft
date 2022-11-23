@@ -155,6 +155,8 @@ public class Application {
                 }
             }
 
+            window.pollEvents(dt);
+
             framebuffer.bind();
             glDrawBuffers(Constants.BUFS_ZERO_NONE_NONE);
             glClearBufferfv(GL_COLOR, 0, Constants.ZERO_FILLER_VEC);
@@ -184,7 +186,6 @@ public class Application {
             glEnable(GL_DEPTH_TEST);
 
             window.swapBuffers();
-            window.pollEvents(dt);
             KeyListener.endFrame();
             MouseListener.endFrame();
 
@@ -225,6 +226,10 @@ public class Application {
 
     public static Future<?> submit(Runnable task) {
         return Application.app.threadPool.submit(task);
+    }
+
+    public static <T> Future<T> submit(Runnable task, T result) {
+        return Application.app.threadPool.submit(task, result);
     }
 
     public static void runLater(Runnable task) {

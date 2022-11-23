@@ -2,10 +2,12 @@ package com.github.wnebyte.minecraft.core;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import org.joml.*;
 import com.github.wnebyte.minecraft.world.*;
 import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.ui.Hud;
+import com.github.wnebyte.minecraft.ui.JGui;
 import com.github.wnebyte.minecraft.components.Inventory;
 import com.github.wnebyte.minecraft.event.EventSystem;
 import com.github.wnebyte.minecraft.util.*;
@@ -33,6 +35,8 @@ public class Scene {
     private Hud hud;
 
     private EventSystem eventSystem;
+
+    private AtomicLong counter = new AtomicLong(0L);
 
     public Scene() {
         this.camera = new Camera.Builder()
@@ -117,33 +121,44 @@ public class Scene {
         hud = new Hud(camera);
         world.start(this);
         hud.start(this);
+        world.load(counter);
     }
 
     public void update(float dt) {
+        if (counter.get() < World.CHUNK_SPAWN_AREA) {
+            long percentage = (counter.get() / World.CHUNK_SPAWN_AREA) * 100;
+            JGui.begin(-3.0f, 1.3f, 6.0f, 3.0f);
+            JGui.advanceCursor(0.0f, 1.5f);
+            JGui.centerNextElement();
+            JGui.label(String.format("%d%s", percentage, "%"), 0.0045f, 0xFFFFFF);
+            JGui.end();
+            return;
+        }
+
         debounce -= dt;
         world.update(dt);
 
         // draw overlay
         renderer.drawQuad2D(-3.0f, 1.0f, -6,
-                0.5f, 0.3f, 1f, 0x0000);
+                0.5f, 0.3f, 1f, 0x000000);
 
         // camera position label
         Vector3f pos = new Vector3f(camera.getPosition());
         renderer.drawString(
                 String.format("%.0f, %.0f, %.0f", pos.x, pos.y, pos.z),
-                -3.0f + 0.05f, 1.2f, -5, 0.0045f, 0xFFFF);
+                -3.0f + 0.05f, 1.2f, -5, 0.0045f, 0xFFFFFF);
 
         // chunk coords label
         Vector2i v = Chunk.toChunkCoords(pos);
         renderer.drawString(
                 String.format("%d, %d", v.x, v.y),
-                -3.0f + 0.05f, 1.1f, -5, 0.0045f, 0xFFFF);
+                -3.0f + 0.05f, 1.1f, -5, 0.0045f, 0xFFFFFF);
 
         // fps label
         frames.add(dt);
         renderer.drawString(
                 String.format("%.1f", fps),
-                -3.0f + 0.05f, 1.0f, -5, 0.0045f, 0xFFFF);
+                -3.0f + 0.05f, 1.0f, -5, 0.0045f, 0xFFFFFF);
 
         if (debounce <= 0) {
             float sum = frames.stream().reduce(0.0f, Float::sum);
@@ -156,7 +171,9 @@ public class Scene {
     }
 
     public void render() {
-        world.render();
+        if (counter.get() >= World.CHUNK_SPAWN_AREA) {
+            world.render();
+        }
         renderer.flush(camera);
     }
 
