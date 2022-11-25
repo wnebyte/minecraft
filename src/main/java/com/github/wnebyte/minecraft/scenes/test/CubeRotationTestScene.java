@@ -1,4 +1,4 @@
-package com.github.wnebyte.minecraft.scenes;
+package com.github.wnebyte.minecraft.scenes.test;
 
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -13,7 +13,7 @@ import static com.github.wnebyte.minecraft.core.KeyListener.isKeyBeginPress;
 import static com.github.wnebyte.minecraft.core.KeyListener.isKeyPressed;
 import static org.lwjgl.glfw.GLFW.*;
 
-public class CubeRotationTestScene extends Scene {
+public class CubeRotationTestScene {
 
     private Camera camera;
 
@@ -35,31 +35,32 @@ public class CubeRotationTestScene extends Scene {
 
     private Vector3f position = new Vector3f(-2.25f, 2.36f, 3.52f);
 
+    private Camera c = new Camera(
+            new Vector3f(position),                   // position
+            new Vector3f(0.0f, 0.0f, -1.0f), // forward
+            new Vector3f(0.0f, 1.0f, 0.0f),  // up
+            yaw,
+            pitch,
+            10f,
+            Camera.DEFAULT_MOUSE_SENSITIVITY,
+            fov,
+            Camera.DEFAULT_Z_NEAR,
+            10_000f);
+
     private float scale = 2.25f;
 
     private boolean drawLbls = false;
 
     public CubeRotationTestScene() {
-        this.camera = new Camera(
-                new Vector3f(position),                   // position
-                new Vector3f(0.0f, 0.0f, -1.0f), // forward
-                new Vector3f(0.0f, 1.0f, 0.0f),  // up
-                yaw,
-                pitch,
-                10f,
-                Camera.DEFAULT_MOUSE_SENSITIVITY,
-                fov,
-                Camera.DEFAULT_Z_NEAR,
-                10_000f);
-        this.renderer = Renderer.getInstance();
+
     }
 
-    @Override
+
     public void start() {
-        super.loadResources();
+       // super.loadResources();
     }
 
-    @Override
+
     public void update(float dt) {
         camera.update(dt);
         Vector4f rotation = rotations[index];
@@ -119,17 +120,17 @@ public class CubeRotationTestScene extends Scene {
                 -3.0f + 0.05f, 0.3f, 0, 0.0040f, 0xFFFF);
     }
 
-    @Override
+
     public void render() {
         renderer.flush(camera);
     }
 
-    @Override
+
     public Camera getCamera() {
         return camera;
     }
 
-    @Override
+
     public void processInput(float dt) {
         Vector4f rotation = rotations[index];
         if (isKeyBeginPress(GLFW_KEY_ESCAPE)) {

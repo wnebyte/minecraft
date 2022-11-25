@@ -1,4 +1,4 @@
-package com.github.wnebyte.minecraft.scenes;
+package com.github.wnebyte.minecraft.scenes.test;
 
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -16,7 +16,7 @@ import com.github.wnebyte.minecraft.util.Assets;
 import static com.github.wnebyte.minecraft.core.KeyListener.isKeyBeginPress;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE;
 
-public class JGuiTestScene extends Scene {
+public class JGuiTestScene {
 
     private static final float CROSSHAIR_SIZE = 0.08f;
 
@@ -62,9 +62,8 @@ public class JGuiTestScene extends Scene {
         this.renderer = Renderer.getInstance();
     }
 
-    @Override
     public void start() {
-        super.loadResources();
+       // super.loadResources();
         this.spritesheet = Assets.getSpritesheet(Assets.DIR + "/images/spritesheets/hudSprites.png");
         this.btnRegSprite = spritesheet.getSprite(0);
         this.btnHoverSprite = spritesheet.getSprite(1);
@@ -93,19 +92,17 @@ public class JGuiTestScene extends Scene {
                 .build();
     }
 
-    @Override
     public void processInput(float dt) {
         if (isKeyBeginPress(GLFW_KEY_ESCAPE)) {
             Application.getWindow().setWindowShouldClose(true);
         }
     }
 
-    @Override
     public void update(float dt) {
         // draw cursor
         float x = MouseListener.getScreenX();
         float y = MouseListener.getScreenY();
-        drawCursor(x, y, CROSSHAIR_HALF_SIZE, new Vector3f(0f, 0f, 0f));
+        //drawCursor(x, y, CROSSHAIR_HALF_SIZE, new Vector3f(0f, 0f, 0f));
         // draw gui
         JGui.begin(-3.0f, 1.3f, 6.0f, 3.0f / 6f, 0xFFFFFF);
         JGui.centerNextElement();
@@ -115,31 +112,15 @@ public class JGuiTestScene extends Scene {
        // JGui.end();
     }
 
-    @Override
     public void render() {
         renderer.flush(camera);
     }
 
-    @Override
     public void destroy() {
         renderer.destroy();
     }
 
-    @Override
     public Camera getCamera() {
         return camera;
-    }
-
-    private void drawCursor(float x, float y, float halfSize, Vector3f color) {
-        renderer.drawLine2D(
-                new Vector2f(x, y - halfSize),
-                new Vector2f(x, y + halfSize),
-                0,
-                color);
-        renderer.drawLine2D(
-                new Vector2f(x - halfSize, y),
-                new Vector2f(x + halfSize, y),
-                0,
-                color);
     }
 }

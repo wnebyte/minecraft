@@ -117,7 +117,7 @@ public class JGui {
         window.cursor.x = padding.x;
         window.cursor.y += size.y + padding.y;
     }
-    
+
     public static void image(JImage image) {
         JWindow window = stack.peek();
         Vector2f size = new Vector2f(image.getSize()).mul(scale);

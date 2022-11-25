@@ -1,233 +1,85 @@
 package com.github.wnebyte.minecraft.core;
 
 import java.util.List;
-import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicLong;
 import org.joml.*;
 import com.github.wnebyte.minecraft.world.*;
 import com.github.wnebyte.minecraft.renderer.*;
-import com.github.wnebyte.minecraft.ui.Hud;
-import com.github.wnebyte.minecraft.ui.JGui;
-import com.github.wnebyte.minecraft.components.Inventory;
 import com.github.wnebyte.minecraft.event.EventSystem;
-import com.github.wnebyte.minecraft.util.*;
-import static com.github.wnebyte.minecraft.core.KeyListener.isKeyBeginPress;
-import static com.github.wnebyte.minecraft.core.KeyListener.isKeyPressed;
-import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL11.*;
 
 public class Scene {
 
-    private Camera camera;
+    /*
+    ###########################
+    #      STATIC FIELDS      #
+    ###########################
+    */
 
-    private Renderer renderer;
+    protected static final float CROSSHAIR_SIZE = 0.08f;
 
-    private World world;
+    protected static final float CROSSHAIR_HALF_SIZE = CROSSHAIR_SIZE / 2.0f;
 
-    private float debounceTime = 0.75f;
+    protected static final Vector3f CROSSHAIR_COLOR = new Vector3f(177.0f / 255.0f, 199.0f / 255.0f, 179.0f / 255.0f);
 
-    private float debounce = debounceTime;
+    protected static final Camera DEFAULT_CAMERA = new Camera.Builder()
+            .setPosition(0.0f, 0.0f, 3.0f)
+            .setMovementSpeed(10f)
+            .setZFar(10_000f)
+            .build();
 
-    private List<Float> frames = new ArrayList<>();
+    /*
+    ###########################
+    #          FIELDS         #
+    ###########################
+    */
 
-    private float fps = 0.0f;
+    protected Camera camera;
 
-    private Hud hud;
+    protected Renderer renderer;
 
-    private EventSystem eventSystem;
+    protected EventSystem eventSystem;
 
-    private AtomicLong counter = new AtomicLong(0L);
+    protected World world;
 
-    public Scene() {
-        this.camera = new Camera.Builder()
-                .setPosition(0.0f, 0.0f, 3.0f)
-                .setMovementSpeed(10f)
-                .setZFar(10_000f)
-                .build();
+    /*
+    ###########################
+    #       CONSTRUCTORS      #
+    ###########################
+    */
+
+    public Scene(Camera camera) {
+        this.camera = camera;
         this.renderer = Renderer.getInstance();
         this.eventSystem = new EventSystem();
+        this.world = null;
     }
 
-    protected void loadResources() {
-        TexturePacker packer = new TexturePacker(true, true);
+    /*
+    ###########################
+    #          METHODS        #
+    ###########################
+    */
 
-        // load blocks
-        String path = Assets.DIR + "/images/generated/packedTextures.png";
-        packer.pack(
-                Assets.DIR + "/images/blocks",
-                Assets.DIR + "/config/textureFormat.json",
-                path, false, 32, 32);
-        Texture texture = new Texture(path, new Texture.Configuration.Builder()
-                .setTarget(GL_TEXTURE_2D)
-                .flip()
-                .addParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-                .addParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-                .build());
-        Assets.addTexture(texture);
-        BlockMap.loadBlocks(
-                Assets.DIR + "/config/blockFormat.json",
-                Assets.DIR + "/config/textureFormat.json",
-                path);
-        BlockMap.bufferTexCoords();
+    public void start() {}
 
-        // load items
-        packer = new TexturePacker();
-        path = Assets.DIR + "/images/generated/packedItemTextures.png";
-        packer.pack(
-                Assets.DIR + "/images/items",
-                Assets.DIR + "/config/itemTextureFormat.json",
-                path, false, 32, 32);
-        texture = new Texture(path, new Texture.Configuration.Builder()
-                .setTarget(GL_TEXTURE_2D)
-                .addParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-                .addParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-                .build());
-        Assets.addTexture(texture);
-        BlockMap.loadItems(
-                Assets.DIR + "/config/itemFormat.json",
-                Assets.DIR + "/config/itemTextureFormat.json",
-                path);
+    public void update(float dt) {}
 
-        // generate and load block items
-        path = Assets.DIR + "/images/generated/packedBlockItemTextures.png";
-        BlockMap.generateBlockItemImages(
-                Assets.DIR + "/config/blockFormat.json",
-                Assets.DIR + "/images/generated/blockItems");
-        packer.pack(
-                Assets.DIR + "/images/generated/blockItems",
-                Assets.DIR + "/config/blockItemTextureFormat.json",
-                path, false, 32, 32);
-        texture = new Texture(path, new Texture.Configuration.Builder()
-                .setTarget(GL_TEXTURE_2D)
-                .addParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-                .addParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-                .build());
-        Assets.addTexture(texture);
-        BlockMap.loadBlockItems(
-                Assets.DIR + "/config/blockItemTextureFormat.json",
-                path);
+    public void render() {}
 
-        // load remaining assets
-        TerrainGenerator.load(
-                Assets.DIR + "/config/terrainNoise.json",
-                (int)System.currentTimeMillis());
-        Assets.loadSpritesheet(
-                Assets.DIR + "/config/hudSprites.json");
-    }
+    public void destroy() {}
 
-    public void start() {
-        loadResources();
-        world = new World(camera);
-        hud = new Hud(camera);
-        world.start(this);
-        hud.start(this);
-        world.load(counter);
-    }
+    public void processInput(float dt) {}
 
-    public void update(float dt) {
-        if (counter.get() < World.CHUNK_SPAWN_AREA) {
-            long percentage = (counter.get() / World.CHUNK_SPAWN_AREA) * 100;
-            JGui.begin(-3.0f, 1.3f, 6.0f, 3.0f);
-            JGui.advanceCursor(0.0f, 1.5f);
-            JGui.centerNextElement();
-            JGui.label(String.format("%d%s", percentage, "%"), 0.0045f, 0xFFFFFF);
-            JGui.end();
-            return;
-        }
-
-        debounce -= dt;
-        world.update(dt);
-
-        // draw overlay
-        renderer.drawQuad2D(-3.0f, 1.0f, -6,
-                0.5f, 0.3f, 1f, 0x000000);
-
-        // camera position label
-        Vector3f pos = new Vector3f(camera.getPosition());
-        renderer.drawString(
-                String.format("%.0f, %.0f, %.0f", pos.x, pos.y, pos.z),
-                -3.0f + 0.05f, 1.2f, -5, 0.0045f, 0xFFFFFF);
-
-        // chunk coords label
-        Vector2i v = Chunk.toChunkCoords(pos);
-        renderer.drawString(
-                String.format("%d, %d", v.x, v.y),
-                -3.0f + 0.05f, 1.1f, -5, 0.0045f, 0xFFFFFF);
-
-        // fps label
-        frames.add(dt);
-        renderer.drawString(
-                String.format("%.1f", fps),
-                -3.0f + 0.05f, 1.0f, -5, 0.0045f, 0xFFFFFF);
-
-        if (debounce <= 0) {
-            float sum = frames.stream().reduce(0.0f, Float::sum);
-            fps = (1 / (sum / frames.size()));
-            frames.clear();
-            debounce = debounceTime;
-        }
-
-        hud.update(dt);
-    }
-
-    public void render() {
-        if (counter.get() >= World.CHUNK_SPAWN_AREA) {
-            world.render();
-        }
-        renderer.flush(camera);
-    }
-
-    public void destroy() {
-        world.destroy();
-        renderer.destroy();
-    }
-
-    public void processInput(float dt) {
-        if (isKeyPressed(GLFW_KEY_ESCAPE)) {
-            Application.getWindow().setWindowShouldClose(true);
-        }
-        if (isKeyPressed(GLFW_KEY_W)) {
-            camera.handleKeyboard(Camera.Movement.FORWARD, dt);
-        }
-        if (isKeyPressed(GLFW_KEY_S)) {
-            camera.handleKeyboard(Camera.Movement.BACKWARD, dt);
-        }
-        if (isKeyPressed(GLFW_KEY_A)) {
-            camera.handleKeyboard(Camera.Movement.LEFT, dt);
-        }
-        if (isKeyPressed(GLFW_KEY_D)) {
-            camera.handleKeyboard(Camera.Movement.RIGHT, dt);
-        }
-        if (isKeyPressed(GLFW_KEY_SPACE)) {
-            camera.handleKeyboard(Camera.Movement.UP, dt);
-        }
-        if (isKeyPressed(GLFW_KEY_LEFT_CONTROL)) {
-            camera.handleKeyboard(Camera.Movement.DOWN, dt);
-        }
-        if (isKeyPressed(GLFW_KEY_COMMA)) {
-            camera.resetZoom();
-        }
-        if (isKeyBeginPress(GLFW_KEY_K)) {
-            hud.setShowInventory(!hud.isShowInventory());
-            if (hud.isShowInventory()) {
-                float x = Application.getWindow().getWidth() / 2.0f;
-                float y = Application.getWindow().getHeight() / 2.0f;
-                Application.getWindow().setCursorPos(x, y);
-            }
-        }
-        if (isKeyBeginPress(GLFW_KEY_RIGHT)) {
-            Inventory.Hotbar hotbar = hud.getInventory().getHotbar();
-            hotbar.next();
-        }
-        if (isKeyBeginPress(GLFW_KEY_LEFT)) {
-            Inventory.Hotbar hotbar = hud.getInventory().getHotbar();
-            hotbar.previous();
-        }
-        if (isKeyBeginPress(GLFW_KEY_P)) {
-            Application.takeScreenshot("screenshot");
-        }
-
-        hud.processInput(dt);
+    protected void drawCursor(float x, float y, float halfSize, Vector3f color) {
+        renderer.drawLine2D(
+                new Vector2f(x, y - halfSize),
+                new Vector2f(x, y + halfSize),
+                0,
+                color);
+        renderer.drawLine2D(
+                new Vector2f(x - halfSize, y),
+                new Vector2f(x + halfSize, y),
+                0,
+                color);
     }
 
     public World getWorld() {

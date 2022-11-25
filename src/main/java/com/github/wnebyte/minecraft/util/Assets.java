@@ -92,7 +92,7 @@ public class Assets {
         }
     }
 
-    public static void loadSpritesheet(String path) {
+    public static Spritesheet loadSpritesheet(String path) {
         assert Files.exists(path) : "Path does not exist";
         String json = Files.read(path);
         Spritesheet.Configuration conf = Settings.GSON.fromJson(json, Spritesheet.Configuration.class);
@@ -105,6 +105,7 @@ public class Assets {
                 .build());
         Spritesheet spritesheet = new Spritesheet(texture, conf);
         Assets.addSpritesheet(texture.getPath(), spritesheet);
+        return spritesheet;
     }
 
     public static JFont getFont(String path, int fontSize) {

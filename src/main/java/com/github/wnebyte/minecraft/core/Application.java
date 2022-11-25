@@ -7,6 +7,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.Calendar;
 import java.nio.ByteBuffer;
+
+import com.github.wnebyte.minecraft.scenes.MainMenuScene;
 import org.lwjgl.BufferUtils;
 import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.util.Assets;
@@ -92,7 +94,7 @@ public class Application {
         threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() - 1);
         messageQueue = new ConcurrentLinkedQueue<>();
         window = Window.newInstance("Minecraft");
-        window.setScene(new Scene());
+        window.setScene(new MainMenuScene());
         ScreenRenderer.start();
         framebuffer = new Framebuffer.Builder()
                 .setSize(window.getWidth(), window.getHeight())

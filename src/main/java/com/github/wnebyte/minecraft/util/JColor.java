@@ -4,6 +4,16 @@ import org.joml.Vector3f;
 
 public class JColor {
 
+    /*
+    ###########################
+    #          FIELDS         #
+    ###########################
+    */
+
+    public static final int BLACK_HEX = 0x000000;
+
+    public static final int WHITE_HEX = 0xFFFFFF;
+
     public static int toInt(Vector3f rgb) {
         int value = (((int)rgb.x & 0xFF) << 16) |
                     (((int)rgb.y & 0xFF) << 8)  |
