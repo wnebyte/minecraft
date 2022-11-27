@@ -5,10 +5,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Supplier;
 import java.util.Calendar;
 import java.nio.ByteBuffer;
-
-import com.github.wnebyte.minecraft.scenes.MainMenuScene;
 import org.lwjgl.BufferUtils;
 import com.github.wnebyte.minecraft.renderer.*;
 import com.github.wnebyte.minecraft.util.Assets;
@@ -27,10 +26,55 @@ public class Application {
     ###########################
     */
 
-    public static void launch() {
+    protected static class Configuration {
+
+        private String title;
+
+        private int width;
+
+        private int height;
+
+        private Supplier<Scene> scene;
+
+        public void setTitle(String title) {
+            this.title = title;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public void setWidth(int width) {
+            this.width = width;
+        }
+
+        public int getWidth() {
+            return width;
+        }
+
+        public void setHeight(int height) {
+            this.height = height;
+        }
+
+        public int getHeight() {
+            return height;
+        }
+
+        public void setScene(Supplier<Scene> scene) {
+            this.scene = scene;
+        }
+
+        public Supplier<Scene> getScene() {
+            return scene;
+        }
+    }
+
+    public static void launch(Application app) {
         if (Application.app == null) {
-            Application.app = new Application();
-            Application.app.run();
+            Application.app = app;
+            Configuration conf = new Configuration();
+            app.configure(conf);
+            app.run(conf);
         } else {
             throw new IllegalStateException(
                     "Application has already been launched."
@@ -76,7 +120,7 @@ public class Application {
     ###########################
     */
 
-    private Application() {}
+    protected Application() {}
 
     /*
     ###########################
@@ -84,17 +128,19 @@ public class Application {
     ###########################
     */
 
-    private void run() {
-        init();
+    protected void configure(Configuration conf) {}
+
+    private void run(Configuration conf) {
+        init(conf);
         loop();
     }
 
-    private void init() {
+    private void init(Configuration conf) {
         thread = Thread.currentThread().getId();
         threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() - 1);
         messageQueue = new ConcurrentLinkedQueue<>();
-        window = Window.newInstance("Minecraft");
-        window.setScene(new MainMenuScene());
+        window = Window.newInstance(conf.getTitle());
+        window.setScene(conf.getScene().get());
         ScreenRenderer.start();
         framebuffer = new Framebuffer.Builder()
                 .setSize(window.getWidth(), window.getHeight())
@@ -158,7 +204,7 @@ public class Application {
             }
 
             window.pollEvents(dt);
-
+            // Render pass 1:
             framebuffer.bind();
             glDrawBuffers(Constants.BUFS_ZERO_NONE_NONE);
             glClearBufferfv(GL_COLOR, 0, Constants.ZERO_FILLER_VEC);

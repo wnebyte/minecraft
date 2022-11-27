@@ -22,36 +22,13 @@ public class LoadingScene extends Scene {
 
     private static class ResourceLoader implements Runnable {
 
-        private String blockTexturePath = Assets.DIR + "/images/generated/packedTextures.png";
+        private final String blockTexturePath = Assets.DIR + "/images/generated/packedTextures.png";
 
-        private String itemTexturePath = Assets.DIR + "/images/generated/packedItemTextures.png";
+        private final String itemTexturePath = Assets.DIR + "/images/generated/packedItemTextures.png";
 
-        private String blockItemTexturePath = Assets.DIR + "/images/generated/packedBlockItemTextures.png";
+        private final String blockItemTexturePath = Assets.DIR + "/images/generated/packedBlockItemTextures.png";
 
-        private Texture blockTexture;
-
-        private Texture itemTexture;
-
-        private Texture blockItemTexture;
-
-        public ResourceLoader() {
-            blockTexture = new Texture(blockTexturePath, new Texture.Configuration.Builder()
-                    .setTarget(GL_TEXTURE_2D)
-                    .flip()
-                    .addParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-                    .addParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-                    .build());
-            itemTexture = new Texture(itemTexturePath, new Texture.Configuration.Builder()
-                    .setTarget(GL_TEXTURE_2D)
-                    .addParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-                    .addParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-                    .build());
-            blockItemTexture = new Texture(blockItemTexturePath, new Texture.Configuration.Builder()
-                    .setTarget(GL_TEXTURE_2D)
-                    .addParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-                    .addParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-                    .build());
-        }
+        public ResourceLoader() {}
 
         @Override
         public void run() {
@@ -62,6 +39,12 @@ public class LoadingScene extends Scene {
                     Assets.DIR + "/images/blocks",
                     Assets.DIR + "/config/textureFormat.json",
                     blockTexturePath, false, 32, 32);
+            Texture blockTexture = new Texture(blockTexturePath, new Texture.Configuration.Builder()
+                    .setTarget(GL_TEXTURE_2D)
+                    .flip()
+                    .addParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+                    .addParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+                    .build());
             Assets.addTexture(blockTexture);
             BlockMap.loadBlocks(
                     Assets.DIR + "/config/blockFormat.json",
@@ -75,6 +58,11 @@ public class LoadingScene extends Scene {
                     Assets.DIR + "/images/items",
                     Assets.DIR + "/config/itemTextureFormat.json",
                     itemTexturePath, false, 32, 32);
+            Texture itemTexture = new Texture(itemTexturePath, new Texture.Configuration.Builder()
+                    .setTarget(GL_TEXTURE_2D)
+                    .addParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+                    .addParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+                    .build());
             Assets.addTexture(itemTexture);
             BlockMap.loadItems(
                     Assets.DIR + "/config/itemFormat.json",
@@ -89,6 +77,11 @@ public class LoadingScene extends Scene {
                     Assets.DIR + "/images/generated/blockItems",
                     Assets.DIR + "/config/blockItemTextureFormat.json",
                     blockItemTexturePath, false, 32, 32);
+            Texture blockItemTexture = new Texture(blockItemTexturePath, new Texture.Configuration.Builder()
+                    .setTarget(GL_TEXTURE_2D)
+                    .addParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+                    .addParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+                    .build());
             Assets.addTexture(blockItemTexture);
             BlockMap.loadBlockItems(
                     Assets.DIR + "/config/blockItemTextureFormat.json",
@@ -109,6 +102,8 @@ public class LoadingScene extends Scene {
 
     private GameScene gameScene;
 
+    private int frames;
+
     private final ResourceLoader resourceLoader;
 
     /*
@@ -120,6 +115,7 @@ public class LoadingScene extends Scene {
     public LoadingScene(Camera camera) {
         super(camera);
         this.resourceLoader = new ResourceLoader();
+        this.frames = 0;
     }
 
     /*
@@ -130,14 +126,12 @@ public class LoadingScene extends Scene {
 
     @Override
     public void start() {
-        resourceLoader.run();
-        gameScene = new GameScene(camera);
-        gameScene.start();
+        // do nothing
     }
 
     @Override
     public void update(float dt) {
-        long count = gameScene.getCounter();
+        long count = (gameScene == null) ? 0L : gameScene.getCounter();
         long percentage = (count / World.CHUNK_SPAWN_AREA) * 100;
         JGui.begin(-3.0f, 1.3f, 6.0f, 3.0f);
         JGui.advanceCursor(0.0f, 1.4f);
@@ -145,7 +139,7 @@ public class LoadingScene extends Scene {
         JGui.label(String.format("%d%s", percentage, "%"), 0.0045f, 0xFFFFFF);
         JGui.end();
 
-        if (count >= World.CHUNK_SPAWN_AREA) {
+        if (frames == -1 && count >= World.CHUNK_SPAWN_AREA) {
             camera.unlock();
             Application.getWindow().setScene(gameScene);
         }
@@ -159,6 +153,14 @@ public class LoadingScene extends Scene {
     @Override
     public void render() {
         renderer.flush(camera);
+        if (frames == 2) {
+            resourceLoader.run();
+            gameScene = new GameScene(camera);
+            gameScene.start();
+            frames = -1;
+        } else if (frames >= 0) {
+            frames++;
+        }
     }
 
     @Override
