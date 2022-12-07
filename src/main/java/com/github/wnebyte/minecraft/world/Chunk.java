@@ -1,5 +1,7 @@
 package com.github.wnebyte.minecraft.world;
 
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.Future;
@@ -123,7 +125,7 @@ public class Chunk {
 
     private final Map map;
 
-    private final Pool<Key, Subchunk> subchunks;
+    private final Pool<Vector3i, Subchunk> subchunks;
 
     private final AtomicReference<State> state;
 
@@ -142,7 +144,7 @@ public class Chunk {
     ###########################
     */
 
-    public Chunk(int i, int j, int k, Map map, Pool<Key, Subchunk> subchunks) {
+    public Chunk(int i, int j, int k, Map map, Pool<Vector3i, Subchunk> subchunks) {
         this.chunkPosX = i * Chunk.WIDTH;
         this.chunkPosY = j * Chunk.HEIGHT;
         this.chunkPosZ = k * Chunk.DEPTH;
@@ -381,14 +383,9 @@ public class Chunk {
 
     public synchronized void unmesh(int subchunkLevel) {
         Vector3i v = new Vector3i(chunkCoordX, subchunkLevel, chunkCoordZ);
-        Key opaqueKey = new Key(v, false);
-        Key transparentKey = new Key(v, true);
-        Subchunk opaqueSubchunk = subchunks.get(opaqueKey);
-        Subchunk transparentSubchunk = subchunks.get(transparentKey);
-        opaqueSubchunk.setState(Subchunk.State.UNMESHED);
-        transparentSubchunk.setState(Subchunk.State.UNMESHED);
-        assert subchunks.free(opaqueKey) : "Free failed";
-        assert subchunks.free(transparentKey) : "Free failed";
+        Subchunk subchunk = subchunks.get(v);
+        subchunk.setState(Subchunk.State.UNMESHED);
+        assert subchunks.free(v) : "Free failed";
     }
 
     public synchronized void unmeshAsync() {
@@ -408,19 +405,13 @@ public class Chunk {
 
     public synchronized void mesh(int subchunkLevel) {
         Vector3i v = new Vector3i(chunkCoordX, subchunkLevel, chunkCoordZ);
-        Key opaqueKey = new Key(v, false);
-        Key transparentKey = new Key(v, true);
-        Subchunk opaqueSubchunk = subchunks.get(opaqueKey);
-        Subchunk transparentSubchunk = subchunks.get(transparentKey);
-        assert (opaqueSubchunk != null && transparentSubchunk != null) : "buffer is null";
-        opaqueSubchunk.setBlendable(false);
-        opaqueSubchunk.setChunkCoords(chunkCoords);
-        opaqueSubchunk.setSubchunkLevel(subchunkLevel);
-        opaqueSubchunk.resetVertexBuffer();
-        transparentSubchunk.setBlendable(true);
-        transparentSubchunk.setChunkCoords(chunkCoords);
-        transparentSubchunk.setSubchunkLevel(subchunkLevel);
-        transparentSubchunk.resetVertexBuffer();
+        Subchunk subchunk = subchunks.get(v);
+        assert (subchunk != null) : "Subchunk is null";
+        subchunk.setChunkCoords(chunkCoords);
+        subchunk.setSubchunkLevel(subchunkLevel);
+        subchunk.resetVertexBuffer();
+        List<Integer> transparentIndices = new ArrayList<>();
+        List<Integer> blendableIndices = new ArrayList<>();
         int j = subchunkLevel * 16;
         int jMax = j + 16;
         int access;
@@ -432,15 +423,36 @@ public class Chunk {
                     byte id = data[access];
                     Block b = BlockMap.getBlock(id);
 
-                    if (Block.isAir(b)) { continue; }
-                    createRenderData(b.isBlendable() ? transparentSubchunk.getVertexBuffer() : opaqueSubchunk.getVertexBuffer(),
-                            b, i, j, k, access);
+                    if (Block.isAir(b)) {
+                        continue;
+                    } else if (b.isBlendable()) {
+                        blendableIndices.add(access);
+                    } else if (b.isTransparent()) {
+                        transparentIndices.add(access);
+                    } else {
+                        createRenderData(0, subchunk.getVertexBuffer(), b, i, j, k, access);
+                    }
                 }
             }
         }
 
-        opaqueSubchunk.setState(Subchunk.State.MESHED);
-        transparentSubchunk.setState(Subchunk.State.MESHED);
+        // mesh transparent blocks
+        for (int i : transparentIndices) {
+            Vector3i index3D = toIndex3D(i);
+            byte id = data[i];
+            Block b = BlockMap.getBlock(id);
+            createRenderData(1, subchunk.getVertexBuffer(), b, index3D.x, index3D.y, index3D.z, i);
+        }
+
+        // mesh blendable blocks
+        for (int i : blendableIndices) {
+            Vector3i index3D = toIndex3D(i);
+            byte id = data[i];
+            Block b = BlockMap.getBlock(id);
+            createRenderData(2, subchunk.getVertexBuffer(), b, index3D.x, index3D.y, index3D.z, i);
+        }
+
+        subchunk.setState(Subchunk.State.MESHED);
     }
 
     public synchronized void meshAsync() {
@@ -451,35 +463,35 @@ public class Chunk {
         Application.submit(() -> this.mesh(subchunkLevel));
     }
 
-    private void createRenderData(VertexBuffer buffer, Block b, int i, int j, int k, int access) {
+    private void createRenderData(int range, VertexBuffer buffer, Block b, int i, int j, int k, int access) {
         // Left face (X-)
         if (visibleFaceXN(b, i-1, j, k)) {
-            appendFace(buffer, b, access, FaceType.LEFT);
+            appendFace(range, buffer, b, access, FaceType.LEFT);
         }
         // Right face (X+)
         if (visibleFaceXP(b, i+1, j, k)) {
-            appendFace(buffer, b, access, FaceType.RIGHT);
+            appendFace(range, buffer, b, access, FaceType.RIGHT);
         }
         // Back face (Z-)
         if (visibleFaceZN(b, i, j, k-1)) {
-            appendFace(buffer, b, access, FaceType.BACK);
+            appendFace(range, buffer, b, access, FaceType.BACK);
         }
         // Front face (Z+)
         if (visibleFaceZP(b, i, j, k+1)) {
-            appendFace(buffer, b, access, FaceType.FRONT);
+            appendFace(range, buffer, b, access, FaceType.FRONT);
         }
         // Bottom face (Y-)
         if (visibleFaceYN(b, i, j-1, k)) {
-            appendFace(buffer, b, access, FaceType.BOTTOM);
+            appendFace(range, buffer, b, access, FaceType.BOTTOM);
         }
         // Top face (Y+)
         if (visibleFaceYP(b, i, j+1, k)) {
-            appendFace(buffer, b, access, FaceType.TOP);
+            appendFace(range, buffer, b, access, FaceType.TOP);
         }
     }
 
-    private void appendFace(VertexBuffer buffer, Block b, int access, FaceType face) {
-        buffer.append(access, b.getTexCoordsIndex(face), (byte)face.ordinal(), b.getColorByBiome(face));
+    private void appendFace(int range, VertexBuffer buffer, Block b, int access, FaceType face) {
+        buffer.append(range, access, b.getTexCoordsIndex(face), (byte)face.ordinal(), b.getColorByBiome(face));
     }
 
     private boolean visibleFaceXN(Block b, int i, int j, int k) {

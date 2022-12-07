@@ -1,6 +1,7 @@
 package com.github.wnebyte.minecraft.world;
 
 import java.nio.ByteBuffer;
+import org.joml.Vector3i;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
 import com.github.wnebyte.minecraft.core.Application;
@@ -32,6 +33,8 @@ public class ChunkRenderer {
 
     private int iboID;
 
+    private int tiboID;
+
     private int biboID;
 
     private int cboID;
@@ -42,6 +45,8 @@ public class ChunkRenderer {
 
     private final Shader transparentShader;
 
+    private final Shader blendableShader;
+
     private final Shader compositeShader;
 
     private final Texture texture;
@@ -50,16 +55,20 @@ public class ChunkRenderer {
 
     private final IDrawCommandBuffer transparentDrawCommands;
 
-    private final Pool<Key, Subchunk> subchunks;
+    private final IDrawCommandBuffer blendableDrawCommands;
 
-    public ChunkRenderer(Camera camera, Pool<Key, Subchunk> subchunks) {
+    private final Pool<Vector3i, Subchunk> subchunks;
+
+    public ChunkRenderer(Camera camera, Pool<Vector3i, Subchunk> subchunks) {
         this.camera = camera;
         this.shader = Assets.getShader(Assets.DIR + "/shaders/opaque.glsl");
-        this.transparentShader = Assets.getShader(Assets.DIR + "/shaders/transparent.glsl");
+        this.transparentShader = shader;
+        this.blendableShader = Assets.getShader(Assets.DIR + "/shaders/transparent.glsl");
         this.compositeShader = Assets.getShader(Assets.DIR + "/shaders/composite.glsl");
         this.texture = Assets.getTexture(Assets.DIR + "/images/generated/packedTextures.png");
         this.drawCommands = new FlatDrawCommandBuffer(World.CHUNK_CAPACITY * 16);
         this.transparentDrawCommands = new FlatDrawCommandBuffer(World.CHUNK_CAPACITY * 16);
+        this.blendableDrawCommands = new FlatDrawCommandBuffer(World.CHUNK_CAPACITY * 16);
         this.subchunks = subchunks;
     }
 
@@ -83,8 +92,7 @@ public class ChunkRenderer {
 
         for (int offset = 0, i = 0; offset <= size - length && i < subchunks.capacity(); offset += length, i++) {
             ByteBuffer slice = MemoryUtil.memByteBuffer(base + offset, length);
-            Subchunk subchunk = new Subchunk(new VertexBuffer(slice));
-            subchunk.setFirst(i * VERTEX_CAPACITY);
+            Subchunk subchunk = new Subchunk(new VertexBuffer(slice), i * VERTEX_CAPACITY);
             subchunks.add(subchunk);
         }
         DebugStats.vertexMemAlloc = size;
@@ -92,12 +100,17 @@ public class ChunkRenderer {
         iboID = glGenBuffers();
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, iboID);
         glBufferData(GL_DRAW_INDIRECT_BUFFER,
-                (long)drawCommands.capacity() * DrawCommand.SIZE_BYTES, GL_DYNAMIC_DRAW);
+                (long)drawCommands.capacity() * DrawCommand.STRIDE_BYTES, GL_DYNAMIC_DRAW);
+
+        tiboID = glGenBuffers();
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, tiboID);
+        glBufferData(GL_DRAW_INDIRECT_BUFFER,
+                (long)transparentDrawCommands.capacity() * DrawCommand.STRIDE_BYTES, GL_DYNAMIC_DRAW);
 
         biboID = glGenBuffers();
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, biboID);
         glBufferData(GL_DRAW_INDIRECT_BUFFER,
-                (long)transparentDrawCommands.capacity() * DrawCommand.SIZE_BYTES, GL_DYNAMIC_DRAW);
+                (long)blendableDrawCommands.capacity() * DrawCommand.STRIDE_BYTES, GL_DYNAMIC_DRAW);
 
         cboID = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, cboID);
@@ -118,14 +131,27 @@ public class ChunkRenderer {
                 Vector3f max = new Vector3f(min)
                         .add(new Vector3f(16.0f, 16.0f, 16.0f));
                 if (camera.getFrustrum().isBoxVisible(min, max)) {
-                    if (subchunk.isBlendable()) {
-                        transparentDrawCommands.add(subchunk);
-                    } else {
-                        drawCommands.add(subchunk);
+                    Range range;
+                    if ((range = subchunk.getVertexBuffer().getRange(0)).size() > 0) {
+                        addDrawCommand(subchunk, range, drawCommands);
+                    }
+                    if ((range = subchunk.getVertexBuffer().getRange(1)).size() > 0) {
+                        addDrawCommand(subchunk, range, transparentDrawCommands);
+                    }
+                    if ((range = subchunk.getVertexBuffer().getRange(2)).size() > 0) {
+                        addDrawCommand(subchunk, range, blendableDrawCommands);
                     }
                 }
             }
         }
+    }
+
+    private void addDrawCommand(Subchunk subchunk, Range range, IDrawCommandBuffer drawCommandBuffer) {
+        int first = subchunk.getFirst() + range.getFromIndex();
+        int vertexCount = range.size();
+        int baseInstance = drawCommandBuffer.size();
+        DrawCommand drawCommand = new DrawCommand(vertexCount, 1, first, baseInstance);
+        drawCommandBuffer.add(drawCommand, subchunk.getChunkCoords());
     }
 
     private void draw(int iboID, Shader shader, IDrawCommandBuffer drawCommandBuffer) {
@@ -168,6 +194,18 @@ public class ChunkRenderer {
             // Render pass 2:
             // set transparent render states
             glDisable(GL_CULL_FACE);
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LESS);
+            glDepthMask(true);
+            glDisable(GL_BLEND);
+            // draw transparent geometry
+            draw(tiboID, transparentShader, transparentDrawCommands);
+        }
+
+        if (blendableDrawCommands.size() > 0) {
+            // Render pass 3:
+            // set blendable render states
+            glDisable(GL_CULL_FACE);
             glDepthMask(false);
             glEnable(GL_BLEND);
             glBlendFunci(1, GL_ONE, GL_ONE); // accumulation blend target
@@ -177,8 +215,8 @@ public class ChunkRenderer {
             glDrawBuffers(Constants.BUFS_NONE_ONE_TWO);
             glClearBufferfv(GL_COLOR, 1, Constants.ZERO_FILLER_VEC);
             glClearBufferfv(GL_COLOR, 2, Constants.ONE_FILLER_VEC);
-            // draw transparent geometry
-            draw(biboID, transparentShader, transparentDrawCommands);
+            // draw blendable geometry
+            draw(biboID, blendableShader, blendableDrawCommands);
         }
 
         // Render pass 3:
@@ -186,7 +224,6 @@ public class ChunkRenderer {
         glDepthFunc(GL_ALWAYS);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
         // configure framebuffer
         glDrawBuffers(Constants.BUFS_ZERO_NONE_NONE);
 
@@ -210,8 +247,9 @@ public class ChunkRenderer {
         glUnmapBuffer(vboID);
         glDeleteBuffers(vboID);
         glDeleteBuffers(iboID);
-        glDeleteBuffers(cboID);
+        glDeleteBuffers(tiboID);
         glDeleteBuffers(biboID);
+        glDeleteBuffers(cboID);
         glDeleteVertexArrays(vaoID);
     }
 }

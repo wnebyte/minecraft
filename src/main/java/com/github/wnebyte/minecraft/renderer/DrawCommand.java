@@ -2,11 +2,11 @@ package com.github.wnebyte.minecraft.renderer;
 
 import java.util.Objects;
 
-public class DrawCommand {
+public class DrawCommand implements Comparable<DrawCommand> {
 
-    public static final int SIZE = 4;
+    public static final int STRIDE = 4;
 
-    public static final int SIZE_BYTES = SIZE * Integer.BYTES;
+    public static final int STRIDE_BYTES = STRIDE * Integer.BYTES;
 
     private int vertexCount;
 
@@ -85,5 +85,10 @@ public class DrawCommand {
     public String toString() {
         return String.format("DrawCommand[vertexCount: %d, instanceCount: %d, first: %d, baseInstance: %d]",
                 this.vertexCount, this.instanceCount, this.first, this.baseInstance);
+    }
+
+    @Override
+    public int compareTo(DrawCommand o) {
+        return Integer.compare(this.first, o.first);
     }
 }

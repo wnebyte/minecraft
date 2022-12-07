@@ -13,9 +13,7 @@ public class Subchunk {
 
     private final VertexBuffer vertexBuffer;
 
-    private int first;
-
-    private boolean blendable;
+    private final int first;
 
     private Vector2i chunkCoords;
 
@@ -23,8 +21,9 @@ public class Subchunk {
 
     private AtomicReference<State> state;
 
-    public Subchunk(VertexBuffer vertexBuffer) {
+    public Subchunk(VertexBuffer vertexBuffer, int first) {
         this.vertexBuffer = vertexBuffer;
+        this.first = first;
         this.state = new AtomicReference<>(State.UNMESHED);
     }
 
@@ -38,14 +37,6 @@ public class Subchunk {
 
     public int getFirst() {
         return first;
-    }
-
-    public void setFirst(int first) {
-        this.first = first;
-    }
-
-    public int getNumVertices() {
-        return vertexBuffer.getNumVertices();
     }
 
     public Vector2i getChunkCoords() {
@@ -64,14 +55,6 @@ public class Subchunk {
         this.subchunkLevel = subchunkLevel;
     }
 
-    public void setBlendable(boolean value) {
-        this.blendable = value;
-    }
-
-    public boolean isBlendable() {
-        return blendable;
-    }
-
     public State getState() {
         return state.get();
     }
@@ -86,7 +69,8 @@ public class Subchunk {
         if (o == this) return true;
         if (!(o instanceof Subchunk)) return false;
         Subchunk subchunk = (Subchunk) o;
-        return Objects.equals(subchunk.first, this.first);
+        return Objects.equals(subchunk.chunkCoords, this.chunkCoords) &&
+                Objects.equals(subchunk.subchunkLevel, this.subchunkLevel);
     }
 
     @Override
@@ -94,6 +78,12 @@ public class Subchunk {
         int result = 2;
         return 2 *
                 result +
-                Objects.hashCode(this.first);
+                Objects.hashCode(this.chunkCoords) +
+                Objects.hashCode(this.subchunkLevel);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Subchunk[x: %d, y: %d, z: %d]", chunkCoords.x, subchunkLevel, chunkCoords.y);
     }
 }

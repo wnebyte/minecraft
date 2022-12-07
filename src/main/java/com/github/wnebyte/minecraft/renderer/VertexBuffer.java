@@ -2,9 +2,8 @@ package com.github.wnebyte.minecraft.renderer;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.util.Comparator;
-import com.github.wnebyte.minecraft.util.BufferUtils;
 import com.github.wnebyte.minecraft.util.DebugStats;
+import com.github.wnebyte.minecraft.util.Range;
 
 public class VertexBuffer {
 
@@ -56,6 +55,8 @@ public class VertexBuffer {
 
     private final IntBuffer data;
 
+    private final Range[] ranges;
+
     private int size;
 
     /*
@@ -66,6 +67,7 @@ public class VertexBuffer {
 
     public VertexBuffer(ByteBuffer buffer) {
         this.data = buffer.asIntBuffer();
+        this.ranges = new Range[]{ new Range(), new Range(), new Range() };
         this.size = 0;
     }
 
@@ -77,6 +79,7 @@ public class VertexBuffer {
 
     public void reset() {
         data.clear();
+        for (Range range : ranges) { range.set(0, 0); }
         DebugStats.vertexMemUsed -= (long)STRIDE_BYTES * size;
         size = 0;
     }
@@ -87,8 +90,10 @@ public class VertexBuffer {
     // colorByBiome   - 1 bit
     // vertex index   - 2 bits
     // TR, TL, BL, BR, TR, BL
-    public void append(int position, int uv, byte face, boolean colorByBiome) {
+    public void append(int index, int position, int uv, byte face, boolean colorByBiome) {
         assert (size <= capacity() - 6) : String.format("Error: (VertexBuffer) Overflow: %d", size + 6);
+        assert (index < ranges.length)  : String.format("Error: (VertexBuffer) Index: '%s' is out of bounds", index);
+        Range range = ranges[index];
         int shared = compress(position, uv, face, (byte)(colorByBiome ? 1 : 0));
         data.put(shared | 0); // TR
         data.put(shared | 3); // TL
@@ -97,23 +102,17 @@ public class VertexBuffer {
         data.put(shared | 0); // TR
         data.put(shared | 2); // BL
         size += STRIDE * 6;
+        range.addToIndex(STRIDE * 6);
+        for (int i = index + 1; i < ranges.length; i++) {
+            Range r = ranges[i];
+            r.setFromIndex(range.getToIndex());
+            r.setToIndex(range.getToIndex());
+        }
         DebugStats.vertexMemUsed += (long)STRIDE_BYTES * 6;
     }
 
-    public int binarySearch(int key) {
-        return BufferUtils.binarySearch(data, key);
-    }
-
-    public int binarySearch(int fromIndex, int toIndex, int key) {
-        return BufferUtils.binarySearch(data, fromIndex, toIndex, key);
-    }
-
-    public int binarySearch(int key, Comparator<? super Integer> c) {
-        return BufferUtils.binarySearch(data, key, c);
-    }
-
-    public int binarySearch(int fromIndex, int toIndex, int key, Comparator<? super Integer> c) {
-        return BufferUtils.binarySearch(data, fromIndex, toIndex, key, c);
+    public Range getRange(int index) {
+        return ranges[index];
     }
 
     public int size() {

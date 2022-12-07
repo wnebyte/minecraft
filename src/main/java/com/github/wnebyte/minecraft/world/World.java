@@ -8,6 +8,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.joml.Vector2i;
+import org.joml.Vector3i;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.core.*;
 import com.github.wnebyte.minecraft.physics.Physics;
@@ -34,21 +35,21 @@ public class World {
     ###########################
     */
 
-    private Camera camera;
+    private final Camera camera;
 
-    private Map map;
+    private final Map map;
 
-    private Pool<Key, Subchunk> subchunks;
+    private final Pool<Vector3i, Subchunk> subchunks;
 
-    private ChunkRenderer chunkRenderer;
+    private final ChunkRenderer chunkRenderer;
 
-    private Skybox skybox;
+    private final Skybox skybox;
 
-    private Physics physics;
+    private final Physics physics;
+
+    private final List<GameObject> gameObjects;
 
     private Vector3f lastCameraPos;
-
-    private List<GameObject> gameObjects;
 
     private float time;
 
@@ -66,7 +67,7 @@ public class World {
         this.camera = camera;
         this.lastCameraPos = new Vector3f(camera.getPosition());
         this.map = new Map(CHUNK_CAPACITY);
-        this.subchunks = new Pool<>(2 * World.CHUNK_CAPACITY * 16);
+        this.subchunks = new Pool<>(World.CHUNK_CAPACITY * 16);
         this.chunkRenderer = new ChunkRenderer(camera, subchunks);
         this.skybox = new Skybox(camera);
         this.physics = new Physics(map);
@@ -166,13 +167,13 @@ public class World {
             try {
                 for (Future<Chunk> it : futures) {
                     Chunk chunk = it.get();
-                    if (counter != null) {
-                        counter.incrementAndGet();
-                    }
                 }
                 for (Chunk c : chunks) {
                     assert c.isLoaded() : "Chunk is not loaded";
-                    c.meshAsync();
+                    c.mesh();
+                    if (counter != null) {
+                        counter.incrementAndGet();
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();

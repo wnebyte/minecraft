@@ -14,6 +14,16 @@ public class MainMenuScene extends Scene {
 
     /*
     ###########################
+    #      STATIC FIELDS      #
+    ###########################
+    */
+
+    private static final float BUTTON_WIDTH = 1.2f;
+    
+    private static final float BUTTON_HEIGHT = 0.2f;
+
+    /*
+    ###########################
     #          FIELDS         #
     ###########################
     */
@@ -41,7 +51,7 @@ public class MainMenuScene extends Scene {
         Sprite btnHoverSprite = spritesheet.getSprite(1);
         Sprite btnClickSprite = spritesheet.getSprite(2);
         this.loadButton = new JImageButton.Builder()
-                .setSize(0.9f, 0.2f)
+                .setSize(BUTTON_WIDTH, BUTTON_HEIGHT)
                 .setDefaultSprite(btnRegSprite)
                 .setHoverSprite(btnHoverSprite)
                 .setClickSprite(btnClickSprite)
@@ -49,7 +59,7 @@ public class MainMenuScene extends Scene {
                 .setTextScale(0.0045f)
                 .build();
         this.newButton = new JImageButton.Builder()
-                .setSize(0.9f, 0.2f)
+                .setSize(BUTTON_WIDTH, BUTTON_HEIGHT)
                 .setDefaultSprite(btnRegSprite)
                 .setHoverSprite(btnHoverSprite)
                 .setClickSprite(btnClickSprite)
@@ -57,7 +67,7 @@ public class MainMenuScene extends Scene {
                 .setTextScale(0.0045f)
                 .build();
         this.exitButton = new JImageButton.Builder()
-                .setSize(0.9f, 0.2f)
+                .setSize(BUTTON_WIDTH, BUTTON_HEIGHT)
                 .setDefaultSprite(btnRegSprite)
                 .setHoverSprite(btnHoverSprite)
                 .setClickSprite(btnClickSprite)

@@ -1,8 +1,10 @@
 package com.github.wnebyte.minecraft.renderer;
 
+import org.joml.Vector2i;
+
 public interface IDrawCommandBuffer {
 
-    boolean add(Subchunk subchunk);
+    boolean add(DrawCommand drawCommand, Vector2i chunkCoords);
 
     int size();
 

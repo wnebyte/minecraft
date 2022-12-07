@@ -21,8 +21,20 @@ public class FlatDrawCommandBuffer implements IDrawCommandBuffer {
     }
 
     @Override
-    public boolean add(Subchunk subchunk) {
-        return add(subchunk.getFirst(), subchunk.getNumVertices(), subchunk.getChunkCoords());
+    public boolean add(DrawCommand drawCommand, Vector2i ivec2) {
+        if (remaining() > 0) {
+            int index = 4 * size;
+            drawCommands[index + 0] = drawCommand.getVertexCount();
+            drawCommands[index + 1] = drawCommand.getInstanceCount();
+            drawCommands[index + 2] = drawCommand.getFirst();
+            drawCommands[index + 3] = drawCommand.getBaseInstance();
+            index = 2 * size;
+            chunkCoords[index + 0] = ivec2.x;
+            chunkCoords[index + 1] = ivec2.y;
+            size++;
+            return true;
+        }
+        return false;
     }
 
     public boolean add(int first, int vertexCount, Vector2i ivec2) {

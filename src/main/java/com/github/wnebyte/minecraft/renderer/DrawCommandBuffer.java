@@ -21,8 +21,14 @@ public class DrawCommandBuffer implements IDrawCommandBuffer {
     }
 
     @Override
-    public boolean add(Subchunk subchunk) {
-        return add(subchunk.getFirst(), subchunk.getNumVertices(), subchunk.getChunkCoords());
+    public boolean add(DrawCommand drawCommand, Vector2i ivec2) {
+        if (remaining() > 0) {
+            drawCommands[size] = drawCommand;
+            chunkCoords[size] = ivec2;
+            size++;
+            return true;
+        }
+        return false;
     }
 
     public boolean add(int first, int vertexCount, Vector2i ivec2) {
