@@ -49,7 +49,7 @@ public class World {
 
     private final List<GameObject> gameObjects;
 
-    private Vector3f lastCameraPos;
+    private final Vector3f lastCameraPos;
 
     private float time;
 
@@ -72,10 +72,8 @@ public class World {
         this.skybox = new Skybox(camera);
         this.physics = new Physics(map);
         this.gameObjects = new ArrayList<>();
-        GameObject cameraGo = new GameObject("Camera");
-        cameraGo.addComponent(camera);
-        gameObjects.add(cameraGo);
         GameObject playerGo = Prefabs.createPlayer(0, 0, 0, 1f);
+        playerGo.addComponent(camera);
         gameObjects.add(playerGo);
         GameObject sunGo = Prefabs.createSun(200, 200, 200, 20f);
         gameObjects.add(sunGo);
@@ -92,8 +90,12 @@ public class World {
         chunkRenderer.start();
         for (GameObject go : gameObjects) {
             go.start(scene);
+            physics.add(go);
         }
-        camera.setPosition(new Vector3f(CHUNK_SPAWN_AREA / 2.0f, 140, CHUNK_SPAWN_AREA / 2.0f));
+        Vector3f pos = new Vector3f(CHUNK_SPAWN_AREA / 2.0f, 140f, CHUNK_SPAWN_AREA / 2.0f);
+        GameObject playerGo = getGameObject("Player");
+        playerGo.transform.position.set(pos);
+        camera.setOffset(new Vector3f(0, 2f, -5f));
     }
 
     public void update(float dt) {
@@ -129,6 +131,8 @@ public class World {
             lastCameraPos.set(camera.getPosition());
             debounce = debounceTime;
         }
+
+        physics.update(dt);
     }
 
     public void load(AtomicLong counter) {

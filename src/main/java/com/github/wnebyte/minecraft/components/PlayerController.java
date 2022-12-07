@@ -71,25 +71,13 @@ public class PlayerController extends Component {
         // destroy block
         if (isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && info != null && info.isHit() &&
                 destroyBlockDebounce <= 0) {
-            Block b = destroyBlock();
-            if (b != null) {
-                Item item = BlockMap.getItem(b.getId());
-               // inventory.add(item);
-            }
+
         }
 
         // place block
         if (isMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT) && info != null && info.isHit() &&
                 placeBlockDebounce <= 0) {
-            /*
-            Item item = inventory.getHotbar().getSelected();
-            if (item != null && item.isBlock()) {
-                Block b = BlockMap.getBlock(item.getId());
-                placeBlock(b);
-                inventory.remove(item);
-            }
 
-             */
         }
     }
 

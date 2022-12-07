@@ -1,50 +1,88 @@
 package com.github.wnebyte.minecraft.components;
 
-import com.github.wnebyte.minecraft.core.KeyListener;
-import org.joml.Vector2f;
 import org.joml.Vector3f;
+import com.github.wnebyte.minecraft.core.Scene;
 import com.github.wnebyte.minecraft.core.Component;
 import com.github.wnebyte.minecraft.core.Camera;
-
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_W;
+import com.github.wnebyte.minecraft.core.KeyListener;
+import com.github.wnebyte.minecraft.renderer.Renderer;
+import com.github.wnebyte.minecraft.physics.components.BoxCollider;
+import static org.lwjgl.glfw.GLFW.*;
 
 public class CharacterController extends Component {
 
-    public float baseSpeed;
+    public float baseMovementSpeed = 7.5f;
 
-    public float runSpeed;
-
-    public float movementSensitivity;
-
-    public float jumpForce;
-
-    public float downJumpForce;
-
-    public Vector3f cameraOffset;
-
-    public Vector3f movementAxis;
-
-    public Vector2f viewAxis;
+    public float runMovementSpeed = baseMovementSpeed * 1.5f;
 
     public boolean isRunning;
 
-    public boolean lockedToCamera;
-
-    public boolean applyJumpForce;
-
-    public boolean inMiddleOfJump;
-
     public Camera camera;
+
+    private Renderer renderer;
 
     private float debounceTime = 0.2f;
 
     private float debounce = debounceTime;
 
     @Override
+    public void start(Scene scene) {
+        camera = scene.getCamera();
+        renderer = scene.getRenderer();
+    }
+
+    @Override
     public void update(float dt) {
         if (KeyListener.isKeyPressed(GLFW_KEY_W)) {
-            float velocity = baseSpeed * dt;
-            camera.getPosition().add((new Vector3f(camera.getForward().mul(velocity))));
+            handleMovement(Camera.Movement.FORWARD, dt);
+        }
+        if (KeyListener.isKeyPressed(GLFW_KEY_S)) {
+            handleMovement(Camera.Movement.BACKWARD, dt);
+        }
+        if (KeyListener.isKeyPressed(GLFW_KEY_A)) {
+            handleMovement(Camera.Movement.LEFT, dt);
+        }
+        if (KeyListener.isKeyPressed(GLFW_KEY_D)) {
+            handleMovement(Camera.Movement.RIGHT, dt);
+        }
+        if (KeyListener.isKeyPressed(GLFW_KEY_SPACE)) {
+            handleMovement(Camera.Movement.UP, dt);
+        }
+        if (KeyListener.isKeyPressed(GLFW_KEY_LEFT_CONTROL)) {
+            handleMovement(Camera.Movement.DOWN, dt);
+        }
+
+        BoxCollider bc = gameObject.getComponent(BoxCollider.class);
+        if (bc != null) {
+            renderer.drawBox3D(new Vector3f(gameObject.transform.position).add(bc.getOffset()), bc.getSize(),
+                    0, new Vector3f(1f, 1f, 1f));
+        }
+    }
+
+    private void handleMovement(Camera.Movement direction, float dt) {
+        float velocity = baseMovementSpeed * dt;
+        Vector3f position = gameObject.transform.position;
+        Vector3f forward = new Vector3f(camera.getForward());
+        forward.y = 0.0f;
+        switch (direction) {
+            case FORWARD:
+                position.add(new Vector3f(forward).mul(velocity));
+                break;
+            case BACKWARD:
+                position.sub(new Vector3f(forward).mul(velocity));
+                break;
+            case LEFT:
+                position.sub(new Vector3f(camera.getRight()).mul(velocity));
+                break;
+            case RIGHT:
+                position.add(new Vector3f(camera.getRight()).mul(velocity));
+                break;
+            case UP:
+                position.add(new Vector3f(camera.getUp()).mul(velocity));
+                break;
+            case DOWN:
+                position.sub(new Vector3f(camera.getUp()).mul(velocity));
+                break;
         }
     }
 }

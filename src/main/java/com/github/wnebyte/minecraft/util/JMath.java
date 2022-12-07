@@ -170,6 +170,14 @@ public class JMath {
         return Math.min(val, max);
     }
 
+    public static Vector3f clamp(Vector3f val, Vector3f min, Vector3f max) {
+        Vector3f res = new Vector3f();
+        res.x = clamp(val.x, min.x, max.x);
+        res.y = clamp(val.y, min.y, max.y);
+        res.z = clamp(val.z, min.z, max.z);
+        return res;
+    }
+
     public static void rotate(Vector2f vec, float angleDeg, Vector2f origin) {
         float x = vec.x - origin.x;
         float y = vec.y - origin.y;

@@ -186,6 +186,8 @@ public class Camera extends Component {
 
     private Matrix4f viewMatrix;
 
+    private Matrix4f viewProjection;
+
     private Matrix4f inverseProjection;
 
     private Matrix4f inverseView;
@@ -201,6 +203,8 @@ public class Camera extends Component {
     private Frustrum frustrum;
 
     private boolean locked;
+
+    private Vector3f offset;
 
     /*
     ###########################
@@ -255,6 +259,7 @@ public class Camera extends Component {
         this.zFar = zFar;
         this.projectionMatrix = new Matrix4f();
         this.viewMatrix = new Matrix4f();
+        this.viewProjection = new Matrix4f();
         this.inverseProjection = new Matrix4f();
         this.inverseView = new Matrix4f();
         this.projectionMatrixHUD = new Matrix4f();
@@ -262,6 +267,7 @@ public class Camera extends Component {
         this.inverseProjectionHUD = new Matrix4f();
         this.inverseViewHUD = new Matrix4f();
         this.frustrum = new Frustrum();
+        this.offset = new Vector3f();
         updateCameraVectors();
         update(0);
     }
@@ -274,10 +280,17 @@ public class Camera extends Component {
 
     @Override
     public void update(float dt) {
+        updatePosition();
         updateProjectionMatrix();
         updateViewMatrix();
-        Matrix4f vp = new Matrix4f(projectionMatrix).mul(viewMatrix);
-        frustrum.update(vp);
+        viewProjection = new Matrix4f(projectionMatrix).mul(viewMatrix);
+        frustrum.update(viewProjection);
+    }
+
+    private void updatePosition() {
+        if (gameObject != null && gameObject.transform != null) {
+            position.set(new Vector3f(gameObject.transform.position).add(offset));
+        }
     }
 
     public void updateProjectionMatrix() {
@@ -312,6 +325,7 @@ public class Camera extends Component {
         return viewMatrixHUD;
     }
 
+    // Todo: remove
     /**
      * Processes input received from any keyboard-like input system.
      */
@@ -402,18 +416,12 @@ public class Camera extends Component {
         return projectionMatrix;
     }
 
-    public void setProjectionMatrix(Matrix4f projectionMatrix) {
-        this.projectionMatrix = projectionMatrix;
-        this.projectionMatrix.invert(this.inverseProjection);
-    }
-
     public Matrix4f getViewMatrix() {
         return viewMatrix;
     }
 
-    public void setViewMatrix(Matrix4f viewMatrix) {
-        this.viewMatrix = viewMatrix;
-        this.viewMatrix.invert(this.inverseView);
+    public Matrix4f getViewProjection() {
+        return viewProjection;
     }
 
     public Matrix4f getInverseProjection() {
@@ -514,6 +522,14 @@ public class Camera extends Component {
 
     public void setPitch(float pitch) {
         this.pitch = pitch;
+    }
+
+    public void setOffset(Vector3f offset) {
+        this.offset.set(offset);
+    }
+
+    public Vector3f getOffset() {
+        return offset;
     }
 
     @Override

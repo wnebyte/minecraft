@@ -5,26 +5,11 @@ import com.github.wnebyte.minecraft.core.Component;
 
 public class Rigidbody extends Component {
 
-    private Vector3f position;
-
     private Vector3f velocity;
 
     private Vector3f acceleration;
 
     private boolean sensor;
-
-    @Override
-    public void update(float dt) {
-       // position.set(gameObject.transform.position);
-    }
-
-    public Vector3f getPosition() {
-        return position;
-    }
-
-    public void setPosition(Vector3f position) {
-        this.position = position;
-    }
 
     public Vector3f getVelocity() {
         return velocity;

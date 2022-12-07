@@ -11,6 +11,8 @@ import com.github.wnebyte.minecraft.ui.JGuiWindow;
 import com.github.wnebyte.minecraft.world.World;
 import com.github.wnebyte.minecraft.components.Inventory;
 import com.github.wnebyte.minecraft.ui.Hud;
+import org.joml.Vector3f;
+
 import static com.github.wnebyte.minecraft.core.KeyListener.isKeyBeginPress;
 import static com.github.wnebyte.minecraft.core.KeyListener.isKeyPressed;
 import static org.lwjgl.glfw.GLFW.*;
@@ -59,23 +61,13 @@ public class GameScene extends Scene {
         if (isKeyPressed(GLFW_KEY_ESCAPE)) {
             Application.getWindow().setWindowShouldClose(true);
         }
-        if (isKeyPressed(GLFW_KEY_W)) {
-            camera.handleKeyboard(Camera.Movement.FORWARD, dt);
+        if (isKeyPressed(GLFW_KEY_KP_ADD)) {
+            Vector3f offset = camera.getOffset();
+            offset.z += 0.5f;
         }
-        if (isKeyPressed(GLFW_KEY_S)) {
-            camera.handleKeyboard(Camera.Movement.BACKWARD, dt);
-        }
-        if (isKeyPressed(GLFW_KEY_A)) {
-            camera.handleKeyboard(Camera.Movement.LEFT, dt);
-        }
-        if (isKeyPressed(GLFW_KEY_D)) {
-            camera.handleKeyboard(Camera.Movement.RIGHT, dt);
-        }
-        if (isKeyPressed(GLFW_KEY_SPACE)) {
-            camera.handleKeyboard(Camera.Movement.UP, dt);
-        }
-        if (isKeyPressed(GLFW_KEY_LEFT_CONTROL)) {
-            camera.handleKeyboard(Camera.Movement.DOWN, dt);
+        if (isKeyPressed(GLFW_KEY_KP_SUBTRACT)) {
+            Vector3f offset = camera.getOffset();
+            offset.z -= 0.5f;
         }
         if (isKeyPressed(GLFW_KEY_COMMA)) {
             camera.resetZoom();
