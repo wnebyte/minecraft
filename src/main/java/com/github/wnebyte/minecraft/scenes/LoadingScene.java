@@ -20,7 +20,7 @@ public class LoadingScene extends Scene {
     ###########################
     */
 
-    private static class ResourceLoader implements Runnable {
+    public static class ResourceLoader implements Runnable {
 
         private final String blockTexturePath = Assets.DIR + "/images/generated/packedTextures.png";
 

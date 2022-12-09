@@ -1,6 +1,7 @@
 package com.github.wnebyte.minecraft.core;
 
 import java.util.Objects;
+import org.joml.Vector3f;
 
 public abstract class Component {
 
@@ -17,6 +18,10 @@ public abstract class Component {
     public void start(Scene scene) {}
 
     public void update(float dt) {}
+
+    public void preSolve(GameObject go, Vector3f contactNormal) {}
+
+    public void postSolve(GameObject go, Vector3f contactNormal) {}
 
     public void destroy() {}
 

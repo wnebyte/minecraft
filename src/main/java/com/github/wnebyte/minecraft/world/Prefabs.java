@@ -30,7 +30,7 @@ public class Prefabs {
         rb.setAcceleration(new Vector3f());
         go.addComponent(rb);
         BoxCollider bc = new BoxCollider();
-        bc.setSize(new Vector3f(1f, 1f, 1f));
+        bc.setSize(new Vector3f(scale));
         bc.setOffset(new Vector3f(0f, 0f, 0f));
         go.addComponent(bc);
         return go;

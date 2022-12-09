@@ -59,7 +59,7 @@ public class GameScene extends Scene {
     @Override
     public void processInput(float dt) {
         if (isKeyPressed(GLFW_KEY_ESCAPE)) {
-            Application.getWindow().setWindowShouldClose(true);
+            Application.getWindow().setShouldClose(true);
         }
         if (isKeyPressed(GLFW_KEY_KP_ADD)) {
             Vector3f offset = camera.getOffset();

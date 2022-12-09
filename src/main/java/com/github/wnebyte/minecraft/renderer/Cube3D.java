@@ -7,7 +7,7 @@ import com.github.wnebyte.minecraft.core.Transform;
 
 public class Cube3D {
 
-    private Transform transform;
+    public Transform transform;
 
     private Vector3f color;
 

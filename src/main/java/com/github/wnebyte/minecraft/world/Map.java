@@ -49,9 +49,9 @@ public class Map implements Iterable<Chunk> {
     }
 
     public Block getBlock(Vector3f v) {
-        int i = (int)Math.floor(v.x / Chunk.WIDTH);
+        int i = (int)Math.floor(v.x) / Chunk.WIDTH;
         int j = (int)Math.floor(v.y);
-        int k = (int)Math.floor(v.z / Chunk.DEPTH);
+        int k = (int)Math.floor(v.z) / Chunk.DEPTH;
         Chunk chunk = getChunk(i, k);
         if (chunk != null && j >= 0 && j < Chunk.HEIGHT - 1) {
             i = (int)Math.floor(v.x) - (i * Chunk.WIDTH);

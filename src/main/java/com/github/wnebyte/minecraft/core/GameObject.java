@@ -3,10 +3,23 @@ package com.github.wnebyte.minecraft.core;
 import java.util.Objects;
 import java.util.List;
 import java.util.ArrayList;
+import org.joml.Vector3f;
 
 public class GameObject {
 
+    /*
+    ###########################
+    #      STATIC FIELDS      #
+    ###########################
+    */
+
     private static int ID_COUNTER = 0;
+
+    /*
+    ###########################
+    #          FIELDS         #
+    ###########################
+    */
 
     public Transform transform;
 
@@ -16,11 +29,23 @@ public class GameObject {
 
     private final List<Component> components;
 
+    /*
+    ###########################
+    #       CONSTRUCTORS      #
+    ###########################
+    */
+
     public GameObject(String name) {
         this.name = name;
         this.id = ID_COUNTER++;
         this.components = new ArrayList<>();
     }
+
+    /*
+    ###########################
+    #          METHODS        #
+    ###########################
+    */
 
     public void start(Scene scene) {
         for (int i = 0; i < components.size(); i++) {
@@ -33,6 +58,20 @@ public class GameObject {
         for (int i = 0; i < components.size(); i++) {
             Component c = components.get(i);
             c.update(dt);
+        }
+    }
+
+    public void preSolve(GameObject go, Vector3f contactNormal) {
+        for (int i = 0; i < components.size(); i++) {
+            Component c = components.get(i);
+            c.preSolve(go, contactNormal);
+        }
+    }
+
+    public void postSolve(GameObject go, Vector3f contactNormal) {
+        for (int i = 0; i < components.size(); i++) {
+            Component c = components.get(i);
+            c.postSolve(go, contactNormal);
         }
     }
 
@@ -70,6 +109,11 @@ public class GameObject {
 
     public void addComponent(Component c) {
         components.add(c);
+        c.gameObject = this;
+    }
+
+    public void addComponent(int index, Component c) {
+        components.add(index, c);
         c.gameObject = this;
     }
 

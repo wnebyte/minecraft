@@ -4,7 +4,6 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 import com.github.wnebyte.minecraft.core.Application;
 import com.github.wnebyte.minecraft.core.Camera;
-import com.github.wnebyte.minecraft.core.Scene;
 import com.github.wnebyte.minecraft.core.Transform;
 import com.github.wnebyte.minecraft.renderer.Cube3D;
 import com.github.wnebyte.minecraft.renderer.Renderer;
@@ -134,7 +133,7 @@ public class CubeRotationTestScene {
     public void processInput(float dt) {
         Vector4f rotation = rotations[index];
         if (isKeyBeginPress(GLFW_KEY_ESCAPE)) {
-            Application.getWindow().setWindowShouldClose(true);
+            Application.getWindow().setShouldClose(true);
         }
         if (isKeyPressed(GLFW_KEY_RIGHT)) {
             rotation.x += 0.5f;

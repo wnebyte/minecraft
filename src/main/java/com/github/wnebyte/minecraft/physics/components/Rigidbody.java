@@ -5,9 +5,9 @@ import com.github.wnebyte.minecraft.core.Component;
 
 public class Rigidbody extends Component {
 
-    private Vector3f velocity;
+    public Vector3f velocity;
 
-    private Vector3f acceleration;
+    public Vector3f acceleration;
 
     private boolean sensor;
 
@@ -19,12 +19,20 @@ public class Rigidbody extends Component {
         this.velocity = velocity;
     }
 
+    public void setVelocity(float x, float y, float z) {
+        this.velocity.set(x, y, z);
+    }
+
     public Vector3f getAcceleration() {
         return acceleration;
     }
 
     public void setAcceleration(Vector3f acceleration) {
         this.acceleration = acceleration;
+    }
+
+    public void setAcceleration(float x, float y, float z) {
+        this.acceleration.set(x, y, z);
     }
 
     public boolean isSensor() {

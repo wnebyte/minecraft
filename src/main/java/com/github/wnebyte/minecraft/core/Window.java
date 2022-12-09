@@ -177,7 +177,7 @@ public class Window {
         glViewport(0, 0, width, height);
     }
 
-    public void setWindowShouldClose(boolean value) {
+    public void setShouldClose(boolean value) {
         glfwSetWindowShouldClose(glfwWindow, value);
     }
 

@@ -1,11 +1,9 @@
 package com.github.wnebyte.minecraft.scenes.test;
 
-import org.joml.Vector2f;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.ui.*;
 import com.github.wnebyte.minecraft.world.BlockMap;
 import com.github.wnebyte.minecraft.core.Application;
-import com.github.wnebyte.minecraft.core.Scene;
 import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.core.MouseListener;
 import com.github.wnebyte.minecraft.renderer.Renderer;
@@ -94,7 +92,7 @@ public class JGuiTestScene {
 
     public void processInput(float dt) {
         if (isKeyBeginPress(GLFW_KEY_ESCAPE)) {
-            Application.getWindow().setWindowShouldClose(true);
+            Application.getWindow().setShouldClose(true);
         }
     }
 

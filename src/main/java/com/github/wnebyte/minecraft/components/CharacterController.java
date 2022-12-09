@@ -51,12 +51,6 @@ public class CharacterController extends Component {
         if (KeyListener.isKeyPressed(GLFW_KEY_LEFT_CONTROL)) {
             handleMovement(Camera.Movement.DOWN, dt);
         }
-
-        BoxCollider bc = gameObject.getComponent(BoxCollider.class);
-        if (bc != null) {
-            renderer.drawBox3D(new Vector3f(gameObject.transform.position).add(bc.getOffset()), bc.getSize(),
-                    0, new Vector3f(1f, 1f, 1f));
-        }
     }
 
     private void handleMovement(Camera.Movement direction, float dt) {

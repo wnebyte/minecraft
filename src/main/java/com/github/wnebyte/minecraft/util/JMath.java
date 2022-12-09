@@ -140,6 +140,10 @@ public class JMath {
         return Math.max(a, Math.max(b, c));
     }
 
+    public static float min(float a, float b, float c) {
+        return Math.min(a, Math.min(b, c));
+    }
+
     public static float absMax(float a, float b, float c) {
         return Math.max(Math.abs(a), Math.max(Math.abs(b), Math.abs(c)));
     }

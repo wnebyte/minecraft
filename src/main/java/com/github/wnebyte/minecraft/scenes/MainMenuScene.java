@@ -106,7 +106,7 @@ public class MainMenuScene extends Scene {
         }
         JGui.centerNextElement();
         if (JGui.imageButton(exitButton)) {
-            Application.getWindow().setWindowShouldClose(true);
+            Application.getWindow().setShouldClose(true);
         }
         JGui.end();
     }

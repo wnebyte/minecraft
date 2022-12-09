@@ -5,9 +5,22 @@ import com.github.wnebyte.minecraft.core.Component;
 
 public class BoxCollider extends Component {
 
+    private Vector3f size;
+
     private Vector3f offset;
 
-    private Vector3f size;
+    public BoxCollider() {
+        this(new Vector3f(), new Vector3f());
+    }
+
+    public BoxCollider(Vector3f size) {
+        this(size, new Vector3f());
+    }
+
+    public BoxCollider(Vector3f size, Vector3f offset) {
+        this.size = size;
+        this.offset = offset;
+    }
 
     public Vector3f getOffset() {
         return offset;

@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+
+import com.github.wnebyte.minecraft.physics.components.BoxCollider;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
 import org.joml.Vector3f;
@@ -72,8 +74,8 @@ public class World {
         this.skybox = new Skybox(camera);
         this.physics = new Physics(map);
         this.gameObjects = new ArrayList<>();
-        GameObject playerGo = Prefabs.createPlayer(0, 0, 0, 1f);
-        playerGo.addComponent(camera);
+        GameObject playerGo = Prefabs.createPlayer(0, 0, 0, 1.0f);
+        playerGo.addComponent(0, camera);
         gameObjects.add(playerGo);
         GameObject sunGo = Prefabs.createSun(200, 200, 200, 20f);
         gameObjects.add(sunGo);
@@ -133,6 +135,14 @@ public class World {
         }
 
         physics.update(dt);
+
+        GameObject go = getGameObject("Player");
+        BoxCollider bc = go.getComponent(BoxCollider.class);
+        if (bc != null) {
+            Renderer renderer = Renderer.getInstance();
+            renderer.drawBox3D(new Vector3f(go.transform.position).add(bc.getOffset()), bc.getSize(),
+                    0, new Vector3f(252f / 255f, 248f / 255f, 3f / 255f));
+        }
     }
 
     public void load(AtomicLong counter) {
@@ -171,13 +181,13 @@ public class World {
             try {
                 for (Future<Chunk> it : futures) {
                     Chunk chunk = it.get();
-                }
-                for (Chunk c : chunks) {
-                    assert c.isLoaded() : "Chunk is not loaded";
-                    c.mesh();
                     if (counter != null) {
                         counter.incrementAndGet();
                     }
+                }
+                for (Chunk c : chunks) {
+                    assert c.isLoaded() : "Chunk is not loaded";
+                    c.meshAsync();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
