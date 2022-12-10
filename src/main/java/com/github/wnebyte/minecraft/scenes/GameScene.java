@@ -50,7 +50,7 @@ public class GameScene extends Scene {
     @Override
     public void update(float dt) {
         for (JGuiWindow window : windows) {
-            window.jgui(dt);
+            window.update(dt);
         }
         world.update(dt);
         hud.update(dt);

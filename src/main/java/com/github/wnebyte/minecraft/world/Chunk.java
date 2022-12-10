@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import org.joml.Vector2i;
@@ -455,12 +456,12 @@ public class Chunk {
         subchunk.setState(Subchunk.State.MESHED);
     }
 
-    public synchronized void meshAsync() {
-        Application.submit(this::mesh);
+    public synchronized Future<Chunk> meshAsync() {
+        return Application.submit(this::mesh, this);
     }
 
-    public synchronized void meshAsync(int subchunkLevel) {
-        Application.submit(() -> this.mesh(subchunkLevel));
+    public synchronized Future<Chunk> meshAsync(int subchunkLevel) {
+        return Application.submit(() -> this.mesh(subchunkLevel), this);
     }
 
     private void createRenderData(int range, VertexBuffer buffer, Block b, int i, int j, int k, int access) {
@@ -605,6 +606,10 @@ public class Chunk {
         cXP = map.getChunk(chunkCoordX + 1, chunkCoordZ);
         cZN = map.getChunk(chunkCoordX, chunkCoordZ - 1);
         cZP = map.getChunk(chunkCoordX, chunkCoordZ + 1);
+    }
+
+    public int getHeight(int x, int z) {
+        return generator.getHeight(x, z, MIN_BIOME_HEIGHT, MAX_BIOME_HEIGHT);
     }
 
     public Vector3f getChunkPos() {

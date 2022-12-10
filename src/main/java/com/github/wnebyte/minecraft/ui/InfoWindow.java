@@ -10,6 +10,10 @@ import com.github.wnebyte.minecraft.util.JColor;
 
 public class InfoWindow implements JGuiWindow {
 
+    private static final float TEXT_SCALE = 0.0045f;
+
+    private static final int TEXT_COLOR = JColor.WHITE_HEX;
+
     private Camera camera;
 
     private List<Float> frames = new ArrayList<>();
@@ -25,17 +29,21 @@ public class InfoWindow implements JGuiWindow {
     }
 
     @Override
-    public void jgui(float dt) {
+    public void update(float dt) {
         debounce -= dt;
         frames.add(dt);
 
         Vector3f pos = camera.getPosition();
-        Vector2i cpos = Chunk.toChunkCoords(pos);
+        Vector2i cc = Chunk.toChunkCoords(pos);
+        float pitch = camera.getPitch();
+        float yaw = camera.getYaw();
 
         JGui.begin(-3.0f, 1.3f, 0.5f, 0.3f, JColor.BLACK_HEX);
-        JGui.label(String.format("%.0f, %.0f, %.0f", pos.x, pos.y, pos.z), 0.0045f, JColor.WHITE_HEX);
-        JGui.label(String.format("%d %d", cpos.x, cpos.y), 0.0045f, JColor.WHITE_HEX);
-        JGui.label(String.format("%.1f", fps), 0.0045f, JColor.WHITE_HEX);
+        JGui.label(String.format("%.0f, %.0f, %.0f", pos.x, pos.y, pos.z), TEXT_SCALE, TEXT_COLOR);
+        JGui.label(String.format("%d %d",            cc.x, cc.y),          TEXT_SCALE, TEXT_COLOR);
+        JGui.label(String.format("%.1f",             fps),                 TEXT_SCALE, TEXT_COLOR);
+       // JGui.label(String.format("%.2f",             pitch),               TEXT_SCALE, TEXT_COLOR);
+       // JGui.label(String.format("%.2f",             yaw),                 TEXT_SCALE, TEXT_COLOR);
         JGui.end();
 
         if (debounce <= 0) {

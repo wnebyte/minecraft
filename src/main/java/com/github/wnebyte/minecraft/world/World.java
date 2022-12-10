@@ -7,14 +7,13 @@ import java.util.ArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-
-import com.github.wnebyte.minecraft.physics.components.BoxCollider;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
 import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.core.*;
-import com.github.wnebyte.minecraft.physics.Physics;
 import com.github.wnebyte.minecraft.renderer.*;
+import com.github.wnebyte.minecraft.physics.Physics;
+import com.github.wnebyte.minecraft.physics.components.BoxCollider;
 import com.github.wnebyte.minecraft.util.*;
 
 public class World {
@@ -30,6 +29,8 @@ public class World {
     public static final int CHUNK_CAPACITY = 2 * (CHUNK_RADIUS * CHUNK_RADIUS);
 
     public static final int CHUNK_SPAWN_AREA = 9 * 9;
+
+    private static final float PLAYER_HEIGHT = 2.0f;
 
     /*
     ###########################
@@ -74,7 +75,7 @@ public class World {
         this.skybox = new Skybox(camera);
         this.physics = new Physics(map);
         this.gameObjects = new ArrayList<>();
-        GameObject playerGo = Prefabs.createPlayer(0, 0, 0, 1.0f);
+        GameObject playerGo = Prefabs.createPlayer(0, 0, 0, 1.0f, PLAYER_HEIGHT, 1.0f);
         playerGo.addComponent(0, camera);
         gameObjects.add(playerGo);
         GameObject sunGo = Prefabs.createSun(200, 200, 200, 20f);
@@ -97,7 +98,7 @@ public class World {
         Vector3f pos = new Vector3f(CHUNK_SPAWN_AREA / 2.0f, 140f, CHUNK_SPAWN_AREA / 2.0f);
         GameObject playerGo = getGameObject("Player");
         playerGo.transform.position.set(pos);
-        camera.setOffset(new Vector3f(0, 2f, -5f));
+        camera.setOffset(new Vector3f(0, PLAYER_HEIGHT / 2.0f, 0));
     }
 
     public void update(float dt) {
@@ -135,7 +136,9 @@ public class World {
         }
 
         physics.update(dt);
+    }
 
+    private void drawPlayerBoxCollider() {
         GameObject go = getGameObject("Player");
         BoxCollider bc = go.getComponent(BoxCollider.class);
         if (bc != null) {
@@ -181,13 +184,17 @@ public class World {
             try {
                 for (Future<Chunk> it : futures) {
                     Chunk chunk = it.get();
+                }
+                futures.clear();
+                for (Chunk c : chunks) {
+                    assert c.isLoaded() : "Chunk is not loaded";
+                    futures.add(c.meshAsync());
+                }
+                for (Future<Chunk> it : futures) {
+                    it.get();
                     if (counter != null) {
                         counter.incrementAndGet();
                     }
-                }
-                for (Chunk c : chunks) {
-                    assert c.isLoaded() : "Chunk is not loaded";
-                    c.meshAsync();
                 }
             } catch (Exception e) {
                 e.printStackTrace();

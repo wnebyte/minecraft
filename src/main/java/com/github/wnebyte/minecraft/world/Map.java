@@ -44,20 +44,19 @@ public class Map implements Iterable<Chunk> {
         return getChunk(i, k);
     }
 
-    public Chunk getChunk(Vector3f vec3f) {
-        return getChunk(vec3f.x, vec3f.y, vec3f.z);
+    public Chunk getChunk(Vector3f pos) {
+        return getChunk(pos.x, pos.y, pos.z);
     }
 
-    public Block getBlock(Vector3f v) {
-        int i = (int)Math.floor(v.x) / Chunk.WIDTH;
-        int j = (int)Math.floor(v.y);
-        int k = (int)Math.floor(v.z) / Chunk.DEPTH;
+    public Block getBlock(Vector3f pos) {
+        int i = (int)Math.floor(pos.x / Chunk.WIDTH);
+        int j = (int)Math.floor(pos.y);
+        int k = (int)Math.floor(pos.z / Chunk.DEPTH);
         Chunk chunk = getChunk(i, k);
-        if (chunk != null && j >= 0 && j < Chunk.HEIGHT - 1) {
-            i = (int)Math.floor(v.x) - (i * Chunk.WIDTH);
-            k = (int)Math.floor(v.z) - (k * Chunk.DEPTH);
-            Block b = chunk.getBlock(i, j, k);
-            return b;
+        if (chunk != null && j >= 0 && j < Chunk.HEIGHT) {
+            i = (int)Math.floor(pos.x - (i * Chunk.WIDTH));
+            k = (int)Math.floor(pos.z - (k * Chunk.DEPTH));
+            return chunk.getBlock(i, j, k);
         }
         return null;
     }

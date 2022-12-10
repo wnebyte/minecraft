@@ -44,4 +44,8 @@ public class Physics {
     public RaycastInfo raycast(Vector3f origin, Vector3f normal, float maxDistance) {
         return world.raycast(origin, normal, maxDistance);
     }
+
+    public boolean isOnGround(GameObject go, float height) {
+        return world.isOnGround(go, height);
+    }
 }

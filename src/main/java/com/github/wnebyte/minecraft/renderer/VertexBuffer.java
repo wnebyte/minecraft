@@ -35,7 +35,7 @@ public class VertexBuffer {
 
     public static final int STRIDE_BYTES = STRIDE * Integer.BYTES;
 
-    public static final int VERTEX_CAPACITY = 8200;
+    public static final int VERTEX_CAPACITY = 10_000;
 
     public static final int POSITION_BITMASK = 0xFFFF0000;
 
@@ -66,8 +66,15 @@ public class VertexBuffer {
     */
 
     public VertexBuffer(ByteBuffer buffer) {
+        this(buffer, 3);
+    }
+
+    public VertexBuffer(ByteBuffer buffer, int nRanges) {
         this.data = buffer.asIntBuffer();
-        this.ranges = new Range[]{ new Range(), new Range(), new Range() };
+        this.ranges = new Range[nRanges];
+        for (int i = 0; i < nRanges; i++) {
+            ranges[i] = new Range();
+        }
         this.size = 0;
     }
 
@@ -92,8 +99,6 @@ public class VertexBuffer {
     // TR, TL, BL, BR, TR, BL
     public void append(int index, int position, int uv, byte face, boolean colorByBiome) {
         assert (size <= capacity() - 6) : String.format("Error: (VertexBuffer) Overflow: %d", size + 6);
-        assert (index < ranges.length)  : String.format("Error: (VertexBuffer) Index: '%s' is out of bounds", index);
-        Range range = ranges[index];
         int shared = compress(position, uv, face, (byte)(colorByBiome ? 1 : 0));
         data.put(shared | 0); // TR
         data.put(shared | 3); // TL
@@ -102,6 +107,7 @@ public class VertexBuffer {
         data.put(shared | 0); // TR
         data.put(shared | 2); // BL
         size += STRIDE * 6;
+        Range range = ranges[index];
         range.addToIndex(STRIDE * 6);
         for (int i = index + 1; i < ranges.length; i++) {
             Range r = ranges[i];

@@ -256,6 +256,13 @@ public class World {
         }
     }
 
+    public boolean isOnGround(GameObject go, float height) {
+        BoxCollider bc = go.getComponent(BoxCollider.class);
+        Vector3f origin = new Vector3f(go.transform.position).add(bc.getOffset()).sub(bc.getSize().mul(0.5f));
+        RaycastInfo info = raycast(origin, new Vector3f(0, -1, 0), height);
+        return info.isHit();
+    }
+
     private GameObject createGameObject(Transform transform, Component... components) {
         GameObject go = new GameObject("Local");
         go.transform = transform;

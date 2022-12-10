@@ -140,11 +140,15 @@ public class Camera extends Component {
 
     public static final float DEFAULT_MOUSE_SENSITIVITY =  0.08f;
 
-    public static final float DEFAULT_ZOOM              =  45.0f;
+    public static final float DEFAULT_ZOOM              =  90.0f;
 
     public static final float DEFAULT_Z_NEAR            =  0.1f;
 
     public static final float DEFAULT_Z_FAR             =  100.0f;
+
+    private static final float MIN_PITCH                = -1.5f;
+
+    private static final float MAX_PITCH                = 1.5f;
 
     private static final float PROJECTION_WIDTH         =  6;
 
@@ -367,11 +371,11 @@ public class Camera extends Component {
 
         // make sure that when pitch is out of bounds, screen doesn't get flipped
         if (constrainPitch) {
-            if (pitch > 89.0f) {
-                pitch = 89.0f;
+            if (pitch > MAX_PITCH) {
+                pitch = MAX_PITCH;
             }
-            if (pitch < -89.0f) {
-                pitch = -89.0f;
+            if (pitch < MIN_PITCH) {
+                pitch = MIN_PITCH;
             }
         }
 
