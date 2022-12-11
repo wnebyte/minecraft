@@ -3,15 +3,14 @@ package com.github.wnebyte.minecraft.renderer;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Comparator;
-
-import com.github.wnebyte.minecraft.util.JColor;
-import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.joml.Matrix4f;
 import com.github.wnebyte.minecraft.core.Camera;
 import com.github.wnebyte.minecraft.renderer.fonts.JFont;
 import com.github.wnebyte.minecraft.renderer.fonts.CharInfo;
 import com.github.wnebyte.minecraft.util.Assets;
+import com.github.wnebyte.minecraft.util.JColor;
 import com.github.wnebyte.minecraft.util.JMath;
 import static org.lwjgl.opengl.GL11.*;
 
@@ -54,17 +53,13 @@ public class Renderer {
 
     private final List<Batch<Line3D>> line3DBatches;
 
-    private final List<Batch<Vertex2D>> vertex2DBlendableBatches;
-
     private final List<Batch<Vertex2D>> vertex2DBatches;
 
     private final List<Batch<Vertex3D>> vertex3DBatches;
 
-    private final List<Batch<Cube3D>> cubeBatches;
+    private final List<Batch<Cube3D>> cube3DBatches;
 
     private final List<Batch<?>> batches;
-
-    private final List<Batch<?>> blendableBatches;
 
     private final JFont font;
 
@@ -78,11 +73,9 @@ public class Renderer {
         this.line2DBatches = new ArrayList<>();
         this.line3DBatches = new ArrayList<>();
         this.vertex2DBatches = new ArrayList<>();
-        this.vertex2DBlendableBatches = new ArrayList<>();
         this.vertex3DBatches = new ArrayList<>();
+        this.cube3DBatches = new ArrayList<>();
         this.batches = new ArrayList<>();
-        this.blendableBatches = new ArrayList<>();
-        this.cubeBatches = new ArrayList<>();
         this.font = Assets.getFont(Assets.DIR + "/fonts/Minecraft.ttf", 16);
     }
 
@@ -101,19 +94,23 @@ public class Renderer {
             }
         }
         if (!added) {
-            Batch<Line3D> batch = new Line3DBatchRenderer();
+            Batch<Line3D> batch = new Line3DBatchRenderer(line.getWidth());
             batch.start();
             batch.add(line);
             line3DBatches.add(batch);
-            addBatch(batch, false);
+            batches.add(batch);
         }
+    }
+
+    public void drawLine3D(Vector3f start, Vector3f end, Vector3f color, float width) {
+        drawLine3D(new Line3D(start, end, color, width));
     }
 
     public void drawLine3D(Vector3f start, Vector3f end, Vector3f color) {
         drawLine3D(new Line3D(start, end, color));
     }
 
-    public void drawBox3D(Vector3f center, Vector3f dimensions, float rotation, Vector3f color) {
+    public void drawBox3D(Vector3f center, Vector3f dimensions, float rotation, Vector3f color, float width) {
         Vector3f min = new Vector3f(center).sub(new Vector3f(dimensions).mul(0.5f));
         Vector3f max = new Vector3f(center).add(new Vector3f(dimensions).mul(0.5f));
 
@@ -135,35 +132,39 @@ public class Renderer {
         }
 
         // FRONT
-        drawLine3D(vertices[0], vertices[1], color);
-        drawLine3D(vertices[1], vertices[3], color);
-        drawLine3D(vertices[3], vertices[2], color);
-        drawLine3D(vertices[2], vertices[0], color);
+        drawLine3D(vertices[0], vertices[1], color, width);
+        drawLine3D(vertices[1], vertices[3], color, width);
+        drawLine3D(vertices[3], vertices[2], color, width);
+        drawLine3D(vertices[2], vertices[0], color, width);
         // BACK
-        drawLine3D(vertices[4], vertices[5], color);
-        drawLine3D(vertices[5], vertices[7], color);
-        drawLine3D(vertices[7], vertices[6], color);
-        drawLine3D(vertices[6], vertices[4], color);
+        drawLine3D(vertices[4], vertices[5], color, width);
+        drawLine3D(vertices[5], vertices[7], color, width);
+        drawLine3D(vertices[7], vertices[6], color, width);
+        drawLine3D(vertices[6], vertices[4], color, width);
         // LEFT
-        drawLine3D(vertices[0], vertices[2], color);
-        drawLine3D(vertices[2], vertices[6], color);
-        drawLine3D(vertices[6], vertices[4], color);
-        drawLine3D(vertices[4], vertices[0], color);
+        drawLine3D(vertices[0], vertices[2], color, width);
+        drawLine3D(vertices[2], vertices[6], color, width);
+        drawLine3D(vertices[6], vertices[4], color, width);
+        drawLine3D(vertices[4], vertices[0], color, width);
         // RIGHT
-        drawLine3D(vertices[1], vertices[5], color);
-        drawLine3D(vertices[5], vertices[7], color);
-        drawLine3D(vertices[7], vertices[3], color);
-        drawLine3D(vertices[3], vertices[1], color);
+        drawLine3D(vertices[1], vertices[5], color, width);
+        drawLine3D(vertices[5], vertices[7], color, width);
+        drawLine3D(vertices[7], vertices[3], color, width);
+        drawLine3D(vertices[3], vertices[1], color, width);
         // TOP
-        drawLine3D(vertices[0], vertices[4], color);
-        drawLine3D(vertices[4], vertices[5], color);
-        drawLine3D(vertices[5], vertices[1], color);
-        drawLine3D(vertices[1], vertices[0], color);
+        drawLine3D(vertices[0], vertices[4], color, width);
+        drawLine3D(vertices[4], vertices[5], color, width);
+        drawLine3D(vertices[5], vertices[1], color, width);
+        drawLine3D(vertices[1], vertices[0], color, width);
         // BOTTOM
-        drawLine3D(vertices[2], vertices[6], color);
-        drawLine3D(vertices[6], vertices[7], color);
-        drawLine3D(vertices[7], vertices[3], color);
-        drawLine3D(vertices[3], vertices[2], color);
+        drawLine3D(vertices[2], vertices[6], color, width);
+        drawLine3D(vertices[6], vertices[7], color, width);
+        drawLine3D(vertices[7], vertices[3], color, width);
+        drawLine3D(vertices[3], vertices[2], color, width);
+    }
+
+    public void drawBox3D(Vector3f center, Vector3f dimensions, float rotation, Vector3f color) {
+        drawBox3D(center, dimensions, rotation, color, Line3D.DEFAULT_WIDTH);
     }
 
     public void drawLine2D(Line2D line) {
@@ -175,19 +176,23 @@ public class Renderer {
             }
         }
         if (!added) {
-            Batch<Line2D> batch = new Line2DBatchRenderer(line.getZIndex());
+            Batch<Line2D> batch = new Line2DBatchRenderer(line.getZIndex(), line.getWidth());
             batch.start();
             batch.add(line);
             line2DBatches.add(batch);
-            addBatch(batch, false);
+            batches.add(batch);
         }
+    }
+
+    public void drawLine2D(Vector2f start, Vector2f end, int zIndex, Vector3f color, float width) {
+        drawLine2D(new Line2D(start, end, zIndex, color, width));
     }
 
     public void drawLine2D(Vector2f start, Vector2f end, int zIndex, Vector3f color) {
         drawLine2D(new Line2D(start, end, zIndex, color));
     }
 
-    public void drawBox2D(Vector2f center, Vector2f dimensions, int zIndex, float rotation, Vector3f color) {
+    public void drawBox2D(Vector2f center, Vector2f dimensions, int zIndex, float rotation, Vector3f color, float width) {
         Vector2f min = new Vector2f(center).sub(new Vector2f(dimensions).mul(0.5f));
         Vector2f max = new Vector2f(center).add(new Vector2f(dimensions).mul(0.5f));
 
@@ -204,32 +209,31 @@ public class Renderer {
             }
         }
 
-        drawLine2D(vertices[0], vertices[1], zIndex, color);
-        drawLine2D(vertices[0], vertices[3], zIndex, color);
-        drawLine2D(vertices[1], vertices[2], zIndex, color);
-        drawLine2D(vertices[2], vertices[3], zIndex, color);
+        drawLine2D(vertices[0], vertices[1], zIndex, color, width);
+        drawLine2D(vertices[0], vertices[3], zIndex, color, width);
+        drawLine2D(vertices[1], vertices[2], zIndex, color, width);
+        drawLine2D(vertices[2], vertices[3], zIndex, color, width);
     }
 
-    public void drawVertex2D(Vertex2D vertex, boolean blend) {
-        List<Batch<Vertex2D>> vBatches = blend ? vertex2DBlendableBatches : vertex2DBatches;
+    public void drawBox2D(Vector2f center, Vector2f dimensions, int zIndex, float rotation, Vector3f color) {
+        drawBox2D(center, dimensions, zIndex, rotation, color, Line2D.DEFAULT_WIDTH);
+    }
+
+    public void drawVertex2D(Vertex2D vertex) {
         boolean added = false;
-        for (Batch<Vertex2D> batch : vBatches) {
+        for (Batch<Vertex2D> batch : vertex2DBatches) {
             if (batch.add(vertex)) {
                 added = true;
                 break;
             }
         }
         if (!added) {
-            Batch<Vertex2D> batch = new Vertex2DBatchRenderer(vertex.getZIndex());
+            Batch<Vertex2D> batch = new Vertex2DBatchRenderer(vertex.getZIndex(), vertex.isBlend());
             batch.start();
             batch.add(vertex);
-            vBatches.add(batch);
-            addBatch(batch, blend);
+            vertex2DBatches.add(batch);
+            batches.add(batch);
         }
-    }
-
-    public void drawVertex2D(Vertex2D vertex) {
-        drawVertex2D(vertex, false);
     }
 
     public void drawQuad2D(float x, float y, int z, float width, float height, int rgb) {
@@ -246,10 +250,10 @@ public class Renderer {
         Vector3f color = JColor.toVec3f(rgb);
 
         Vertex2D[] vertices = {
-                new Vertex2D(new Vector2f(x1, y0), z, color, new Vector2f(), -1),
-                new Vertex2D(new Vector2f(x1, y1), z, color, new Vector2f(), -1),
-                new Vertex2D(new Vector2f(x0, y1), z, color, new Vector2f(), -1),
-                new Vertex2D(new Vector2f(x0, y0), z, color, new Vector2f(), -1)
+                new Vertex2D(new Vector2f(x1, y0), z, color, new Vector2f(), -1, false),
+                new Vertex2D(new Vector2f(x1, y1), z, color, new Vector2f(), -1, false),
+                new Vertex2D(new Vector2f(x0, y1), z, color, new Vector2f(), -1, false),
+                new Vertex2D(new Vector2f(x0, y0), z, color, new Vector2f(), -1, false)
         };
 
         for (Vertex2D vertex : vertices) {
@@ -274,14 +278,14 @@ public class Renderer {
         Vector3f color = JColor.toVec3f(rgb);
 
         Vertex2D[] vertices = {
-                new Vertex2D(new Vector2f(x1, y0), z, color, new Vector2f(uvs[0].x, uvs[0].y), texId),
-                new Vertex2D(new Vector2f(x1, y1), z, color, new Vector2f(uvs[1].x, uvs[1].y), texId),
-                new Vertex2D(new Vector2f(x0, y1), z, color, new Vector2f(uvs[2].x, uvs[2].y), texId),
-                new Vertex2D(new Vector2f(x0, y0), z, color, new Vector2f(uvs[3].x, uvs[3].y), texId)
+                new Vertex2D(new Vector2f(x1, y0), z, color, new Vector2f(uvs[0].x, uvs[0].y), texId, blend),
+                new Vertex2D(new Vector2f(x1, y1), z, color, new Vector2f(uvs[1].x, uvs[1].y), texId, blend),
+                new Vertex2D(new Vector2f(x0, y1), z, color, new Vector2f(uvs[2].x, uvs[2].y), texId, blend),
+                new Vertex2D(new Vector2f(x0, y0), z, color, new Vector2f(uvs[3].x, uvs[3].y), texId, blend)
         };
 
         for (Vertex2D vertex : vertices) {
-            drawVertex2D(vertex, blend);
+            drawVertex2D(vertex);
         }
     }
 
@@ -314,14 +318,14 @@ public class Renderer {
             float uy1 = uvs[1].y;
 
             Vertex2D[] vertices = {
-                    new Vertex2D(new Vector2f(x1, y0), z, color, new Vector2f(ux1, uy0), texId),
-                    new Vertex2D(new Vector2f(x1, y1), z, color, new Vector2f(ux1, uy1), texId),
-                    new Vertex2D(new Vector2f(x0, y1), z, color, new Vector2f(ux0, uy1), texId),
-                    new Vertex2D(new Vector2f(x0, y0), z, color, new Vector2f(ux0, uy0), texId)
+                    new Vertex2D(new Vector2f(x1, y0), z, color, new Vector2f(ux1, uy0), texId, true),
+                    new Vertex2D(new Vector2f(x1, y1), z, color, new Vector2f(ux1, uy1), texId, true),
+                    new Vertex2D(new Vector2f(x0, y1), z, color, new Vector2f(ux0, uy1), texId, true),
+                    new Vertex2D(new Vector2f(x0, y0), z, color, new Vector2f(ux0, uy0), texId, true)
             };
 
             for (Vertex2D vertex : vertices) {
-                drawVertex2D(vertex, true);
+                drawVertex2D(vertex);
             }
 
             x += scale * width;
@@ -341,7 +345,7 @@ public class Renderer {
             batch.start();
             batch.add(vertex);
             vertex3DBatches.add(batch);
-            addBatch(batch, false);
+            batches.add(batch);
         }
     }
 
@@ -362,7 +366,7 @@ public class Renderer {
 
     public void drawCube3D(Cube3D cube) {
         boolean added = false;
-        for (Batch<Cube3D> batch : cubeBatches) {
+        for (Batch<Cube3D> batch : cube3DBatches) {
             if (batch.add(cube)) {
                 added = true;
                 break;
@@ -372,8 +376,8 @@ public class Renderer {
             Batch<Cube3D> batch = new Cube3DBatchRenderer();
             batch.start();
             batch.add(cube);
-            cubeBatches.add(batch);
-            addBatch(batch, true);
+            cube3DBatches.add(batch);
+            batches.add(batch);
         }
     }
 
@@ -389,7 +393,7 @@ public class Renderer {
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         }
         // flush batches
-        for (Batch<Cube3D> batch : cubeBatches) {
+        for (Batch<Cube3D> batch : cube3DBatches) {
             batch.render(viewMatrix, projectionMatrix);
         }
     }
@@ -397,43 +401,20 @@ public class Renderer {
     public void flush(Camera camera) {
         // set render states
         glEnable(GL_CULL_FACE);
-        glDisable(GL_BLEND);
-
-        // non-blendable
+        // sort all batches
         batches.sort(COMPARATOR);
+        // flush all batches
         for (int i = 0; i < batches.size(); i++) {
             Batch<?> batch = batches.get(i);
-            batch.render(camera);
-        }
-
-        // set render states
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        // blendable
-        blendableBatches.sort(COMPARATOR);
-        for (int i = 0; i < blendableBatches.size(); i++) {
-            Batch<?> batch = blendableBatches.get(i);
             batch.render(camera);
         }
     }
 
     public void destroy() {
-        for (int i = 0; i < blendableBatches.size(); i++) {
-            Batch<?> batch = blendableBatches.get(i);
-            batch.destroy();
-        }
         for (int i = 0; i < batches.size(); i++) {
             Batch<?> batch = batches.get(i);
             batch.destroy();
         }
     }
 
-    private void addBatch(Batch<?> batch, boolean blend) {
-        if (blend) {
-            blendableBatches.add(batch);
-        } else {
-            batches.add(batch);
-        }
-    }
 }

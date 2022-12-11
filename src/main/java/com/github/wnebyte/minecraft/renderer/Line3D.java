@@ -5,16 +5,25 @@ import org.joml.Vector3f;
 
 public class Line3D {
 
+    public static final float DEFAULT_WIDTH = 2.0f;
+
     private Vector3f start;
 
     private Vector3f end;
 
     private Vector3f color;
 
+    private float width;
+
     public Line3D(Vector3f start, Vector3f end, Vector3f color) {
+        this(start, end, color, DEFAULT_WIDTH);
+    }
+
+    public Line3D(Vector3f start, Vector3f end, Vector3f color, float width) {
         this.start = start;
         this.end = end;
         this.color = color;
+        this.width = width;
     }
 
     public Vector3f getStart() {
@@ -41,6 +50,14 @@ public class Line3D {
         this.color = color;
     }
 
+    public float getWidth() {
+        return width;
+    }
+
+    public void setWidth(float width) {
+        this.width = width;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null) return false;
@@ -49,7 +66,8 @@ public class Line3D {
         Line3D line3D = (Line3D) o;
         return Objects.equals(line3D.start, this.start) &&
                 Objects.equals(line3D.end, this.end) &&
-                Objects.equals(line3D.color, this.color);
+                Objects.equals(line3D.color, this.color) &&
+                Objects.equals(line3D.width, this.width);
     }
 
     @Override
@@ -59,6 +77,7 @@ public class Line3D {
                 result +
                 Objects.hashCode(this.start) +
                 Objects.hashCode(this.end) +
-                Objects.hashCode(this.color);
+                Objects.hashCode(this.color) +
+                Objects.hashCode(this.width);
     }
 }

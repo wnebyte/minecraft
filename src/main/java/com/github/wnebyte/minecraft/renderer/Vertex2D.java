@@ -15,12 +15,15 @@ public class Vertex2D {
 
     private int texId;
 
-    public Vertex2D(Vector2f position, int zIndex, Vector3f color, Vector2f texCoords, int texId) {
+    private boolean blend;
+
+    public Vertex2D(Vector2f position, int zIndex, Vector3f color, Vector2f texCoords, int texId, boolean blend) {
         this.position = position;
         this.zIndex = zIndex;
         this.color = color;
         this.texCoords = texCoords;
         this.texId = texId;
+        this.blend = blend;
     }
 
     public Vector2f getPosition() {
@@ -61,5 +64,13 @@ public class Vertex2D {
 
     public void setTexId(int texId) {
         this.texId = texId;
+    }
+
+    public boolean isBlend() {
+        return blend;
+    }
+
+    public void setBlend(boolean blend) {
+        this.blend = blend;
     }
 }

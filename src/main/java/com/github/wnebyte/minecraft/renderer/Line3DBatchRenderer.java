@@ -38,7 +38,10 @@ public class Line3DBatchRenderer implements Batch<Line3D> {
 
     private final Shader shader;
 
-    public Line3DBatchRenderer() {
+    private final float width;
+
+    public Line3DBatchRenderer(float width) {
+        this.width = width;
         this.data = new float[MAX_LINES * 2 * STRIDE];
         this.shader = Assets.getShader(Assets.DIR + "/shaders/line3D.glsl");
         this.size = 0;
@@ -59,7 +62,6 @@ public class Line3DBatchRenderer implements Batch<Line3D> {
         glVertexAttribPointer(1, COLOR_SIZE, GL_FLOAT, false, STRIDE_BYTES, COLOR_OFFSET);
         glEnableVertexAttribArray(1);
 
-        glLineWidth(2.0f);
         started = true;
     }
 
@@ -78,6 +80,8 @@ public class Line3DBatchRenderer implements Batch<Line3D> {
         shader.uploadMatrix4f(Shader.U_VIEW, viewMatrix);
         shader.uploadMatrix4f(Shader.U_PROJECTION, projectionMatrix);
 
+        glLineWidth(width);
+
         glBindVertexArray(vaoID);
         glDrawArrays(GL_LINES, 0, size * 2);
         glBindVertexArray(0);
@@ -95,7 +99,7 @@ public class Line3DBatchRenderer implements Batch<Line3D> {
 
     @Override
     public boolean add(Line3D line) {
-        if (atCapacity()) {
+        if (line.getWidth() != width || atCapacity()) {
             return false;
         }
         int index = size * 2 * STRIDE;

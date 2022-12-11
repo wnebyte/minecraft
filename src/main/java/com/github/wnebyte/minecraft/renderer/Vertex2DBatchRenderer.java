@@ -67,8 +67,11 @@ public class Vertex2DBatchRenderer implements Batch<Vertex2D> {
 
     private final int zIndex;
 
-    public Vertex2DBatchRenderer(int zIndex) {
+    private final boolean blend;
+
+    public Vertex2DBatchRenderer(int zIndex, boolean blend) {
         this.zIndex = zIndex;
+        this.blend = blend;
         this.data = new float[BATCH_SIZE * STRIDE];
         this.shader = Assets.getShader(Assets.DIR + "/shaders/vertex2D.glsl");
         this.textures = new CapacitySet<>(TEX_SLOTS.length);
@@ -133,9 +136,20 @@ public class Vertex2DBatchRenderer implements Batch<Vertex2D> {
         }
         shader.uploadIntArray(Shader.U_TEXTURES, TEX_SLOTS);
 
+        // set render states
+        if (blend) {
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        }
+
         glBindVertexArray(vaoID);
         glDrawElements(GL_TRIANGLES, size + (size / 2), GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
+
+        // reset render states
+        if (blend) {
+            glDisable(GL_BLEND);
+        }
 
         // Reset batch for use on the next draw call
         Arrays.fill(data, 0, size * STRIDE, 0.0f);
@@ -151,7 +165,7 @@ public class Vertex2DBatchRenderer implements Batch<Vertex2D> {
 
     @Override
     public boolean add(Vertex2D vertex) {
-        if (vertex.getZIndex() != zIndex || atCapacity(vertex)) {
+        if (vertex.getZIndex() != zIndex || vertex.isBlend() ^ blend || atCapacity(vertex)) {
             return false;
         }
         int index = size * STRIDE;
@@ -175,12 +189,12 @@ public class Vertex2DBatchRenderer implements Batch<Vertex2D> {
         data[index + 7] = textures.indexOf(texId);
     }
 
-    private boolean atCapacity(Vertex2D element) {
-        return (size >= BATCH_SIZE || atTexCapacity(element));
+    private boolean atCapacity(Vertex2D vertex) {
+        return (size >= BATCH_SIZE || atTexCapacity(vertex));
     }
 
-    private boolean atTexCapacity(Vertex2D element) {
-        return ((element.getTexId() >= 0) && !(textures.add(element.getTexId())));
+    private boolean atTexCapacity(Vertex2D vertex) {
+        return ((vertex.getTexId() >= 0) && !(textures.add(vertex.getTexId())));
     }
 
     @Override

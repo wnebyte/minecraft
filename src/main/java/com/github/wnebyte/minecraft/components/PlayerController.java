@@ -8,9 +8,10 @@ import com.github.wnebyte.minecraft.renderer.Renderer;
 import com.github.wnebyte.minecraft.physics.Physics;
 import com.github.wnebyte.minecraft.physics.RaycastInfo;
 import com.github.wnebyte.minecraft.physics.components.Rigidbody;
+import com.github.wnebyte.minecraft.util.JColor;
+import static com.github.wnebyte.minecraft.core.MouseListener.isMouseButtonBeginDown;
 import static com.github.wnebyte.minecraft.core.KeyListener.isKeyBeginPress;
 import static com.github.wnebyte.minecraft.core.KeyListener.isKeyPressed;
-import static com.github.wnebyte.minecraft.core.MouseListener.isMouseButtonDown;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class PlayerController extends Component {
@@ -98,18 +99,17 @@ public class PlayerController extends Component {
 
         if (raycast.isHit()) {
             info = raycast;
-            renderer.drawBox3D(info.getCenter(), info.getSize(), 0f,
-                    new Vector3f(1f, 1f, 1f));
+            renderer.drawBox3D(info.getCenter(), info.getSize(), 0f, JColor.WHITE_VEC3, 4f);
         }
 
         // destroy block
-        if (isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && info != null && info.isHit() &&
+        if (isMouseButtonBeginDown(GLFW_MOUSE_BUTTON_LEFT) && info != null && info.isHit() &&
                 destroyBlockDebounce <= 0) {
             destroyBlock();
         }
 
         // place block
-        if (isMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT) && info != null && info.isHit() &&
+        if (isMouseButtonBeginDown(GLFW_MOUSE_BUTTON_RIGHT) && info != null && info.isHit() &&
                 placeBlockDebounce <= 0) {
             Block b = BlockMap.getBlock("sand");
             placeBlock(b);

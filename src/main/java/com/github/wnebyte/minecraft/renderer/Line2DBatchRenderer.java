@@ -43,10 +43,13 @@ public class Line2DBatchRenderer implements Batch<Line2D> {
 
     private final int zIndex;
 
+    private final float width;
+
     private final Shader shader;
 
-    public Line2DBatchRenderer(int zIndex) {
+    public Line2DBatchRenderer(int zIndex, float width) {
         this.zIndex = zIndex;
+        this.width = width;
         this.data = new float[MAX_LINES * 2 * STRIDE];
         this.shader = Assets.getShader(Assets.DIR + "/shaders/line2D.glsl");
         this.size = 0;
@@ -67,7 +70,6 @@ public class Line2DBatchRenderer implements Batch<Line2D> {
         glVertexAttribPointer(1, COLOR_SIZE, GL_FLOAT, false, STRIDE_BYTES, COLOR_OFFSET);
         glEnableVertexAttribArray(1);
 
-        glLineWidth(2.0f);
         started = true;
     }
 
@@ -87,6 +89,8 @@ public class Line2DBatchRenderer implements Batch<Line2D> {
         shader.uploadMatrix4f(Shader.U_VIEW, viewMatrix);
         shader.uploadMatrix4f(Shader.U_PROJECTION, projectionMatrix);
 
+        glLineWidth(width);
+
         glBindVertexArray(vaoID);
         glDrawArrays(GL_LINES, 0, size * 2);
         glBindVertexArray(0);
@@ -104,7 +108,7 @@ public class Line2DBatchRenderer implements Batch<Line2D> {
 
     @Override
     public boolean add(Line2D line) {
-        if (line.getZIndex() != zIndex || atCapacity()) {
+        if (line.getZIndex() != zIndex || line.getWidth() != width || atCapacity()) {
             return false;
         }
         int index = size * 2 * STRIDE;

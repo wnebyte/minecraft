@@ -6,6 +6,8 @@ import org.joml.Vector3f;
 
 public class Line2D {
 
+    public static final float DEFAULT_WIDTH = 2.0f;
+
     private Vector2f start;
 
     private Vector2f end;
@@ -14,11 +16,18 @@ public class Line2D {
 
     private Vector3f color;
 
+    private float width;
+
     public Line2D(Vector2f start, Vector2f end, int zIndex, Vector3f color) {
+        this(start, end, zIndex, color, DEFAULT_WIDTH);
+    }
+
+    public Line2D(Vector2f start, Vector2f end, int zIndex, Vector3f color, float width) {
         this.start = start;
         this.zIndex = zIndex;
         this.end = end;
         this.color = color;
+        this.width = width;
     }
 
     public Vector2f getStart() {
@@ -49,6 +58,14 @@ public class Line2D {
         this.color = color;
     }
 
+    public float getWidth() {
+        return width;
+    }
+
+    public void setWidth(float width) {
+        this.width = width;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null) return false;
@@ -58,7 +75,8 @@ public class Line2D {
         return Objects.equals(line2D.start, this.start) &&
                 Objects.equals(line2D.end, this.end) &&
                 Objects.equals(line2D.zIndex, this.zIndex) &&
-                Objects.equals(line2D.color, this.color);
+                Objects.equals(line2D.color, this.color) &&
+                Objects.equals(line2D.width, this.width);
     }
 
     @Override
@@ -69,6 +87,7 @@ public class Line2D {
                 Objects.hashCode(this.start) +
                 Objects.hashCode(this.end) +
                 Objects.hashCode(this.zIndex) +
-                Objects.hashCode(this.color);
+                Objects.hashCode(this.color) +
+                Objects.hashCode(this.width);
     }
 }
