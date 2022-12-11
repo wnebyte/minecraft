@@ -24,16 +24,16 @@ A minecraft clone built using LWJGL.
 - [x] Implement order independent transparency (OIT). 
 - [x] Implement a skybox.
 - [x] Implement raycasting.
-- [ ] Implement collision detection.
+- [x] Implement collision detection.
 - [x] Implement chunk serialization/deserialization.
 - [x] Make use of multi-threading/concurrency when loading and meshing chunks.
-- [x] Setup HUD. (Still not 100%)
+- [x] Setup HUD.
 - [x] Implement generic renderer.
 - [ ] Implement entity renderer.
 - [x] Fix font renderer.
 - [ ] Implement lighting system.
-- [ ] Implement lightweight immediate mode GUI.
+- [x] Implement lightweight immediate mode GUI.
 - [x] Implement inventory system.
-- [ ] Implement menus.
+- [x] Implement menus.
 - [ ] Add animations.
 - [ ] Implement a particle system.

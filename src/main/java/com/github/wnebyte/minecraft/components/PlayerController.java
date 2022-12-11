@@ -106,7 +106,6 @@ public class PlayerController extends Component {
         if (isMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT) && info != null && info.isHit() &&
                 destroyBlockDebounce <= 0) {
             destroyBlock();
-            destroyBlockDebounce = destroyBlockDebounceTime;
         }
 
         // place block
@@ -114,7 +113,6 @@ public class PlayerController extends Component {
                 placeBlockDebounce <= 0) {
             Block b = BlockMap.getBlock("sand");
             placeBlock(b);
-            placeBlockDebounce = placeBlockDebounceTime;
         }
     }
 
@@ -152,6 +150,7 @@ public class PlayerController extends Component {
             chunk.setBlock(b, index3D.x, index3D.y, index3D.z, true);
         }
         info = null;
+        placeBlockDebounce = placeBlockDebounceTime;
     }
 
     private Block destroyBlock() {
@@ -163,6 +162,7 @@ public class PlayerController extends Component {
             return Block.isAir(b) ? null : b;
         }
         info = null;
+        destroyBlockDebounce = destroyBlockDebounceTime;
         return null;
     }
 }

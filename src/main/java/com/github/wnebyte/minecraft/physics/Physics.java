@@ -46,6 +46,10 @@ public class Physics {
     }
 
     public boolean isOnGround(GameObject go, float height) {
-        return world.isOnGround(go, height);
+        return isOnGround(go, height, false);
+    }
+
+    public boolean isOnGround(GameObject go, float height, boolean draw) {
+        return world.isOnGround(go, height, draw);
     }
 }

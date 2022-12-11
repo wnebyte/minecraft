@@ -8,8 +8,10 @@ import com.github.wnebyte.minecraft.core.Component;
 import com.github.wnebyte.minecraft.core.Transform;
 import com.github.wnebyte.minecraft.world.Map;
 import com.github.wnebyte.minecraft.world.Block;
+import com.github.wnebyte.minecraft.renderer.Renderer;
 import com.github.wnebyte.minecraft.physics.components.Rigidbody;
 import com.github.wnebyte.minecraft.physics.components.BoxCollider;
+import com.github.wnebyte.minecraft.util.JColor;
 import com.github.wnebyte.minecraft.util.JMath;
 
 public class World {
@@ -86,11 +88,15 @@ public class World {
             velocity.z = JMath.clamp(velocity.z, -terminalVelocity.z, terminalVelocity.z);
 
             // resolve collisions
-            resolveCollision(go, transform, rb, bc);
+            resolveCollisions(go, transform, rb, bc);
         }
     }
 
     public RaycastInfo raycast(Vector3f origin, Vector3f normal, float maxDistance) {
+        return raycast(origin, normal, maxDistance, false);
+    }
+
+    public RaycastInfo raycast(Vector3f origin, Vector3f normal, float maxDistance, boolean draw) {
         RaycastInfo res = new RaycastInfo();
         res.hit = false;
 
@@ -99,6 +105,10 @@ public class World {
         }
 
         Vector3f rayEnd = JMath.add(origin, new Vector3f(normal).mul(maxDistance));
+        if (draw) {
+            Renderer renderer = Renderer.getInstance();
+            renderer.drawLine3D(origin, rayEnd, JColor.YELLOW_VEC3);
+        }
         // http://www.cse.yorku.ca/~amana/research/grid.pdf
         // Do some fancy math to figure out which voxel is the next voxel
         Vector3f blockCenter = JMath.ceil(origin);
@@ -210,7 +220,7 @@ public class World {
         return false;
     }
 
-    private void resolveCollision(GameObject go, Transform t1, Rigidbody rb, BoxCollider bc1) {
+    private void resolveCollisions(GameObject go, Transform t1, Rigidbody rb, BoxCollider bc1) {
         Vector3f min = new Vector3f(t1.position).add(bc1.getOffset())
                 .sub(new Vector3f(bc1.getSize()).mul(0.5f));
         Vector3f max = new Vector3f(t1.position).add(bc1.getOffset())
@@ -257,10 +267,30 @@ public class World {
     }
 
     public boolean isOnGround(GameObject go, float height) {
+        return isOnGround(go, height, false);
+    }
+
+    public boolean isOnGround(GameObject go, float height, boolean draw) {
         BoxCollider bc = go.getComponent(BoxCollider.class);
-        Vector3f origin = new Vector3f(go.transform.position).add(bc.getOffset()).sub(bc.getSize().mul(0.5f));
-        RaycastInfo info = raycast(origin, new Vector3f(0, -1, 0), height);
-        return info.isHit();
+        if (bc == null) {
+            return false;
+        }
+        Vector3f tl = new Vector3f(go.transform.position).add(bc.getOffset()).sub(new Vector3f(bc.getSize()).mul(0.5f));
+        Vector3f tr = new Vector3f(tl).add(bc.getSize().x, 0, 0);
+        Vector3f bl = new Vector3f(tl).add(0, 0, bc.getSize().z);
+        Vector3f br = new Vector3f(bl).add(bc.getSize().x, 0, 0);
+        Vector3f center = new Vector3f(tl).add(bc.getSize().x / 2.0f, 0, bc.getSize().z / 2.0f);
+        Vector3f[] vertices = { tl, tr, bl, br, center };
+        Vector3f normal = new Vector3f(0, -1, 0);
+
+        for (Vector3f origin : vertices) {
+            RaycastInfo info = raycast(origin, normal, height, draw);
+            if (info.isHit()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private GameObject createGameObject(Transform transform, Component... components) {
@@ -318,6 +348,7 @@ public class World {
         float abs = Math.abs(penetration);
         Vector3f expandedSize = new Vector3f(bc1.getSize()).add(bc2.getSize());
         Vector3f halfSize = new Vector3f(expandedSize).div(2.0f);
+
         if (axis.equals(X_AXIS)) {
             if (abs > halfSize.x) {
                 penetration = expandedSize.x - abs;
@@ -331,6 +362,7 @@ public class World {
                 penetration = expandedSize.z - abs;
             }
         }
+
         return penetration;
     }
 

@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Random;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import org.joml.Vector2i;
@@ -608,8 +607,24 @@ public class Chunk {
         cZP = map.getChunk(chunkCoordX, chunkCoordZ + 1);
     }
 
-    public int getHeight(int x, int z) {
-        return generator.getHeight(x, z, MIN_BIOME_HEIGHT, MAX_BIOME_HEIGHT);
+    public int getHeight(int i, int k) {
+        int jMax = Chunk.HEIGHT - 1;
+        for (int j = jMax; j >= 0; j--) {
+            Vector3i index = new Vector3i(i, j, k);
+            Block block = getBlock(index);
+            if (!Block.isAir(block)) {
+                return j;
+            }
+        }
+        return -1;
+    }
+
+    public Vector3i toIndex3D(Vector3f pos) {
+        return Chunk.world2Index3D(pos, chunkCoords);
+    }
+
+    public Vector3f toWorldCoords(int y) {
+        return Chunk.toWorldCoords(chunkCoords, y);
     }
 
     public Vector3f getChunkPos() {

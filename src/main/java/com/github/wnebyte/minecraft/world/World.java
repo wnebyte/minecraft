@@ -144,7 +144,7 @@ public class World {
         if (bc != null) {
             Renderer renderer = Renderer.getInstance();
             renderer.drawBox3D(new Vector3f(go.transform.position).add(bc.getOffset()), bc.getSize(),
-                    0, new Vector3f(252f / 255f, 248f / 255f, 3f / 255f));
+                    0, JColor.YELLOW_VEC3);
         }
     }
 

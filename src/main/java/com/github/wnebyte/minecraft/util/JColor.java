@@ -14,6 +14,8 @@ public class JColor {
 
     public static final int WHITE_HEX = 0xFFFFFF;
 
+    public static final Vector3f YELLOW_VEC3 = new Vector3f(252f / 255f, 248f / 255f, 3f / 255f);
+
     public static int toInt(Vector3f rgb) {
         int value = (((int)rgb.x & 0xFF) << 16) |
                     (((int)rgb.y & 0xFF) << 8)  |
