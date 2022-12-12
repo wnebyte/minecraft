@@ -36,4 +36,4 @@ A minecraft clone built using LWJGL.
 - [x] Implement inventory system.
 - [x] Implement menus.
 - [ ] Add animations.
-- [ ] Implement a particle system.
+- [x] Implement a particle system.
