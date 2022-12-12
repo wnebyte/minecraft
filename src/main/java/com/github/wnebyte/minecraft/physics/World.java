@@ -115,7 +115,7 @@ public class World {
         }
         // http://www.cse.yorku.ca/~amana/research/grid.pdf
         // Do some fancy math to figure out which voxel is the next voxel
-        Vector3f blockCenter = JMath.ceil(origin);
+        Vector3f blockCenter = JMath.round(origin);
         Vector3f step        = JMath.sign(normal);
         // Max amount we can step in any direction of the ray, and remain in the voxel
         Vector3f blockCenterToOriginSign = JMath.sign(JMath.sub(blockCenter, origin));
@@ -170,54 +170,53 @@ public class World {
     }
 
     private boolean doRaycast(Vector3f origin, Vector3f normal, float maxDistance, Vector3f blockCenter, RaycastInfo out) {
-        Block b = map.getBlock(blockCenter);
+        Block block = map.getBlock(blockCenter);
 
-        if (!Block.isAir(b)) {
-            BoxCollider box = DEFAULT_BOX_COLLIDER;
+        if (Block.isSolid(block)) {
             Transform transform = new Transform(blockCenter);
+            BoxCollider box = DEFAULT_BOX_COLLIDER;
+            Vector3f min = new Vector3f(transform.position).add(box.getOffset())
+                    .sub(new Vector3f(box.getSize()).mul(0.5f));
+            Vector3f max = new Vector3f(transform.position).add(box.getOffset())
+                    .add(new Vector3f(box.getSize()).mul(0.5f));
 
-            if (b.isSolid()) {
-                Vector3f min = JMath.sub(transform.position, JMath.add(JMath.mul(box.getSize(), 0.5f), box.getOffset()));
-                Vector3f max = JMath.add(transform.position, JMath.add(JMath.mul(box.getSize(), 0.5f), box.getOffset()));
+            float t1 = (min.x - origin.x) / (JMath.compare(normal.x, 0.0f) ? 0.00001f : normal.x);
+            float t2 = (max.x - origin.x) / (JMath.compare(normal.x, 0.0f) ? 0.00001f : normal.x);
+            float t3 = (min.y - origin.y) / (JMath.compare(normal.y, 0.0f) ? 0.00001f : normal.y);
+            float t4 = (max.y - origin.y) / (JMath.compare(normal.y, 0.0f) ? 0.00001f : normal.y);
+            float t5 = (min.z - origin.z) / (JMath.compare(normal.z, 0.0f) ? 0.00001f : normal.z);
+            float t6 = (max.z - origin.z) / (JMath.compare(normal.z, 0.0f) ? 0.00001f : normal.z);
+            float tmin = Math.max(Math.max(Math.min(t1, t2), Math.min(t3, t4)), Math.min(t5, t6));
+            float tmax = Math.min(Math.min(Math.max(t1, t2), Math.max(t3, t4)), Math.max(t5, t6));
 
-                float t1 = (min.x - origin.x) / (JMath.compare(normal.x, 0.0f) ? 0.00001f : normal.x);
-                float t2 = (max.x - origin.x) / (JMath.compare(normal.x, 0.0f) ? 0.00001f : normal.x);
-                float t3 = (min.y - origin.y) / (JMath.compare(normal.y, 0.0f) ? 0.00001f : normal.y);
-                float t4 = (max.y - origin.y) / (JMath.compare(normal.y, 0.0f) ? 0.00001f : normal.y);
-                float t5 = (min.z - origin.z) / (JMath.compare(normal.z, 0.0f) ? 0.00001f : normal.z);
-                float t6 = (max.z - origin.z) / (JMath.compare(normal.z, 0.0f) ? 0.00001f : normal.z);
-                float tmin = Math.max(Math.max(Math.min(t1, t2), Math.min(t3, t4)), Math.min(t5, t6));
-                float tmax = Math.min(Math.min(Math.max(t1, t2), Math.max(t3, t4)), Math.max(t5, t6));
-
-                if (tmax < 0 || tmin > tmax) {
-                    // no intersection
-                    return false;
-                }
-
-                float depth;
-                if (tmin < 0.0f) {
-                    // The ray's origin is inside the AABB
-                    depth = tmax;
-                }
-                else {
-                    depth = tmin;
-                }
-
-                out.hit = true;
-                out.point = JMath.add(origin, JMath.mul(normal, depth));
-                out.center = JMath.add(transform.position, box.getOffset());
-                out.size = box.getSize();
-                out.contactNormal = JMath.sub(out.point, out.center);
-                float maxComponent = JMath.absMax(out.contactNormal);
-                if (maxComponent == Math.abs(out.contactNormal.x)) {
-                    out.contactNormal = JMath.mul(new Vector3f(1, 0, 0), Math.signum(out.contactNormal.x));
-                } else if (maxComponent == Math.abs(out.contactNormal.y)) {
-                    out.contactNormal = JMath.mul(new Vector3f(0, 1, 0), Math.signum(out.contactNormal.y));
-                } else if (maxComponent == Math.abs(out.contactNormal.z)) {
-                    out.contactNormal = JMath.mul(new Vector3f(0, 0, 1), Math.signum(out.contactNormal.z));
-                }
-                return true;
+            if (tmax < 0 || tmin > tmax) {
+                // no intersection
+                return false;
             }
+
+            float depth;
+            if (tmin < 0.0f) {
+                // The ray's origin is inside the AABB
+                depth = tmax;
+            }
+            else {
+                depth = tmin;
+            }
+
+            out.hit = true;
+            out.point = JMath.add(origin, JMath.mul(normal, depth));
+            out.center = JMath.add(transform.position, box.getOffset());
+            out.size = box.getSize();
+            out.contactNormal = JMath.sub(out.point, out.center);
+            float maxComponent = JMath.absMax(out.contactNormal);
+            if (maxComponent == Math.abs(out.contactNormal.x)) {
+                out.contactNormal = JMath.mul(new Vector3f(1, 0, 0), Math.signum(out.contactNormal.x));
+            } else if (maxComponent == Math.abs(out.contactNormal.y)) {
+                out.contactNormal = JMath.mul(new Vector3f(0, 1, 0), Math.signum(out.contactNormal.y));
+            } else if (maxComponent == Math.abs(out.contactNormal.z)) {
+                out.contactNormal = JMath.mul(new Vector3f(0, 0, 1), Math.signum(out.contactNormal.z));
+            }
+            return true;
 
         }
 
@@ -244,25 +243,25 @@ public class World {
                     Transform t2 = new Transform(blockPos);
                     BoxCollider bc2 = DEFAULT_BOX_COLLIDER;
 
-                    if (block != null && block.isSolid() && isColliding(t1, bc1, t2, bc2)) {
+                    if (Block.isSolid(block) && isColliding(t1, bc1, t2, bc2)) {
                         List<Penetration> c = getPenetrations(t1, bc1, t2, bc2);
                         Penetration penetration = c.stream().min((o1, o2) -> Float.compare(o1.abs, o2.abs)).orElse(null);
-                        if (penetration != null) {
-                            GameObject blockGo = createGameObject(t2, bc2);
-                            Vector3f contactNormal = new Vector3f(penetration.axis).mul(Math.signum(penetration.value));
-                            go.preSolve(blockGo, contactNormal);
-                            if (penetration.axis.equals(X_AXIS)) {
-                                t1.position.x += penetration.value;
-                                rb.velocity.x = 0.0f;
-                            } else if (penetration.axis.equals(Y_AXIS)) {
-                                t1.position.y += penetration.value;
-                                rb.velocity.y = 0.0f;
-                            } else {
-                                t1.position.z += penetration.value;
-                                rb.velocity.z = 0.0f;
-                            }
-                            go.postSolve(blockGo, contactNormal);
+                        assert (penetration != null) : "Error: (Physics.World) Penetration is null";
+                        GameObject blockGo = createGameObject(t2, bc2);
+                        Vector3f contactNormal = new Vector3f(penetration.axis).mul(Math.signum(penetration.value));
+
+                        go.preSolve(blockGo, contactNormal);
+                        if (penetration.axis.equals(X_AXIS)) {
+                            t1.position.x += penetration.value;
+                            rb.velocity.x = 0.0f;
+                        } else if (penetration.axis.equals(Y_AXIS)) {
+                            t1.position.y += penetration.value;
+                            rb.velocity.y = 0.0f;
+                        } else if (penetration.axis.equals(Z_AXIS)) {
+                            t1.position.z += penetration.value;
+                            rb.velocity.z = 0.0f;
                         }
+                        go.postSolve(blockGo, contactNormal);
                     }
 
                 }

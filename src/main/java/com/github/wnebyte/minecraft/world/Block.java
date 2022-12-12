@@ -91,6 +91,18 @@ public class Block {
         return (block == null || block.id == 1);
     }
 
+    public static boolean isSolid(Block block) {
+        return (block != null && block.isSolid());
+    }
+
+    public static boolean isTransparent(Block block) {
+        return (block != null && block.isTransparent());
+    }
+
+    public static boolean isBlendable(Block block) {
+        return (block != null && block.isBlendable());
+    }
+
     /*
     ###########################
     #          FIELDS         #

@@ -134,6 +134,6 @@ public class Line3DBatchRenderer implements Batch<Line3D> {
 
     @Override
     public int zIndex() {
-        return -6;
+        return -100;
     }
 }

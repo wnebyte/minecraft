@@ -1,5 +1,6 @@
 package com.github.wnebyte.minecraft.util;
 
+import java.util.ArrayList;
 import java.util.List;
 import com.github.wnebyte.minecraft.core.GameObject;
 import com.github.wnebyte.minecraft.core.Component;
@@ -11,7 +12,7 @@ public class GameObjectBuilder {
 
     private Transform transform;
 
-    private List<Component> components;
+    private List<Component> components = new ArrayList<>();
 
     public GameObjectBuilder setName(String name) {
         this.name = name;

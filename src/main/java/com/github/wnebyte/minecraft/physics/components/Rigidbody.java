@@ -11,6 +11,24 @@ public class Rigidbody extends Component {
 
     private boolean sensor;
 
+    public Rigidbody() {
+        this(new Vector3f(), new Vector3f());
+    }
+
+    public Rigidbody(Vector3f velocity) {
+        this(velocity, new Vector3f());
+    }
+
+    public Rigidbody(Vector3f velocity, Vector3f acceleration) {
+        this(velocity, acceleration, false);
+    }
+
+    public Rigidbody(Vector3f velocity, Vector3f acceleration, boolean sensor) {
+        this.velocity = velocity;
+        this.acceleration = acceleration;
+        this.sensor = sensor;
+    }
+
     public Vector3f getVelocity() {
         return velocity;
     }

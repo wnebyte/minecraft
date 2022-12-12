@@ -180,7 +180,7 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
         glDrawArrays(GL_TRIANGLES, 0, size * 36);
         glBindVertexArray(0);
 
-        Arrays.fill(data, 0, size * STRIDE, 0.0f);
+        Arrays.fill(data, 0, size * 36 * STRIDE, 0.0f);
         size = 0;
         glBindTexture(GL_TEXTURE_2D, 0);
         shader.detach();
@@ -252,7 +252,7 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
 
     // Todo: impl
     private boolean atTexCapacity(Cube3D cube) {
-        return !textures.containsAll(Arrays.asList(
+        return !textures.hasCapacity(Arrays.asList(
                 cube.getSideSprite().getTexId(),
                 cube.getTopSprite().getTexId(),
                 cube.getBottomSprite().getTexId()));
@@ -266,6 +266,6 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
 
     @Override
     public int zIndex() {
-        return 0;
+        return -100;
     }
 }

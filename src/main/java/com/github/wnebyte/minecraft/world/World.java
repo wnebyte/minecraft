@@ -27,7 +27,11 @@ public class World {
 
     public static final int CHUNK_SPAWN_AREA = 9 * 9;
 
+    private static final float PLAYER_WIDTH = 0.95f;
+
     private static final float PLAYER_HEIGHT = 2.0f;
+
+    private static final float PLAYER_DEPTH = 0.95f;
 
     /*
     ###########################
@@ -77,7 +81,7 @@ public class World {
         this.physics = new Physics(map);
         this.gameObjects = new ArrayList<>();
         this.pendingGameObjects = new LinkedList<>();
-        GameObject playerGo = Prefabs.createPlayer(0, 0, 0, 1.0f, PLAYER_HEIGHT, 1.0f);
+        GameObject playerGo = Prefabs.createPlayer(0, 0, 0, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_DEPTH);
         playerGo.addComponent(0, camera);
         gameObjects.add(playerGo);
         GameObject sunGo = Prefabs.createSun(200, 200, 200, 20f);

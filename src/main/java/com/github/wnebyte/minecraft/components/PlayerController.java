@@ -71,7 +71,7 @@ public class PlayerController extends Component {
     public void update(float dt) {
         destroyBlockDebounce -= dt;
         placeBlockDebounce -= dt;
-        onGround = true;
+        onGround = physics.isOnGround(gameObject, 0.2f);
 
         // jump
         if (isKeyBeginPress(GLFW_KEY_SPACE)) {
@@ -108,12 +108,12 @@ public class PlayerController extends Component {
         // destroy block
         if (isMouseButtonBeginDown(GLFW_MOUSE_BUTTON_LEFT) && info != null && info.isHit() &&
                 destroyBlockDebounce <= 0) {
-            Vector3f pos = info.getCenter();
-            Block block = destroyBlock(pos);
+            Vector3f position = info.getCenter();
+            Block block = destroyBlock(position);
             if (block != null) {
                 GameObject go = Prefabs.createGameObject(
-                        "Particle_Generator", new Transform(pos), new ParticleGenerator(block));
-                go.start(scene); // Todo: where should the scene be started?
+                        "Particle_Generator", new Transform(position), new ParticleGenerator(block));
+                go.start(scene);
                 scene.addGameObject(go);
             }
         }
