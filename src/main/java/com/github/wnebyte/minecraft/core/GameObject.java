@@ -29,6 +29,8 @@ public class GameObject {
 
     private final List<Component> components;
 
+    private boolean dead;
+
     /*
     ###########################
     #       CONSTRUCTORS      #
@@ -80,6 +82,7 @@ public class GameObject {
             Component c = components.get(i);
             c.destroy();
         }
+        dead = true;
     }
 
     public <T extends Component> T getComponent(Class<T> componentClass) {
@@ -131,6 +134,10 @@ public class GameObject {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public boolean isDead() {
+        return dead;
     }
 
     @Override

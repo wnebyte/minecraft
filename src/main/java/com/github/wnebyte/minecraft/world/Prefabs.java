@@ -1,6 +1,7 @@
 package com.github.wnebyte.minecraft.world;
 
 import org.joml.Vector3f;
+import com.github.wnebyte.minecraft.core.Component;
 import com.github.wnebyte.minecraft.core.GameObject;
 import com.github.wnebyte.minecraft.core.Transform;
 import com.github.wnebyte.minecraft.components.Sun;
@@ -10,6 +11,16 @@ import com.github.wnebyte.minecraft.physics.components.BoxCollider;
 import com.github.wnebyte.minecraft.physics.components.Rigidbody;
 
 public class Prefabs {
+
+    public static GameObject createGameObject(String name, Transform transform, Component... components) {
+        GameObject go = new GameObject(name);
+        go.addComponent(transform);
+        go.transform = transform;
+        for (Component c : components) {
+            go.addComponent(c);
+        }
+        return go;
+    }
 
     public static GameObject createGameObject(String name, float x, float y, float z, float scale) {
         return createGameObject(name, x, y, z, scale, scale, scale);

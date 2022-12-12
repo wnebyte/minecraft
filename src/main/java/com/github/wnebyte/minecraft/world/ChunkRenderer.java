@@ -66,9 +66,9 @@ public class ChunkRenderer {
         this.blendableShader = Assets.getShader(Assets.DIR + "/shaders/transparent.glsl");
         this.compositeShader = Assets.getShader(Assets.DIR + "/shaders/composite.glsl");
         this.texture = Assets.getTexture(Assets.DIR + "/images/generated/packedTextures.png");
-        this.drawCommands = new FlatDrawCommandBuffer(World.CHUNK_CAPACITY * 16);
-        this.transparentDrawCommands = new FlatDrawCommandBuffer(World.CHUNK_CAPACITY * 16);
-        this.blendableDrawCommands = new FlatDrawCommandBuffer(World.CHUNK_CAPACITY * 16);
+        this.drawCommands = new PrimitiveDrawCommandBuffer(World.CHUNK_CAPACITY * 16);
+        this.transparentDrawCommands = new PrimitiveDrawCommandBuffer(World.CHUNK_CAPACITY * 16);
+        this.blendableDrawCommands = new PrimitiveDrawCommandBuffer(World.CHUNK_CAPACITY * 16);
         this.subchunks = subchunks;
     }
 

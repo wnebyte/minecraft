@@ -76,7 +76,7 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
 
     private static final int[] TEX_SLOTS = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
-    private static final int BATCH_SIZE = 100;
+    private static final int BATCH_SIZE = 400;
 
     private static final float[][] VERTICES = {
             { -0.5f,  0.5f,  0.5f },
@@ -124,7 +124,7 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
     private final CapacitySet<Integer> textures;
 
     public Cube3DBatchRenderer() {
-        this.data = new float[BATCH_SIZE * STRIDE];
+        this.data = new float[BATCH_SIZE * 36 * STRIDE];
         this.shader = Assets.getShader(Assets.DIR + "/shaders/vertex3D.glsl");
         this.textures = new CapacitySet<>(TEX_SLOTS.length);
         this.size = 0;
@@ -137,7 +137,7 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
 
         vboID = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, vboID);
-        glBufferData(GL_ARRAY_BUFFER, BATCH_SIZE * STRIDE_BYTES, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, BATCH_SIZE * 36 * STRIDE_BYTES, GL_DYNAMIC_DRAW);
 
         glVertexAttribPointer(0, POS_SIZE, GL_FLOAT, false, STRIDE_BYTES, POS_OFFSET);
         glEnableVertexAttribArray(0);

@@ -2,7 +2,6 @@ package com.github.wnebyte.minecraft.renderer;
 
 import java.util.Objects;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 import com.github.wnebyte.minecraft.core.Transform;
 
 public class Cube3D {

@@ -3,7 +3,7 @@ package com.github.wnebyte.minecraft.renderer;
 import java.util.Arrays;
 import org.joml.Vector2i;
 
-public class FlatDrawCommandBuffer implements IDrawCommandBuffer {
+public class PrimitiveDrawCommandBuffer implements IDrawCommandBuffer {
 
     private final int[] drawCommands;
 
@@ -13,7 +13,7 @@ public class FlatDrawCommandBuffer implements IDrawCommandBuffer {
 
     private int size;
 
-    public FlatDrawCommandBuffer(int capacity) {
+    public PrimitiveDrawCommandBuffer(int capacity) {
         this.capacity = capacity;
         this.drawCommands = new int[4 * capacity];
         this.chunkCoords = new int[2 * capacity];

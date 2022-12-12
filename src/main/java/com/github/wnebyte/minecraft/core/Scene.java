@@ -104,6 +104,12 @@ public class Scene {
         }
     }
 
+    public void destroyGameObject(GameObject go) {
+        if (world != null) {
+            world.destroyGameObject(go);
+        }
+    }
+
     public List<GameObject> getGameObjects() {
         return (world != null) ? world.getGameObjects() : null;
     }

@@ -32,6 +32,8 @@ public class PlayerController extends Component {
 
     private Rigidbody rb;
 
+    private Scene scene;
+
     private transient Camera camera;
 
     private transient Inventory inventory;
@@ -56,12 +58,13 @@ public class PlayerController extends Component {
 
     @Override
     public void start(Scene scene) {
-        camera = scene.getCamera();
-        renderer = scene.getRenderer();
-        map = scene.getWorld().getMap();
-        physics = scene.getWorld().getPhysics();
-        inventory = gameObject.getComponent(Inventory.class);
-        rb = gameObject.getComponent(Rigidbody.class);
+        this.scene = scene;
+        this.camera = scene.getCamera();
+        this.renderer = scene.getRenderer();
+        this.map = scene.getWorld().getMap();
+        this.physics = scene.getWorld().getPhysics();
+        this.inventory = gameObject.getComponent(Inventory.class);
+        this.rb = gameObject.getComponent(Rigidbody.class);
     }
 
     @Override
@@ -105,7 +108,14 @@ public class PlayerController extends Component {
         // destroy block
         if (isMouseButtonBeginDown(GLFW_MOUSE_BUTTON_LEFT) && info != null && info.isHit() &&
                 destroyBlockDebounce <= 0) {
-            destroyBlock();
+            Vector3f pos = info.getCenter();
+            Block block = destroyBlock(pos);
+            if (block != null) {
+                GameObject go = Prefabs.createGameObject(
+                        "Particle_Generator", new Transform(pos), new ParticleGenerator(block));
+                go.start(scene); // Todo: where should the scene be started?
+                scene.addGameObject(go);
+            }
         }
 
         // place block
@@ -153,10 +163,10 @@ public class PlayerController extends Component {
         placeBlockDebounce = placeBlockDebounceTime;
     }
 
-    private Block destroyBlock() {
-        Chunk chunk = map.getChunk(info.getCenter());
+    private Block destroyBlock(Vector3f pos) {
+        Chunk chunk = map.getChunk(pos);
         if (chunk != null) {
-            Vector3i index3D = Chunk.world2Index3D(info.getCenter(), chunk.getChunkCoords());
+            Vector3i index3D = chunk.toIndex3D(pos);
             Block b = chunk.getBlock(index3D);
             chunk.setBlock(BlockMap.getBlock("air"), index3D.x, index3D.y, index3D.z, true);
             return Block.isAir(b) ? null : b;

@@ -41,6 +41,10 @@ public class Physics {
         }
     }
 
+    public void destroy(GameObject go) {
+        world.destroy(go);
+    }
+
     public RaycastInfo raycast(Vector3f origin, Vector3f normal, float maxDistance) {
         return world.raycast(origin, normal, maxDistance);
     }
@@ -51,5 +55,13 @@ public class Physics {
 
     public boolean isOnGround(GameObject go, float height, boolean draw) {
         return world.isOnGround(go, height, draw);
+    }
+
+    public Vector3f getGravity() {
+        return world.getGravity();
+    }
+
+    public Vector3f getTerminalVelocity() {
+        return world.getTerminalVelocity();
     }
 }

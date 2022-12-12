@@ -61,6 +61,10 @@ public class World {
         }
     }
 
+    public void destroy(GameObject go) {
+        gameObjects.remove(go);
+    }
+
     public void step(float dt, int velocityIterations, int positionIterations) {
         for (GameObject go : gameObjects) {
             Rigidbody rb = go.getComponent(Rigidbody.class);
@@ -295,6 +299,7 @@ public class World {
 
     private GameObject createGameObject(Transform transform, Component... components) {
         GameObject go = new GameObject("Local");
+        go.addComponent(transform);
         go.transform = transform;
         for (Component c : components) {
             go.addComponent(c);
@@ -376,5 +381,13 @@ public class World {
             }
         }
         return c;
+    }
+
+    public Vector3f getGravity() {
+        return gravity;
+    }
+
+    public Vector3f getTerminalVelocity() {
+        return terminalVelocity;
     }
 }

@@ -1,9 +1,6 @@
 package com.github.wnebyte.minecraft.world;
 
-import java.util.Set;
-import java.util.List;
-import java.util.HashSet;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -52,7 +49,11 @@ public class World {
 
     private final List<GameObject> gameObjects;
 
+    private final Queue<GameObject> pendingGameObjects;
+
     private final Vector3f lastCameraPos;
+
+    private boolean running;
 
     private float time;
 
@@ -75,6 +76,7 @@ public class World {
         this.skybox = new Skybox(camera);
         this.physics = new Physics(map);
         this.gameObjects = new ArrayList<>();
+        this.pendingGameObjects = new LinkedList<>();
         GameObject playerGo = Prefabs.createPlayer(0, 0, 0, 1.0f, PLAYER_HEIGHT, 1.0f);
         playerGo.addComponent(0, camera);
         gameObjects.add(playerGo);
@@ -99,6 +101,7 @@ public class World {
         GameObject playerGo = getGameObject("Player");
         playerGo.transform.position.set(pos);
         camera.setOffset(new Vector3f(0, PLAYER_HEIGHT / 2.0f, 0));
+        running = true;
     }
 
     public void update(float dt) {
@@ -109,8 +112,22 @@ public class World {
         float blend = JMath.clamp((time / 1440), 0.0f, 1.0f);
         skybox.setBlend(blend);
 
-        for (GameObject go : gameObjects) {
-            go.update(dt);
+        // update game objects
+        for (int i = 0; i < pendingGameObjects.size(); i++) {
+            GameObject go = pendingGameObjects.poll();
+            gameObjects.add(go);
+            physics.add(go);
+        }
+
+        for (int i = 0; i < gameObjects.size(); i++) {
+            GameObject go = gameObjects.get(i);
+            if (go.isDead()) {
+                gameObjects.remove(i);
+                physics.destroy(go);
+                i--;
+            } else {
+                go.update(dt);
+            }
         }
 
         // load/unload chunks
@@ -255,7 +272,17 @@ public class World {
     }
 
     public void addGameObject(GameObject go) {
-        gameObjects.add(go);
+        if (running) {
+            pendingGameObjects.add(go);
+        } else {
+            gameObjects.add(go);
+        }
+    }
+
+    public void destroyGameObject(GameObject go) {
+        go.destroy();
+        physics.destroy(go);
+        gameObjects.remove(go);
     }
 
     public List<GameObject> getGameObjects() {
