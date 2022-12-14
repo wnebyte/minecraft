@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
 import org.joml.Vector2f;
@@ -40,7 +41,7 @@ public class TexturePacker {
         }
     }
 
-    private static ByteBuffer toByteBuffer(List<Pixel> pixels) {
+    private static ByteBuffer toByteBuffer(Collection<Pixel> pixels) {
         ByteBuffer buffer = BufferUtils.createByteBuffer(pixels.size() * 4);
         for (Pixel pixel : pixels) {
             buffer.put(pixel.r);
@@ -217,6 +218,31 @@ public class TexturePacker {
         // write texture formats to fs
         String json = Settings.GSON.toJson(textureFormats);
         Files.write(configPath, json);
+    }
+
+    public List<Image> pack3D(String path, String configPath, int texWidth, int texHeight) {
+        File dir = new File(path);
+        File[] files = dir.listFiles(PNG_FILTER);
+        int numFiles = files.length;
+        List<TextureFormat> textureFormats = new ArrayList<>(numFiles);
+        List<Image> images = new ArrayList<>(numFiles);
+
+        for (int i = 0; i < numFiles; i++) {
+            File file = files[i];
+            Image image = new Image(file.getAbsolutePath(), 4, true);
+            Vector2f[] uvs = {
+                    new Vector2f(1, 1), // TR
+                    new Vector2f(1, 0), // BR
+                    new Vector2f(0, 0), // BL
+                    new Vector2f(0, 1)  // TL
+            };
+            TextureFormat tf = new TextureFormat(i, file.getName().split(".png")[0], uvs);
+            textureFormats.add(tf);
+            images.add(image);
+        }
+
+        JsonIO.write(configPath, textureFormats);
+        return images;
     }
 
     public void setTexCoordsExtractor(TexCoordsExtractor extractor) {

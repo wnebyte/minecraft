@@ -61,8 +61,8 @@ public class CollisionTestScene extends Scene {
 
     @Override
     public void start() {
-        LoadingScene.ResourceLoader loader = new LoadingScene.ResourceLoader();
-        loader.run();
+       // LoadingScene.ResourceLoader loader = new LoadingScene.ResourceLoader();
+       // loader.run();
         staticCube = new Cube3D(new Transform(
                 new Vector3f(0f, 0f, -1),
                 new Vector3f(1f, 1f, 1f)),

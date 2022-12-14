@@ -71,12 +71,12 @@ public class World {
     ###########################
     */
 
-    public World(Camera camera) {
+    public World(Camera camera, Texture texture) {
         this.camera = camera;
         this.lastCameraPos = new Vector3f(camera.getPosition());
         this.map = new Map(CHUNK_CAPACITY);
         this.subchunks = new Pool<>(World.CHUNK_CAPACITY * 16);
-        this.chunkRenderer = new ChunkRenderer(camera, subchunks);
+        this.chunkRenderer = new ChunkRenderer(camera, subchunks, texture);
         this.skybox = new Skybox(camera);
         this.physics = new Physics(map);
         this.gameObjects = new ArrayList<>();

@@ -4,7 +4,7 @@ layout (location=0) in uint aData;
 layout (location=1) in ivec2 aChunkPos;
 
 out vec3 pos;
-out vec2 uv;
+out vec3 uv;
 out struct Face {
     int id;
     vec3 tl;
@@ -66,12 +66,13 @@ void extractPosition(in uint data, out vec3 pos)
     pos = vec3(float(x), float(y), float(z));
 }
 
-void extractTexCoords(in uint data, out vec2 uv)
+void extractTexCoords(in uint data, out vec3 uv)
 {
     uint index = (data & UV_BITMASK) >> 6;
     int uvIndex = int((index * uint(8)) + (vertex * uint(2)));
     uv.x = texelFetch(uTexCoordsTexture, uvIndex + 0).r;
     uv.y = texelFetch(uTexCoordsTexture, uvIndex + 1).r;
+    uv.z = float(index);
 }
 
 void extractFace(in uint data, out Face face)
@@ -141,15 +142,15 @@ void main()
         fColor = vec3(109.0 / 255.0, 184.0 / 255.0, 79.0 / 255.0);
     }
 
-    float xOffset = float(aChunkPos.x) * 16.0;
-    float zOffset = float(aChunkPos.y) * 16.0;
-    gl_Position = uProjection * uView * vec4(pos.x + xOffset, pos.y, pos.z + zOffset, 1.0);
+    pos.x += float(aChunkPos.x) * 16.0;
+    pos.z += float(aChunkPos.y) * 16.0;
+    gl_Position = uProjection * uView * vec4(pos, 1.0);
 }
 
 #type fragment
 #version 460 core
 in vec3 pos;
-in vec2 uv;
+in vec3 uv;
 in struct Face {
     int id;
     vec3 tl;
@@ -163,7 +164,7 @@ flat in uint vertex;
 layout (location=1) out vec4 accum;
 layout (location=2) out float reveal;
 
-uniform sampler2D uTexture;
+uniform sampler2DArray uTexture;
 
 void getNormal(in Face face, out vec3 normal)
 {

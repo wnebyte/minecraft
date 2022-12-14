@@ -87,11 +87,9 @@ public class BlockMap {
         }
     }
 
-    public static void loadBlocks(String blockConfigPath, String textureConfigPath, String packedTexturePath) {
+    public static void loadBlocks(String blockConfigPath, String textureConfigPath, Texture texture) {
         String json = Files.read(textureConfigPath);
         TextureFormat[] tfs = Settings.GSON.fromJson(json, TextureFormat[].class);
-        Texture texture = Assets.getTexture(packedTexturePath);
-
         for (TextureFormat textureFormat : tfs) {
             textureFormat.setTexture(texture);
             textureFormats.put(textureFormat.getName(), textureFormat);
@@ -140,10 +138,9 @@ public class BlockMap {
         }
     }
 
-    public static void loadItems(String itemConfigPath, String textureConfigPath, String packedTexturePath) {
+    public static void loadItems(String itemConfigPath, String textureConfigPath, Texture texture) {
         String json = Files.read(textureConfigPath);
         TextureFormat[] tfs = Settings.GSON.fromJson(json, TextureFormat[].class);
-        Texture texture = Assets.getTexture(packedTexturePath);
 
         for (TextureFormat textureFormat : tfs) {
             textureFormat.setTexture(texture);
@@ -177,10 +174,9 @@ public class BlockMap {
         }
     }
 
-    public static void loadBlockItems(String textureConfigPath, String packedTexturePath) {
+    public static void loadBlockItems(String textureConfigPath, Texture texture) {
         String json = Files.read(textureConfigPath);
         TextureFormat[] tfs = Settings.GSON.fromJson(json, TextureFormat[].class);
-        Texture texture = Assets.getTexture(packedTexturePath);
 
         for (TextureFormat textureFormat : tfs) {
             Block block = getBlock(textureFormat.getName());

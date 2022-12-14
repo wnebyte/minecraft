@@ -1,5 +1,6 @@
 package com.github.wnebyte.minecraft.scenes.test;
 
+import com.github.wnebyte.minecraft.core.Scene;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import com.github.wnebyte.minecraft.core.Application;
@@ -12,7 +13,7 @@ import static com.github.wnebyte.minecraft.core.KeyListener.isKeyBeginPress;
 import static com.github.wnebyte.minecraft.core.KeyListener.isKeyPressed;
 import static org.lwjgl.glfw.GLFW.*;
 
-public class CubeRotationTestScene {
+public class CubeRotationTestScene extends Scene {
 
     private Camera camera;
 
@@ -34,32 +35,24 @@ public class CubeRotationTestScene {
 
     private Vector3f position = new Vector3f(-2.25f, 2.36f, 3.52f);
 
-    private Camera c = new Camera(
-            new Vector3f(position),                   // position
-            new Vector3f(0.0f, 0.0f, -1.0f), // forward
-            new Vector3f(0.0f, 1.0f, 0.0f),  // up
-            yaw,
-            pitch,
-            10f,
-            Camera.DEFAULT_MOUSE_SENSITIVITY,
-            fov,
-            Camera.DEFAULT_Z_NEAR,
-            10_000f);
-
     private float scale = 2.25f;
 
     private boolean drawLbls = false;
 
     public CubeRotationTestScene() {
-
+        super(Scene.DEFAULT_CAMERA);
     }
 
-
+    @Override
     public void start() {
-       // super.loadResources();
+       camera.setPosition(position);
+       camera.setYaw(yaw);
+       camera.setPitch(pitch);
+       camera.setZoom(fov);
+       camera.updateCameraVectors();
     }
 
-
+    @Override
     public void update(float dt) {
         camera.update(dt);
         Vector4f rotation = rotations[index];
@@ -119,16 +112,13 @@ public class CubeRotationTestScene {
                 -3.0f + 0.05f, 0.3f, 0, 0.0040f, 0xFFFF);
     }
 
-
     public void render() {
         renderer.flush(camera);
     }
 
-
     public Camera getCamera() {
         return camera;
     }
-
 
     public void processInput(float dt) {
         Vector4f rotation = rotations[index];

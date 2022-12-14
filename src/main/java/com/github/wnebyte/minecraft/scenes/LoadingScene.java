@@ -1,5 +1,6 @@
 package com.github.wnebyte.minecraft.scenes;
 
+import java.util.List;
 import com.github.wnebyte.minecraft.core.Application;
 import com.github.wnebyte.minecraft.core.Scene;
 import com.github.wnebyte.minecraft.core.Camera;
@@ -7,6 +8,7 @@ import com.github.wnebyte.minecraft.world.World;
 import com.github.wnebyte.minecraft.world.BlockMap;
 import com.github.wnebyte.minecraft.renderer.Texture;
 import com.github.wnebyte.minecraft.ui.JGui;
+import com.github.wnebyte.minecraft.util.Image;
 import com.github.wnebyte.minecraft.util.Assets;
 import com.github.wnebyte.minecraft.util.TerrainGenerator;
 import com.github.wnebyte.minecraft.util.TexturePacker;
@@ -20,7 +22,7 @@ public class LoadingScene extends Scene {
     ###########################
     */
 
-    public static class ResourceLoader implements Runnable {
+    public class ResourceLoader implements Runnable {
 
         private final String blockTexturePath = Assets.DIR + "/images/generated/packedTextures.png";
 
@@ -32,6 +34,7 @@ public class LoadingScene extends Scene {
 
         @Override
         public void run() {
+            /*
             TexturePacker packer = new TexturePacker(true, true);
 
             // load blocks
@@ -49,7 +52,24 @@ public class LoadingScene extends Scene {
             BlockMap.loadBlocks(
                     Assets.DIR + "/config/blockFormat.json",
                     Assets.DIR + "/config/textureFormat.json",
-                    blockTexturePath);
+                    blockTexture);
+            BlockMap.bufferTexCoords();
+             */
+
+            // load blocks
+            TexturePacker packer = new TexturePacker();
+            List<Image> images = packer.pack3D(
+                    Assets.DIR + "/images/blocks",
+                    Assets.DIR + "/config/textureFormat.json",
+                    32, 32);
+            texture = new Texture(images, new Texture.Configuration.Builder()
+                    .addParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR)
+                    .addParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+                    .build());
+            BlockMap.loadBlocks(
+                    Assets.DIR + "/config/blockFormat.json",
+                    Assets.DIR + "/config/textureFormat.json",
+                    texture);
             BlockMap.bufferTexCoords();
 
             // load items
@@ -67,7 +87,7 @@ public class LoadingScene extends Scene {
             BlockMap.loadItems(
                     Assets.DIR + "/config/itemFormat.json",
                     Assets.DIR + "/config/itemTextureFormat.json",
-                    itemTexturePath);
+                    itemTexture);
 
             // generate and load block items
             BlockMap.generateBlockItemImages(
@@ -85,7 +105,7 @@ public class LoadingScene extends Scene {
             Assets.addTexture(blockItemTexture);
             BlockMap.loadBlockItems(
                     Assets.DIR + "/config/blockItemTextureFormat.json",
-                    blockItemTexturePath);
+                    blockItemTexture);
 
             // load remaining assets
             TerrainGenerator.load(
@@ -101,6 +121,8 @@ public class LoadingScene extends Scene {
     */
 
     private GameScene gameScene;
+
+    private Texture texture;
 
     private int frames;
 
@@ -155,7 +177,7 @@ public class LoadingScene extends Scene {
         renderer.flush(camera);
         if (frames == 2) {
             resourceLoader.run();
-            gameScene = new GameScene(camera);
+            gameScene = new GameScene(camera, texture);
             gameScene.start();
             frames = -1;
         } else if (frames >= 0) {

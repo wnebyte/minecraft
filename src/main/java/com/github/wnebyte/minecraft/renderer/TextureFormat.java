@@ -44,6 +44,7 @@ public class TextureFormat {
         Sprite sprite = new Sprite();
         sprite.setTexture(texture);
         sprite.setTexCoords(uvs);
+        sprite.setZ(id);
         return sprite;
     }
 

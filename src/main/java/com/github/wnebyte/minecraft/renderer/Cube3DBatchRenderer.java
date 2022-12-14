@@ -58,9 +58,9 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
 
     private static final int COLOR_SIZE = 3;
 
-    private static final int UV_SIZE = 2;
+    private static final int UV_SIZE = 3;
 
-    private static final int TEX_ID_SIZE = 1;
+   // private static final int TEX_ID_SIZE = 1;
 
     private static final int POS_OFFSET = 0;
 
@@ -68,13 +68,13 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
 
     private static final int UV_OFFSET = COLOR_OFFSET + (COLOR_SIZE * Float.BYTES);
 
-    private static final int TEX_ID_OFFSET = UV_OFFSET + (UV_SIZE * Float.BYTES);
+   // private static final int TEX_ID_OFFSET = UV_OFFSET + (UV_SIZE * Float.BYTES);
 
-    private static final int STRIDE = POS_SIZE + COLOR_SIZE + UV_SIZE + TEX_ID_SIZE;
+    private static final int STRIDE = POS_SIZE + COLOR_SIZE + UV_SIZE;
 
     private static final int STRIDE_BYTES = STRIDE * Float.BYTES;
 
-    private static final int[] TEX_SLOTS = { 0, 1, 2, 3, 4, 5, 6, 7 };
+   // private static final int[] TEX_SLOTS = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
     private static final int BATCH_SIZE = 400;
 
@@ -121,12 +121,14 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
 
     private final Shader shader;
 
-    private final CapacitySet<Integer> textures;
+   // private final CapacitySet<Integer> textures;
+
+    private Texture texture;
 
     public Cube3DBatchRenderer() {
         this.data = new float[BATCH_SIZE * 36 * STRIDE];
-        this.shader = Assets.getShader(Assets.DIR + "/shaders/vertex3D.glsl");
-        this.textures = new CapacitySet<>(TEX_SLOTS.length);
+        this.shader = Assets.getShader(Assets.DIR + "/shaders/cube3D.glsl");
+       // this.textures = new CapacitySet<>(TEX_SLOTS.length);
         this.size = 0;
     }
 
@@ -148,8 +150,10 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
         glVertexAttribPointer(2, UV_SIZE, GL_FLOAT, false, STRIDE_BYTES, UV_OFFSET);
         glEnableVertexAttribArray(2);
 
+        /*
         glVertexAttribPointer(3, TEX_ID_SIZE, GL_FLOAT, false, STRIDE_BYTES, TEX_ID_OFFSET);
         glEnableVertexAttribArray(3);
+         */
 
         started = true;
     }
@@ -168,6 +172,9 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
         shader.use();
         shader.uploadMatrix4f(Shader.U_VIEW, viewMatrix);
         shader.uploadMatrix4f(Shader.U_PROJECTION, projectionMatrix);
+        texture.bind();
+        shader.uploadTexture(Shader.U_TEXTURE, 0);
+        /*
         int i = 0;
         for (int texId : textures) {
             glActiveTexture(GL_TEXTURE0 + i);
@@ -175,6 +182,7 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
             i++;
         }
         shader.uploadIntArray(Shader.U_TEXTURES, TEX_SLOTS);
+         */
 
         glBindVertexArray(vaoID);
         glDrawArrays(GL_TRIANGLES, 0, size * 36);
@@ -182,7 +190,7 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
 
         Arrays.fill(data, 0, size * 36 * STRIDE, 0.0f);
         size = 0;
-        glBindTexture(GL_TEXTURE_2D, 0);
+        texture.unbind();
         shader.detach();
     }
 
@@ -196,10 +204,7 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
         if (atCapacity(cube)) {
             return false;
         }
-        textures.addAll(Arrays.asList(
-                cube.getSideSprite().getTexId(),
-                cube.getTopSprite().getTexId(),
-                cube.getBottomSprite().getTexId()));
+        texture = cube.getSideSprite().getTexture();
         int index = size;
         loadVertexProperties(index, cube);
         size++;
@@ -215,7 +220,7 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
             index = INDICES[i];
             Vector4f pos = verts[index];
             Sprite sprite = sprite(i, cube);
-            Vector2f uv = uv(i, sprite);
+            Vector3f uv = uv(i, sprite);
             data[offset + 0] = pos.x;
             data[offset + 1] = pos.y;
             data[offset + 2] = pos.z;
@@ -224,7 +229,7 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
             data[offset + 5] = color.z;
             data[offset + 6] = uv.x;
             data[offset + 7] = uv.y;
-            data[offset + 8] = textures.indexOf(sprite.getTexId());
+            data[offset + 8] = uv.z;
             offset += STRIDE;
         }
     }
@@ -241,21 +246,23 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
         }
     }
 
-    private Vector2f uv(int index, Sprite sprite) {
+    private Vector3f uv(int index, Sprite sprite) {
         int mod = (index % 6);
-        return sprite.getTexCoords(mod);
+        return sprite.getTexCoords3(mod);
     }
 
     private boolean atCapacity(Cube3D cube) {
         return (size >= BATCH_SIZE || atTexCapacity(cube));
     }
 
-    // Todo: impl
     private boolean atTexCapacity(Cube3D cube) {
+        /*
         return !textures.hasCapacity(Arrays.asList(
                 cube.getSideSprite().getTexId(),
                 cube.getTopSprite().getTexId(),
                 cube.getBottomSprite().getTexId()));
+         */
+        return false;
     }
 
     @Override

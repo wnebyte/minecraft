@@ -37,7 +37,7 @@ public class ChunkRenderer {
 
     private int biboID;
 
-    private int cboID;
+    private int ccboID;
 
     private final Camera camera;
 
@@ -59,13 +59,14 @@ public class ChunkRenderer {
 
     private final Pool<Vector3i, Subchunk> subchunks;
 
-    public ChunkRenderer(Camera camera, Pool<Vector3i, Subchunk> subchunks) {
+    public ChunkRenderer(Camera camera, Pool<Vector3i, Subchunk> subchunks, Texture texture) {
         this.camera = camera;
         this.shader = Assets.getShader(Assets.DIR + "/shaders/opaque.glsl");
         this.transparentShader = shader;
         this.blendableShader = Assets.getShader(Assets.DIR + "/shaders/transparent.glsl");
         this.compositeShader = Assets.getShader(Assets.DIR + "/shaders/composite.glsl");
-        this.texture = Assets.getTexture(Assets.DIR + "/images/generated/packedTextures.png");
+       // this.texture = Assets.getTexture(Assets.DIR + "/images/generated/packedTextures.png");
+        this.texture = texture;
         this.drawCommands = new PrimitiveDrawCommandBuffer(World.CHUNK_CAPACITY * 16);
         this.transparentDrawCommands = new PrimitiveDrawCommandBuffer(World.CHUNK_CAPACITY * 16);
         this.blendableDrawCommands = new PrimitiveDrawCommandBuffer(World.CHUNK_CAPACITY * 16);
@@ -112,8 +113,8 @@ public class ChunkRenderer {
         glBufferData(GL_DRAW_INDIRECT_BUFFER,
                 (long)blendableDrawCommands.capacity() * DrawCommand.STRIDE_BYTES, GL_DYNAMIC_DRAW);
 
-        cboID = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, cboID);
+        ccboID = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, ccboID);
         glBufferData(GL_ARRAY_BUFFER,
                 (long)drawCommands.capacity() * (2 * Integer.BYTES), GL_DYNAMIC_DRAW);
 
@@ -131,31 +132,31 @@ public class ChunkRenderer {
                 Vector3f max = new Vector3f(min)
                         .add(new Vector3f(16.0f, 16.0f, 16.0f));
                 if (camera.getFrustrum().isBoxVisible(min, max)) {
-                    Range range;
-                    if ((range = subchunk.getVertexBuffer().getRange(0)).size() > 0) {
-                        addDrawCommand(subchunk, range, drawCommands);
+                    Slice slice;
+                    if ((slice = subchunk.getVertexBuffer().getSlice(0)).size() > 0) {
+                        addDrawCommand(subchunk, slice, drawCommands);
                     }
-                    if ((range = subchunk.getVertexBuffer().getRange(1)).size() > 0) {
-                        addDrawCommand(subchunk, range, transparentDrawCommands);
+                    if ((slice = subchunk.getVertexBuffer().getSlice(1)).size() > 0) {
+                        addDrawCommand(subchunk, slice, transparentDrawCommands);
                     }
-                    if ((range = subchunk.getVertexBuffer().getRange(2)).size() > 0) {
-                        addDrawCommand(subchunk, range, blendableDrawCommands);
+                    if ((slice = subchunk.getVertexBuffer().getSlice(2)).size() > 0) {
+                        addDrawCommand(subchunk, slice, blendableDrawCommands);
                     }
                 }
             }
         }
     }
 
-    private void addDrawCommand(Subchunk subchunk, Range range, IDrawCommandBuffer drawCommandBuffer) {
-        int first = subchunk.getFirst() + range.getFromIndex();
-        int vertexCount = range.size();
+    private void addDrawCommand(Subchunk subchunk, Slice slice, IDrawCommandBuffer drawCommandBuffer) {
+        int first = subchunk.getFirst() + slice.getFromIndex();
+        int vertexCount = slice.size();
         int baseInstance = drawCommandBuffer.size();
         DrawCommand drawCommand = new DrawCommand(vertexCount, 1, first, baseInstance);
         drawCommandBuffer.add(drawCommand, subchunk.getChunkCoords());
     }
 
     private void draw(int iboID, Shader shader, IDrawCommandBuffer drawCommandBuffer) {
-        glBindBuffer(GL_ARRAY_BUFFER, cboID);
+        glBindBuffer(GL_ARRAY_BUFFER, ccboID);
         glBufferSubData(GL_ARRAY_BUFFER, 0, drawCommandBuffer.getChunkCoords());
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, iboID);
         glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, drawCommandBuffer.getDrawCommands());
@@ -177,6 +178,7 @@ public class ChunkRenderer {
 
     public void render() {
         generateDrawCommands();
+        boolean compose = false;
 
         if (drawCommands.size() > 0) {
             // Render pass 1:
@@ -188,6 +190,7 @@ public class ChunkRenderer {
             glDisable(GL_BLEND);
             // draw opaque geometry
             draw(iboID, shader, drawCommands);
+            compose = true;
         }
 
         if (transparentDrawCommands.size() > 0) {
@@ -200,6 +203,7 @@ public class ChunkRenderer {
             glDisable(GL_BLEND);
             // draw transparent geometry
             draw(tiboID, transparentShader, transparentDrawCommands);
+            compose = true;
         }
 
         if (blendableDrawCommands.size() > 0) {
@@ -217,30 +221,31 @@ public class ChunkRenderer {
             glClearBufferfv(GL_COLOR, 2, Constants.ONE_FILLER_VEC);
             // draw blendable geometry
             draw(biboID, blendableShader, blendableDrawCommands);
+            compose = true;
         }
 
-        // Render pass 3:
-        // set composite render states
-        glDepthFunc(GL_ALWAYS);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        // configure framebuffer
-        glDrawBuffers(Constants.BUFS_ZERO_NONE_NONE);
-
-        // draw screen quad
-        Framebuffer framebuffer = Application.getFramebuffer();
-        compositeShader.use();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, framebuffer.getColorAttachment(1).getId());
-        compositeShader.uploadTexture(Shader.ACCUM, 0);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, framebuffer.getColorAttachment(2).getId());
-        compositeShader.uploadTexture(Shader.REVEAL, 1);
-        ScreenRenderer.render();
-        compositeShader.detach();
-
-        // reset render states
-        glDepthFunc(GL_LESS);
+        if (compose) {
+            // Render pass 4:
+            // set composite render states
+            glDepthFunc(GL_ALWAYS);
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            // configure framebuffer
+            glDrawBuffers(Constants.BUFS_ZERO_NONE_NONE);
+            // draw screen quad
+            Framebuffer framebuffer = Application.getFramebuffer();
+            compositeShader.use();
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, framebuffer.getColorAttachment(1).getId());
+            compositeShader.uploadTexture(Shader.ACCUM, 0);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, framebuffer.getColorAttachment(2).getId());
+            compositeShader.uploadTexture(Shader.REVEAL, 1);
+            ScreenRenderer.render();
+            compositeShader.detach();
+            // reset render states
+            glDepthFunc(GL_LESS);
+        }
     }
 
     public void destroy() {
@@ -249,7 +254,7 @@ public class ChunkRenderer {
         glDeleteBuffers(iboID);
         glDeleteBuffers(tiboID);
         glDeleteBuffers(biboID);
-        glDeleteBuffers(cboID);
+        glDeleteBuffers(ccboID);
         glDeleteVertexArrays(vaoID);
     }
 }

@@ -463,35 +463,35 @@ public class Chunk {
         return Application.submit(() -> this.mesh(subchunkLevel), this);
     }
 
-    private void createRenderData(int range, VertexBuffer buffer, Block b, int i, int j, int k, int access) {
+    private void createRenderData(int slice, VertexBuffer buffer, Block b, int i, int j, int k, int access) {
         // Left face (X-)
         if (visibleFaceXN(b, i-1, j, k)) {
-            appendFace(range, buffer, b, access, FaceType.LEFT);
+            appendFace(slice, buffer, b, access, FaceType.LEFT);
         }
         // Right face (X+)
         if (visibleFaceXP(b, i+1, j, k)) {
-            appendFace(range, buffer, b, access, FaceType.RIGHT);
+            appendFace(slice, buffer, b, access, FaceType.RIGHT);
         }
         // Back face (Z-)
         if (visibleFaceZN(b, i, j, k-1)) {
-            appendFace(range, buffer, b, access, FaceType.BACK);
+            appendFace(slice, buffer, b, access, FaceType.BACK);
         }
         // Front face (Z+)
         if (visibleFaceZP(b, i, j, k+1)) {
-            appendFace(range, buffer, b, access, FaceType.FRONT);
+            appendFace(slice, buffer, b, access, FaceType.FRONT);
         }
         // Bottom face (Y-)
         if (visibleFaceYN(b, i, j-1, k)) {
-            appendFace(range, buffer, b, access, FaceType.BOTTOM);
+            appendFace(slice, buffer, b, access, FaceType.BOTTOM);
         }
         // Top face (Y+)
         if (visibleFaceYP(b, i, j+1, k)) {
-            appendFace(range, buffer, b, access, FaceType.TOP);
+            appendFace(slice, buffer, b, access, FaceType.TOP);
         }
     }
 
-    private void appendFace(int range, VertexBuffer buffer, Block b, int access, FaceType face) {
-        buffer.append(range, access, b.getTexCoordsIndex(face), (byte)face.ordinal(), b.getColorByBiome(face));
+    private void appendFace(int slice, VertexBuffer buffer, Block b, int access, FaceType face) {
+        buffer.append(slice, access, b.getTexCoordsIndex(face), (byte)face.ordinal(), b.getColorByBiome(face));
     }
 
     private boolean visibleFaceXN(Block b, int i, int j, int k) {

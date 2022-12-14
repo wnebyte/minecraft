@@ -71,7 +71,8 @@ public class PlayerController extends Component {
     public void update(float dt) {
         destroyBlockDebounce -= dt;
         placeBlockDebounce -= dt;
-        onGround = physics.isOnGround(gameObject, 0.2f);
+       // onGround = physics.isOnGround(gameObject, 0.2f);
+        onGround = true;
 
         // jump
         if (isKeyBeginPress(GLFW_KEY_SPACE)) {

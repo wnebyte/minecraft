@@ -2,6 +2,7 @@ package com.github.wnebyte.minecraft.renderer;
 
 import java.util.Arrays;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
 
 public class Sprite {
 
@@ -52,6 +53,8 @@ public class Sprite {
 
     private Vector2f[] texCoords;
 
+    private float z;
+
     public Sprite() {
         this(null);
     }
@@ -90,6 +93,18 @@ public class Sprite {
         return uvx[index];
     }
 
+    public Vector3f getTexCoords3(int index) {
+        Vector3f[] uvx = new Vector3f[] {
+                new Vector3f(texCoords[0], z),
+                new Vector3f(texCoords[3], z),
+                new Vector3f(texCoords[2], z),
+                new Vector3f(texCoords[1], z),
+                new Vector3f(texCoords[0], z),
+                new Vector3f(texCoords[2], z)
+        };
+        return uvx[index];
+    }
+
     public Texture getTexture() {
         return texture;
     }
@@ -104,6 +119,14 @@ public class Sprite {
 
     public void setTexCoords(Vector2f[] texCoords) {
         this.texCoords = texCoords;
+    }
+
+    public float getZ() {
+        return z;
+    }
+
+    public void setZ(float z) {
+        this.z = z;
     }
 
     public float getWidth() {

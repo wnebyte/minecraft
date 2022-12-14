@@ -56,10 +56,8 @@ public class Assets {
         if (textures.containsKey(path)) {
             return textures.get(path);
         } else {
-            assert false : "Texture with path: " + path + " has not been added";
-            Texture texture = new Texture(path, true);
-            textures.put(file.getAbsolutePath(), texture);
-            return texture;
+            assert false : "Texture with path: " + path + " has not yet been added";
+            return null;
         }
     }
 

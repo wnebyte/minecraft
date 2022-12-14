@@ -3,7 +3,7 @@ package com.github.wnebyte.minecraft.renderer;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import com.github.wnebyte.minecraft.util.DebugStats;
-import com.github.wnebyte.minecraft.util.Range;
+import com.github.wnebyte.minecraft.util.Slice;
 
 public class VertexBuffer {
 
@@ -55,7 +55,7 @@ public class VertexBuffer {
 
     private final IntBuffer data;
 
-    private final Range[] ranges;
+    private final Slice[] slices;
 
     private int size;
 
@@ -71,9 +71,9 @@ public class VertexBuffer {
 
     public VertexBuffer(ByteBuffer buffer, int nRanges) {
         this.data = buffer.asIntBuffer();
-        this.ranges = new Range[nRanges];
+        this.slices = new Slice[nRanges];
         for (int i = 0; i < nRanges; i++) {
-            ranges[i] = new Range();
+            slices[i] = new Slice();
         }
         this.size = 0;
     }
@@ -86,7 +86,7 @@ public class VertexBuffer {
 
     public void reset() {
         data.clear();
-        for (Range range : ranges) { range.set(0, 0); }
+        for (Slice slice : slices) { slice.set(0, 0); }
         DebugStats.vertexMemUsed -= (long)STRIDE_BYTES * size;
         size = 0;
     }
@@ -107,18 +107,18 @@ public class VertexBuffer {
         data.put(shared | 0); // TR
         data.put(shared | 2); // BL
         size += STRIDE * 6;
-        Range range = ranges[index];
-        range.addToIndex(STRIDE * 6);
-        for (int i = index + 1; i < ranges.length; i++) {
-            Range r = ranges[i];
-            r.setFromIndex(range.getToIndex());
-            r.setToIndex(range.getToIndex());
+        Slice slice = slices[index];
+        slice.addToIndex(STRIDE * 6);
+        for (int i = index + 1; i < slices.length; i++) {
+            Slice s = slices[i];
+            s.setFromIndex(slice.getToIndex());
+            s.setToIndex(slice.getToIndex());
         }
         DebugStats.vertexMemUsed += (long)STRIDE_BYTES * 6;
     }
 
-    public Range getRange(int index) {
-        return ranges[index];
+    public Slice getSlice(int index) {
+        return slices[index];
     }
 
     public int size() {

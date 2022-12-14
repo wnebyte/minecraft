@@ -7,7 +7,12 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.awt.image.BufferedImage;
 import org.lwjgl.BufferUtils;
+import com.github.wnebyte.minecraft.util.Image;
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL12.glTexImage3D;
+import static org.lwjgl.opengl.GL12.glTexSubImage3D;
+import static org.lwjgl.opengl.GL30.GL_TEXTURE_2D_ARRAY;
+import static org.lwjgl.opengl.GL30.glGenerateMipmap;
 import static org.lwjgl.stb.STBImage.*;
 
 public class Texture {
@@ -371,6 +376,42 @@ public class Texture {
         }
 
         stbi_image_free(image);
+    }
+
+    public Texture(List<Image> images, Configuration conf) {
+        this.target = GL_TEXTURE_2D_ARRAY;
+        this.path = "generated";
+        this.id = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D_ARRAY, id);
+
+        if (conf.hasParameters()) {
+            for (Parameter param : conf.getParameters()) {
+                glTexParameteri(GL_TEXTURE_2D_ARRAY, param.getName(), param.getValue());
+            }
+        }
+
+        Image image;
+        if (!images.isEmpty() && ((image = images.get(0)) != null)) {
+            this.width     = image.getWidth();
+            this.height    = image.getHeight();
+            int imageCount = images.size();
+            int format     = (image.getChannels() == 4) ? GL_RGBA : GL_RGB;
+            int type       = GL_UNSIGNED_BYTE;
+            glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, format, width, height, imageCount,
+                    0, format, type, 0);
+
+            for (int i = 0; i < imageCount; i++) {
+                image = images.get(i);
+                glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0,
+                        0, 0, i, width, height, 1,
+                        format, type, image.getData());
+                image.free();
+            }
+
+            glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+        } else {
+            assert false : "Error: (Texture) No images available.";
+        }
     }
 
     public Texture(BufferedImage image) {

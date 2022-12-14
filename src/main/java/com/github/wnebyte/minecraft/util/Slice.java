@@ -2,21 +2,21 @@ package com.github.wnebyte.minecraft.util;
 
 import java.util.Objects;
 
-public class Range {
+public class Slice {
 
     private int fromIndex;
 
     private int toIndex;
 
-    public Range() {
+    public Slice() {
         this(0, 0);
     }
 
-    public Range(int fromIndex) {
+    public Slice(int fromIndex) {
         this(fromIndex, 0);
     }
 
-    public Range(int fromIndex, int toIndex) {
+    public Slice(int fromIndex, int toIndex) {
         this.fromIndex = fromIndex;
         this.toIndex = toIndex;
     }
@@ -58,10 +58,10 @@ public class Range {
     public boolean equals(Object o) {
         if (o == null) return false;
         if (o == this) return true;
-        if (!(o instanceof Range)) return false;
-        Range range = (Range)o;
-        return Objects.equals(range.fromIndex, this.fromIndex) &&
-                Objects.equals(range.toIndex, this.toIndex);
+        if (!(o instanceof Slice)) return false;
+        Slice slice = (Slice)o;
+        return Objects.equals(slice.fromIndex, this.fromIndex) &&
+                Objects.equals(slice.toIndex, this.toIndex);
     }
 
     @Override
@@ -75,6 +75,6 @@ public class Range {
 
     @Override
     public String toString() {
-        return String.format("Range[fromIndex: %d, toIndex: %d]", this.fromIndex, this.toIndex);
+        return String.format("Slice[fromIndex: %d, toIndex: %d]", this.fromIndex, this.toIndex);
     }
 }

@@ -3,16 +3,16 @@ package com.github.wnebyte.minecraft.scenes;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
+import org.joml.Vector3f;
 import com.github.wnebyte.minecraft.core.Application;
 import com.github.wnebyte.minecraft.core.Scene;
 import com.github.wnebyte.minecraft.core.Camera;
+import com.github.wnebyte.minecraft.renderer.Texture;
+import com.github.wnebyte.minecraft.ui.Hud;
 import com.github.wnebyte.minecraft.ui.InfoWindow;
 import com.github.wnebyte.minecraft.ui.JGuiWindow;
 import com.github.wnebyte.minecraft.world.World;
 import com.github.wnebyte.minecraft.components.Inventory;
-import com.github.wnebyte.minecraft.ui.Hud;
-import org.joml.Vector3f;
-
 import static com.github.wnebyte.minecraft.core.KeyListener.isKeyBeginPress;
 import static com.github.wnebyte.minecraft.core.KeyListener.isKeyPressed;
 import static org.lwjgl.glfw.GLFW.*;
@@ -28,9 +28,9 @@ public class GameScene extends Scene {
 
     private final AtomicLong counter;
 
-    public GameScene(Camera camera) {
+    public GameScene(Camera camera, Texture texture) {
         super(camera);
-        this.world = new World(camera);
+        this.world = new World(camera, texture);
         this.hud = new Hud(camera);
         this.windows = new ArrayList<>();
         this.windows.add(new InfoWindow(camera));
@@ -39,12 +39,13 @@ public class GameScene extends Scene {
 
     @Override
     public void start() {
-        if (!started) {
-            world.start(this);
-            hud.start(this);
-            world.load(counter);
-            started = true;
+        if (started) {
+            return;
         }
+        world.start(this);
+        hud.start(this);
+        world.load(counter);
+        started = true;
     }
 
     @Override

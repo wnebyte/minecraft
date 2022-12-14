@@ -4,7 +4,7 @@ layout (location=0) in uint aData;
 layout (location=1) in ivec2 aChunkPos;
 
 out vec3 pos;
-out vec2 uv;
+out vec3 uv;
 out struct Face {
     int id;
     vec3 tl;
@@ -66,12 +66,13 @@ void extractPosition(in uint data, out vec3 pos)
     pos = vec3(float(x), float(y), float(z));
 }
 
-void extractTexCoords(in uint data, out vec2 uv)
+void extractTexCoords(in uint data, out vec3 uv)
 {
     uint index = (data & UV_BITMASK) >> 6;
     int uvIndex = int((index * uint(8)) + (vertex * uint(2)));
     uv.x = texelFetch(uTexCoordsTexture, uvIndex + 0).r;
     uv.y = texelFetch(uTexCoordsTexture, uvIndex + 1).r;
+    uv.z = float(index);
 }
 
 void extractFace(in uint data, out Face face)
@@ -167,7 +168,7 @@ void main()
 #type fragment
 #version 460 core
 in vec3 pos;
-in vec2 uv;
+in vec3 uv;
 in struct Face {
     int id;
     vec3 tl;
@@ -188,7 +189,7 @@ const Light light = { vec3(-45.0), vec3(1.0), 0.1 };
 
 out vec4 color;
 
-uniform sampler2D uTexture;
+uniform sampler2DArray uTexture;
 uniform vec3 uSunPos;
 
 void getNormal(in Face face, out vec3 normal)
