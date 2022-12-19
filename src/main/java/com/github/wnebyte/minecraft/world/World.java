@@ -65,6 +65,12 @@ public class World {
 
     private float debounce = debounceTime;
 
+    private GameObject playerGo;
+
+    private GameObject sunGo;
+
+    private Renderer renderer;
+
     /*
     ###########################
     #       CONSTRUCTORS      #
@@ -81,11 +87,12 @@ public class World {
         this.physics = new Physics(map);
         this.gameObjects = new ArrayList<>();
         this.pendingGameObjects = new LinkedList<>();
-        GameObject playerGo = Prefabs.createPlayer(0, 0, 0, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_DEPTH);
+        this.playerGo = Prefabs.createPlayer(0, 0, 0, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_DEPTH);
         playerGo.addComponent(0, camera);
         gameObjects.add(playerGo);
-        GameObject sunGo = Prefabs.createSun(200, 200, 200, 20f);
+        this.sunGo = Prefabs.createSun(200, 200, 200, 20f);
         gameObjects.add(sunGo);
+        this.renderer = Renderer.getInstance();
     }
 
     /*
@@ -101,9 +108,8 @@ public class World {
             go.start(scene);
             physics.add(go);
         }
-        Vector3f pos = new Vector3f(CHUNK_SPAWN_AREA / 2.0f, 140f, CHUNK_SPAWN_AREA / 2.0f);
-        GameObject playerGo = getGameObject("Player");
-        playerGo.transform.position.set(pos);
+        Vector3f position = new Vector3f(CHUNK_SPAWN_AREA / 2.0f, 140f, CHUNK_SPAWN_AREA / 2.0f);
+        playerGo.transform.position.set(position);
         camera.setOffset(new Vector3f(0, PLAYER_HEIGHT / 2.0f, 0));
         running = true;
     }
@@ -133,6 +139,9 @@ public class World {
                 go.update(dt);
             }
         }
+
+        // tmp
+        chunkRenderer.setLightPos(sunGo.transform.position);
 
         // load/unload chunks
         if (!camera.getPosition().equals(lastCameraPos) && debounce <= 0) {

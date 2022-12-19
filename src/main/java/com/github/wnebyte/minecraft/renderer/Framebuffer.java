@@ -105,6 +105,9 @@ public class Framebuffer {
                 i++;
             }
             glDrawBuffers(bufs);
+        } else {
+            glDrawBuffers(new int[]{GL_NONE});
+            glReadBuffer(GL_NONE);
         }
         if (depthAttachment != null) {
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,

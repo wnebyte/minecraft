@@ -3,6 +3,7 @@ package com.github.wnebyte.minecraft.world;
 import java.nio.ByteBuffer;
 import org.joml.Vector3i;
 import org.joml.Vector3f;
+import org.joml.Matrix4f;
 import org.lwjgl.system.MemoryUtil;
 import com.github.wnebyte.minecraft.core.Application;
 import com.github.wnebyte.minecraft.core.Camera;
@@ -39,6 +40,8 @@ public class ChunkRenderer {
 
     private int ccboID;
 
+    private Framebuffer depthFBO;
+
     private final Camera camera;
 
     private final Shader shader;
@@ -48,6 +51,8 @@ public class ChunkRenderer {
     private final Shader blendableShader;
 
     private final Shader compositeShader;
+
+    private final Shader depthShader;
 
     private final Texture texture;
 
@@ -59,12 +64,15 @@ public class ChunkRenderer {
 
     private final Pool<Vector3i, Subchunk> subchunks;
 
+    private Vector3f lightPos = new Vector3f(0f, 0f, 0f);
+
     public ChunkRenderer(Camera camera, Pool<Vector3i, Subchunk> subchunks, Texture texture) {
         this.camera = camera;
         this.shader = Assets.getShader(Assets.DIR + "/shaders/opaque.glsl");
         this.transparentShader = shader;
         this.blendableShader = Assets.getShader(Assets.DIR + "/shaders/transparent.glsl");
         this.compositeShader = Assets.getShader(Assets.DIR + "/shaders/composite.glsl");
+        this.depthShader = Assets.getShader(Assets.DIR + "/shaders/depth.glsl");
        // this.texture = Assets.getTexture(Assets.DIR + "/images/generated/packedTextures.png");
         this.texture = texture;
         this.drawCommands = new PrimitiveDrawCommandBuffer(World.CHUNK_CAPACITY * 16);
@@ -155,30 +163,99 @@ public class ChunkRenderer {
         drawCommandBuffer.add(drawCommand, subchunk.getChunkCoords());
     }
 
-    private void draw(int iboID, Shader shader, IDrawCommandBuffer drawCommandBuffer) {
+    private void drawShadows(int iboID, Shader shader, IDrawCommandBuffer drawCommandBuffer, Matrix4f lightSpaceMatrix) {
+        // buffer data
         glBindBuffer(GL_ARRAY_BUFFER, ccboID);
         glBufferSubData(GL_ARRAY_BUFFER, 0, drawCommandBuffer.getChunkCoords());
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, iboID);
         glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, drawCommandBuffer.getDrawCommands());
         shader.use();
-        shader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
-        shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
+        // upload uniforms
+        shader.uploadMatrix4f(Shader.U_LIGHT_SPACE_MATRIX, lightSpaceMatrix);
+        // bind and upload 3D texture
         glActiveTexture(GL_TEXTURE0);
         texture.bind();
         shader.uploadTexture(Shader.U_TEXTURE, 0);
+        // bind and upload uv texture
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_BUFFER, BlockMap.getTexCoordsTextureId());
         shader.uploadTexture(Shader.U_TEX_COORDS_TEXTURE, 1);
+        glActiveTexture(GL_TEXTURE2);
+        // bind VAO and issue draw command
         glBindVertexArray(vaoID);
         glMultiDrawArraysIndirect(GL_TRIANGLES, 0, drawCommandBuffer.size(), 0);
+        // reset
+        texture.unbind();
+        shader.detach();
+    }
+
+    private void draw(int iboID, Shader shader, IDrawCommandBuffer drawCommandBuffer, Matrix4f lightSpaceMatrix, Texture depthAttachment) {
+        // buffer data
+        glBindBuffer(GL_ARRAY_BUFFER, ccboID);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, drawCommandBuffer.getChunkCoords());
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, iboID);
+        glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, drawCommandBuffer.getDrawCommands());
+        shader.use();
+        // upload uniforms
+        shader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
+        shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
+        shader.uploadMatrix4f(Shader.U_LIGHT_SPACE_MATRIX, lightSpaceMatrix);
+        shader.uploadVec3f(Shader.U_VIEW_POS, camera.getPosition());
+        shader.uploadVec3f(Shader.U_LIGHT_POS, lightPos);
+        // bind and upload 3D texture
+        glActiveTexture(GL_TEXTURE0);
+        texture.bind();
+        shader.uploadTexture(Shader.U_TEXTURE, 0);
+        // bind and upload uv texture
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_BUFFER, BlockMap.getTexCoordsTextureId());
+        shader.uploadTexture(Shader.U_TEX_COORDS_TEXTURE, 1);
+        glActiveTexture(GL_TEXTURE2);
+        // bind and upload depth texture
+        glBindTexture(GL_TEXTURE_2D, depthAttachment.getId());
+        shader.uploadTexture(Shader.U_SHADOW_MAP, 3);
+        // bind VAO and issue draw command
+        glBindVertexArray(vaoID);
+        glMultiDrawArraysIndirect(GL_TRIANGLES, 0, drawCommandBuffer.size(), 0);
+        // reset
         texture.unbind();
         shader.detach();
         drawCommandBuffer.reset();
     }
 
+    private Matrix4f getLightSpaceMatrix() {
+        // calculate transformations
+        Matrix4f lightProjection = new Matrix4f().identity();
+        lightProjection.ortho(-100, 100, -100, 100, camera.getZNear(), camera.getZFar());
+        Matrix4f lightView = new Matrix4f().identity();
+        // eye - center - up
+        lightView.lookAt(new Vector3f(lightPos), new Vector3f(camera.getPosition()), new Vector3f(camera.getUp()));
+        Matrix4f lightSpaceMatrix = lightProjection.mul(lightView);
+        return lightSpaceMatrix;
+    }
+
     public void render() {
         generateDrawCommands();
+        Matrix4f lightSpaceMatrix = getLightSpaceMatrix();
+        Framebuffer framebuffer = Application.getFramebuffer();
+        Framebuffer depthFramebuffer = Application.getDepthFramebuffer();
+        Texture depthAttachment = depthFramebuffer.getDepthAttachment();
         boolean compose = false;
+        boolean shadows = true;
+
+        if (shadows) {
+            // Shadow render pass:
+            // bind depth framebuffer
+            depthFramebuffer.bind();
+            // configure depth framebuffer
+            glClear(GL_DEPTH_BUFFER_BIT);
+            // draw shadows
+            drawShadows(iboID, depthShader, drawCommands, lightSpaceMatrix);
+            // unbind depth framebuffer
+            depthFramebuffer.unbind();
+            // bind primary framebuffer
+            framebuffer.bind();
+        }
 
         if (drawCommands.size() > 0) {
             // Render pass 1:
@@ -188,8 +265,10 @@ public class ChunkRenderer {
             glDepthFunc(GL_LESS);
             glDepthMask(true);
             glDisable(GL_BLEND);
+            // configure framebuffer
+            glDrawBuffers(Constants.BUFS_ZERO_NONE_NONE);
             // draw opaque geometry
-            draw(iboID, shader, drawCommands);
+            draw(iboID, shader, drawCommands, lightSpaceMatrix, depthAttachment);
             compose = true;
         }
 
@@ -202,7 +281,7 @@ public class ChunkRenderer {
             glDepthMask(true);
             glDisable(GL_BLEND);
             // draw transparent geometry
-            draw(tiboID, transparentShader, transparentDrawCommands);
+            draw(tiboID, transparentShader, transparentDrawCommands, lightSpaceMatrix, depthAttachment);
             compose = true;
         }
 
@@ -220,7 +299,7 @@ public class ChunkRenderer {
             glClearBufferfv(GL_COLOR, 1, Constants.ZERO_FILLER_VEC);
             glClearBufferfv(GL_COLOR, 2, Constants.ONE_FILLER_VEC);
             // draw blendable geometry
-            draw(biboID, blendableShader, blendableDrawCommands);
+            draw(biboID, blendableShader, blendableDrawCommands, lightSpaceMatrix, depthAttachment);
             compose = true;
         }
 
@@ -233,7 +312,6 @@ public class ChunkRenderer {
             // configure framebuffer
             glDrawBuffers(Constants.BUFS_ZERO_NONE_NONE);
             // draw screen quad
-            Framebuffer framebuffer = Application.getFramebuffer();
             compositeShader.use();
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, framebuffer.getColorAttachment(1).getId());
@@ -256,5 +334,9 @@ public class ChunkRenderer {
         glDeleteBuffers(biboID);
         glDeleteBuffers(ccboID);
         glDeleteVertexArrays(vaoID);
+    }
+
+    public void setLightPos(Vector3f lightPos) {
+        this.lightPos.set(lightPos);
     }
 }

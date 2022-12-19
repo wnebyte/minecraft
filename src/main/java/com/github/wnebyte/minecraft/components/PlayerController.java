@@ -65,6 +65,7 @@ public class PlayerController extends Component {
         this.physics = scene.getWorld().getPhysics();
         this.inventory = gameObject.getComponent(Inventory.class);
         this.rb = gameObject.getComponent(Rigidbody.class);
+        this.rb.setSensor(true);
     }
 
     @Override
@@ -75,11 +76,13 @@ public class PlayerController extends Component {
         onGround = true;
 
         // jump
+        /*
         if (isKeyBeginPress(GLFW_KEY_SPACE)) {
             if (onGround) {
                 rb.velocity.y = (jumpBoost * jumpImpulse);
             }
         }
+         */
         // forward movement
         if (isKeyPressed(GLFW_KEY_W)) {
             handleMovement(Camera.Movement.FORWARD, dt);
@@ -95,6 +98,12 @@ public class PlayerController extends Component {
         // right movement
         if (isKeyPressed(GLFW_KEY_D)) {
             handleMovement(Camera.Movement.RIGHT, dt);
+        }
+        if (isKeyPressed(GLFW_KEY_SPACE)) {
+            handleMovement(Camera.Movement.UP, dt);
+        }
+        if (isKeyPressed(GLFW_KEY_LEFT_CONTROL)) {
+            handleMovement(Camera.Movement.DOWN, dt);
         }
 
         Vector3f origin = new Vector3f(camera.getPosition());

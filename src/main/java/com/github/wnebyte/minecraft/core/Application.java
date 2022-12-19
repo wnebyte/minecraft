@@ -106,9 +106,11 @@ public class Application {
 
     private Framebuffer framebuffer;
 
-    private float dt = 0.0f;
+    private Framebuffer depthFramebuffer;
 
-    private float lastFrame = 0.0f;
+    private float dt;
+
+    private float lastFrame;
 
     private boolean takeScreenshot;
 
@@ -183,6 +185,22 @@ public class Application {
                         .setType(GL_FLOAT)
                         .build()))
                 .build();
+        depthFramebuffer = new Framebuffer.Builder()
+                .setDepthAttachment(new Texture(new Texture.Configuration.Builder()
+                        .setTarget(GL_TEXTURE_2D)
+                        .setSize(window.getWidth(), window.getHeight())
+                        .setInternalFormat(GL_DEPTH_COMPONENT)
+                        .setFormat(GL_DEPTH_COMPONENT)
+                        .setType(GL_FLOAT)
+                        .addParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+                        .addParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+                       // .addParameter(GL_TEXTURE_WRAP_S, GL_REPEAT)
+                       // .addParameter(GL_TEXTURE_WRAP_T, GL_REPEAT)
+                        .addParameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER)
+                        .addParameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER)
+                        .addParameter(GL_TEXTURE_BORDER_COLOR, 1)
+                        .build()))
+                .build();
     }
 
     private void loop() {
@@ -203,6 +221,7 @@ public class Application {
                 }
             }
 
+            // poll for input
             window.pollEvents(dt);
             // Render pass 1:
             framebuffer.bind();
@@ -233,7 +252,9 @@ public class Application {
             // reset render states
             glEnable(GL_DEPTH_TEST);
 
+            // swap buffers
             window.swapBuffers();
+            // end frame
             KeyListener.endFrame();
             MouseListener.endFrame();
 
@@ -262,6 +283,10 @@ public class Application {
 
     public static Framebuffer getFramebuffer() {
         return Application.app.framebuffer;
+    }
+
+    public static Framebuffer getDepthFramebuffer() {
+        return Application.app.depthFramebuffer;
     }
 
     public static Window getWindow() {

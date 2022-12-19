@@ -14,9 +14,11 @@ out struct Face {
 } face;
 out vec3 fColor;
 flat out uint vertex;
+out vec4 fPosLightSpace;
 
 uniform mat4 uView;
 uniform mat4 uProjection;
+uniform mat4 uLightSpaceMatrix;
 uniform samplerBuffer uTexCoordsTexture;
 
 const vec3 VERTS[8] = {
@@ -162,6 +164,7 @@ void main()
 
     pos.x += float(aChunkPos.x) * 16.0;
     pos.z += float(aChunkPos.y) * 16.0;
+    fPosLightSpace = uLightSpaceMatrix * vec4(pos, 1.0);
     gl_Position = uProjection * uView * vec4(pos, 1.0);
 }
 
@@ -178,19 +181,14 @@ in struct Face {
 } face;
 in vec3 fColor;
 flat in uint vertex;
-
-struct Light {
-    vec3 direction;
-    vec3 color;
-    float ambientStrength;
-};
-
-const Light light = { vec3(-45.0), vec3(1.0), 0.1 };
+in vec4 fPosLightSpace;
 
 out vec4 color;
 
 uniform sampler2DArray uTexture;
-uniform vec3 uSunPos;
+uniform sampler2D uShadowMap;
+uniform vec3 uViewPos;
+uniform vec3 uLightPos;
 
 void getNormal(in Face face, out vec3 normal)
 {
@@ -217,30 +215,44 @@ void getNormal(in Face face, out vec3 normal)
     }
 }
 
+float shadowCalculation(vec4 fPosLightSpace, vec3 normal, vec3 lightDir)
+{
+    // perform perspective divide
+    vec3 projCoords = fPosLightSpace.xyz / fPosLightSpace.w;
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    if (projCoords.z > 1.0) {
+        return 0.0;
+    }
+    // get closest depth value from light's perspective (using [0,1] range fPosLightSpace as coords)
+    float closestDepth = texture(uShadowMap, projCoords.xy).r;
+    // get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+    // calculate bias used to counteract "shadow acne"
+    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    // check whether current frag pos is in shadow
+    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+    return shadow;
+}
+
 void main()
 {
-    vec4 objectColor = vec4(fColor, 1.0) * texture(uTexture, uv);
-
-    if (objectColor.a < 0.3) {
+    vec4 tmp = vec4(fColor, 1.0) * texture(uTexture, uv);
+    if (tmp.a < 0.3) {
         discard;
     }
-
-    color = objectColor;
-
-    /*
+    vec3 objectColor = tmp.rgb;
     vec3 normal;
     getNormal(face, normal);
-    vec3 lightDir = normalize(-light.direction);
-
+    vec3 lightColor = vec3(0.3);
     // ambient
-    vec3 ambient = light.ambientStrength * light.color;
-
+    vec3 ambient = 0.5 * lightColor;
     // diffuse
-    float diff = max(dot(normal, lightDir), 0.0);
-    vec3 diffuse = diff * light.color;
-
-    // result
-    vec3 result = (ambient + diffuse) * vec3(objectColor);
-    color = vec4(result, 1.0);
-    */
+    vec3 lightDir = normalize(uLightPos - pos);
+    float diff = max(dot(lightDir, normal), 0.0);
+    vec3 diffuse = diff * lightColor;
+    // calculate shadow
+    float shadow = shadowCalculation(fPosLightSpace, normal, lightDir);
+    vec3 lighting = (ambient + (1.0 - shadow) * diffuse) * objectColor;
+    color = vec4(lighting, 1.0);
 }

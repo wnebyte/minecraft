@@ -50,6 +50,8 @@ public class Shader {
 
     public static final String U_FONT_TEXTURE = "uFontTexture";
 
+    public static final String U_SHADOW_MAP = "uShadowMap";
+
     public static final String U_VIEW_POS = "uViewPos";
 
     public static final String U_MATERIALS = "uMaterials";
@@ -57,6 +59,12 @@ public class Shader {
     public static final String U_DIFFUSE_MAPS = "uDiffuseMaps";
 
     public static final String U_SPECULAR_MAPS = "uSpecularMaps";
+
+    public static final String U_LIGHT_POS = "uLightPos";
+
+    public static final String U_LIGHT_DIR = "uLightDir";
+
+    public static final String U_LIGHT_SPACE_MATRIX = "uLightSpaceMatrix";
 
     public static final String U_LIGHT = "uLight";
 

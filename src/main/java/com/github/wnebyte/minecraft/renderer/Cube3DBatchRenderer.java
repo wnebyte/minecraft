@@ -172,17 +172,10 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
         shader.use();
         shader.uploadMatrix4f(Shader.U_VIEW, viewMatrix);
         shader.uploadMatrix4f(Shader.U_PROJECTION, projectionMatrix);
-        texture.bind();
-        shader.uploadTexture(Shader.U_TEXTURE, 0);
-        /*
-        int i = 0;
-        for (int texId : textures) {
-            glActiveTexture(GL_TEXTURE0 + i);
-            glBindTexture(GL_TEXTURE_2D, texId);
-            i++;
+        if (texture != null) {
+            texture.bind();
+            shader.uploadTexture(Shader.U_TEXTURE, 0);
         }
-        shader.uploadIntArray(Shader.U_TEXTURES, TEX_SLOTS);
-         */
 
         glBindVertexArray(vaoID);
         glDrawArrays(GL_TRIANGLES, 0, size * 36);
@@ -190,7 +183,9 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
 
         Arrays.fill(data, 0, size * 36 * STRIDE, 0.0f);
         size = 0;
-        texture.unbind();
+        if (texture != null) {
+            texture.unbind();
+        }
         shader.detach();
     }
 
@@ -229,7 +224,7 @@ public class Cube3DBatchRenderer implements Batch<Cube3D> {
             data[offset + 5] = color.z;
             data[offset + 6] = uv.x;
             data[offset + 7] = uv.y;
-            data[offset + 8] = uv.z;
+            data[offset + 8] = (texture == null) ? -1 : uv.z;
             offset += STRIDE;
         }
     }

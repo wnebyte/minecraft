@@ -62,14 +62,6 @@ public class GameScene extends Scene {
         if (isKeyPressed(GLFW_KEY_ESCAPE)) {
             Application.getWindow().setShouldClose(true);
         }
-        if (isKeyPressed(GLFW_KEY_KP_ADD)) {
-            Vector3f offset = camera.getOffset();
-            offset.z += 0.5f;
-        }
-        if (isKeyPressed(GLFW_KEY_KP_SUBTRACT)) {
-            Vector3f offset = camera.getOffset();
-            offset.z -= 0.5f;
-        }
         if (isKeyPressed(GLFW_KEY_COMMA)) {
             camera.resetZoom();
         }
