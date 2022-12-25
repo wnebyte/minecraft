@@ -185,6 +185,7 @@ public class Application {
                         .setType(GL_FLOAT)
                         .build()))
                 .build();
+        /*
         depthFramebuffer = new Framebuffer.Builder()
                 .setDepthAttachment(new Texture(new Texture.Configuration.Builder()
                         .setTarget(GL_TEXTURE_2D)
@@ -200,6 +201,10 @@ public class Application {
                         .addParameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER)
                         .addParameter(GL_TEXTURE_BORDER_COLOR, 1)
                         .build()))
+                .build();
+         */
+        depthFramebuffer = new Framebuffer.Builder()
+                .setDepthAttachment(new Cubemap(window.getWidth(), window.getHeight(), Cubemap.PIXELATED_TEXTURE_PARAMS))
                 .build();
     }
 

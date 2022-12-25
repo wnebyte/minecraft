@@ -20,7 +20,7 @@ public class Skybox {
 
     private static final int STRIDE_BYTES = STRIDE * Float.BYTES;
 
-    private final float[] VERTICES = {
+    private static final float[] VERTICES = {
             -1.0f,  1.0f, -1.0f,
             -1.0f, -1.0f, -1.0f,
              1.0f, -1.0f, -1.0f,
@@ -68,17 +68,17 @@ public class Skybox {
 
     private int vboID;
 
-    private Camera camera;
-
-    private Shader shader;
-
-    private Cubemap dayCubemap;
-
-    private Cubemap nightCubemap;
-
     private float blend;
 
     private boolean started;
+
+    private final Camera camera;
+
+    private final Shader shader;
+
+    private final Cubemap dayCubemap;
+
+    private final Cubemap nightCubemap;
 
     public Skybox(Camera camera) {
         this(camera, new Cubemap(Cubemap.Type.DAY), new Cubemap(Cubemap.Type.NIGHT));

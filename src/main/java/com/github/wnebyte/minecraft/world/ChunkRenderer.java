@@ -163,7 +163,7 @@ public class ChunkRenderer {
         drawCommandBuffer.add(drawCommand, subchunk.getChunkCoords());
     }
 
-    private void drawShadows(int iboID, Shader shader, IDrawCommandBuffer drawCommandBuffer, Matrix4f lightSpaceMatrix) {
+    private void drawShadows(int iboID, Shader shader, IDrawCommandBuffer drawCommandBuffer, Matrix4f[] mats) {
         // buffer data
         glBindBuffer(GL_ARRAY_BUFFER, ccboID);
         glBufferSubData(GL_ARRAY_BUFFER, 0, drawCommandBuffer.getChunkCoords());
@@ -171,7 +171,9 @@ public class ChunkRenderer {
         glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, drawCommandBuffer.getDrawCommands());
         shader.use();
         // upload uniforms
-        shader.uploadMatrix4f(Shader.U_LIGHT_SPACE_MATRIX, lightSpaceMatrix);
+        shader.uploadMatrix4fArray(Shader.U_MATS, mats);
+        shader.uploadFloat(Shader.U_FAR_PLANE, camera.getZFar());
+        shader.uploadVec3f(Shader.U_LIGHT_POS, lightPos);
         // bind and upload 3D texture
         glActiveTexture(GL_TEXTURE0);
         texture.bind();
@@ -189,7 +191,7 @@ public class ChunkRenderer {
         shader.detach();
     }
 
-    private void draw(int iboID, Shader shader, IDrawCommandBuffer drawCommandBuffer, Matrix4f lightSpaceMatrix, Texture depthAttachment) {
+    private void draw(int iboID, Shader shader, IDrawCommandBuffer drawCommandBuffer, Texture depthAttachment) {
         // buffer data
         glBindBuffer(GL_ARRAY_BUFFER, ccboID);
         glBufferSubData(GL_ARRAY_BUFFER, 0, drawCommandBuffer.getChunkCoords());
@@ -199,9 +201,9 @@ public class ChunkRenderer {
         // upload uniforms
         shader.uploadMatrix4f(Shader.U_VIEW, camera.getViewMatrix());
         shader.uploadMatrix4f(Shader.U_PROJECTION, camera.getProjectionMatrix());
-        shader.uploadMatrix4f(Shader.U_LIGHT_SPACE_MATRIX, lightSpaceMatrix);
         shader.uploadVec3f(Shader.U_VIEW_POS, camera.getPosition());
         shader.uploadVec3f(Shader.U_LIGHT_POS, lightPos);
+        shader.uploadFloat(Shader.U_FAR_PLANE, camera.getZFar());
         // bind and upload 3D texture
         glActiveTexture(GL_TEXTURE0);
         texture.bind();
@@ -212,7 +214,7 @@ public class ChunkRenderer {
         shader.uploadTexture(Shader.U_TEX_COORDS_TEXTURE, 1);
         glActiveTexture(GL_TEXTURE2);
         // bind and upload depth texture
-        glBindTexture(GL_TEXTURE_2D, depthAttachment.getId());
+        glBindTexture(GL_TEXTURE_CUBE_MAP, depthAttachment.getId());
         shader.uploadTexture(Shader.U_SHADOW_MAP, 3);
         // bind VAO and issue draw command
         glBindVertexArray(vaoID);
@@ -234,9 +236,38 @@ public class ChunkRenderer {
         return lightSpaceMatrix;
     }
 
+    public Matrix4f[] getLightSpaceMatrices() {
+        float aspect = Application.getWindow().getAspectRatio();
+        float zNear = camera.getZNear();
+        float zFar = camera.getZFar();
+        Matrix4f lightProjection = new Matrix4f().identity();
+        lightProjection.perspective((float)Math.toRadians(90.0f), aspect, zNear, zFar);
+        Matrix4f[] mats = new Matrix4f[]{
+                new Matrix4f().identity().lookAt(
+                        new Vector3f(lightPos), new Vector3f(lightPos).add(new Vector3f( 1.0f, 0.0f,  0.0f)), new Vector3f(0.0f, -1.0f,  0.0f)),
+                new Matrix4f().identity().lookAt(
+                        new Vector3f(lightPos), new Vector3f(lightPos).add(new Vector3f(-1.0f, 0.0f,  0.0f)), new Vector3f(0.0f, -1.0f,  0.0f)),
+                new Matrix4f().identity().lookAt(
+                        new Vector3f(lightPos), new Vector3f(lightPos).add(new Vector3f(0.0f,  1.0f,  0.0f)), new Vector3f(0.0f,  0.0f,  1.0f)),
+                new Matrix4f().identity().lookAt(
+                        new Vector3f(lightPos), new Vector3f(lightPos).add(new Vector3f(0.0f, -1.0f,  0.0f)), new Vector3f(0.0f,  0.0f, -1.0f)),
+                new Matrix4f().identity().lookAt(
+                        new Vector3f(lightPos), new Vector3f(lightPos).add(new Vector3f(0.0f,  0.0f,  1.0f)), new Vector3f(0.0f, -1.0f,  0.0f)),
+                new Matrix4f().identity().lookAt(
+                        new Vector3f(lightPos), new Vector3f(lightPos).add(new Vector3f(0.0f,  0.0f, -1.0f)), new Vector3f(0.0f, -1.0f,  0.0f))
+
+        };
+        Matrix4f[] muls = new Matrix4f[mats.length];
+        for (int i = 0; i < mats.length; i++) {
+            Matrix4f mat = mats[i];
+            muls[i] = new Matrix4f(lightProjection).mul(mat);
+        }
+        return muls;
+    }
+
     public void render() {
         generateDrawCommands();
-        Matrix4f lightSpaceMatrix = getLightSpaceMatrix();
+        Matrix4f[] mats = getLightSpaceMatrices();
         Framebuffer framebuffer = Application.getFramebuffer();
         Framebuffer depthFramebuffer = Application.getDepthFramebuffer();
         Texture depthAttachment = depthFramebuffer.getDepthAttachment();
@@ -250,7 +281,7 @@ public class ChunkRenderer {
             // configure depth framebuffer
             glClear(GL_DEPTH_BUFFER_BIT);
             // draw shadows
-            drawShadows(iboID, depthShader, drawCommands, lightSpaceMatrix);
+            drawShadows(iboID, depthShader, drawCommands, mats);
             // unbind depth framebuffer
             depthFramebuffer.unbind();
             // bind primary framebuffer
@@ -268,7 +299,7 @@ public class ChunkRenderer {
             // configure framebuffer
             glDrawBuffers(Constants.BUFS_ZERO_NONE_NONE);
             // draw opaque geometry
-            draw(iboID, shader, drawCommands, lightSpaceMatrix, depthAttachment);
+            draw(iboID, shader, drawCommands, depthAttachment);
             compose = true;
         }
 
@@ -281,7 +312,7 @@ public class ChunkRenderer {
             glDepthMask(true);
             glDisable(GL_BLEND);
             // draw transparent geometry
-            draw(tiboID, transparentShader, transparentDrawCommands, lightSpaceMatrix, depthAttachment);
+            draw(tiboID, transparentShader, transparentDrawCommands, depthAttachment);
             compose = true;
         }
 
@@ -299,7 +330,7 @@ public class ChunkRenderer {
             glClearBufferfv(GL_COLOR, 1, Constants.ZERO_FILLER_VEC);
             glClearBufferfv(GL_COLOR, 2, Constants.ONE_FILLER_VEC);
             // draw blendable geometry
-            draw(biboID, blendableShader, blendableDrawCommands, lightSpaceMatrix, depthAttachment);
+            draw(biboID, blendableShader, blendableDrawCommands, depthAttachment);
             compose = true;
         }
 

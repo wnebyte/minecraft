@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import org.lwjgl.BufferUtils;
 import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER;
+import static org.lwjgl.opengl.GL32.glFramebufferTexture;
 
 public class Framebuffer {
 

@@ -299,6 +299,8 @@ public class Texture {
     ###########################
     */
 
+    public Texture() {}
+
     public Texture(String path, boolean pixelate) {
         this.target = GL_TEXTURE_2D;
         this.path = path;

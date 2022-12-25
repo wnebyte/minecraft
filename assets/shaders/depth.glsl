@@ -11,8 +11,6 @@ struct Face {
     vec3 br;
 };
 
-uniform mat4 uLightSpaceMatrix;
-
 const vec3 VERTS[8] = {
     vec3(-0.5f,  0.5f,  0.5f),
     vec3( 0.5f,  0.5f,  0.5f),
@@ -119,13 +117,48 @@ void main()
     pos.x += float(aChunkPos.x) * 16.0;
     pos.z += float(aChunkPos.y) * 16.0;
     // set position
-    gl_Position = uLightSpaceMatrix * vec4(pos, 1.0);
+    gl_Position = vec4(pos, 1.0);
+}
+
+#type geometry
+#version 460 core
+layout (triangles) in;
+layout (triangle_strip, max_vertices=18) out;
+
+uniform mat4 uMats[6];
+
+out vec4 fPos;
+
+void main()
+{
+    for (int face = 0; face < 6; ++face)
+    {
+        gl_Layer = face; // built-in variable that specifies which face to render to
+        for (int vertex = 0; vertex < 3; ++vertex)
+        {
+            fPos = gl_in[vertex].gl_Position;
+            gl_Position = uMats[face] * fPos;
+            EmitVertex();
+        }
+        EndPrimitive();
+    }
 }
 
 #type fragment
 #version 460 core
+in vec4 fPos;
+
+uniform vec3 uLightPos;
+uniform float uFarPlane;
 
 void main()
 {
-    // gl_FragDepth = gl_FragCoord.z;
+    // get distance between fragment and light source
+    float lightDistance = length(fPos.xyz - uLightPos);
+
+    // map to [0:1] range by dividing by far plane
+    lightDistance /= uFarPlane;
+
+    // write this as modified depth
+    gl_FragDepth = lightDistance;
 }

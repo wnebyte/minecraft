@@ -11,6 +11,7 @@ import com.github.wnebyte.minecraft.light.PointCaster;
 import com.github.wnebyte.minecraft.light.DirectionalCaster;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
 import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL32.GL_GEOMETRY_SHADER;
 
 public class Shader {
 
@@ -35,6 +36,10 @@ public class Shader {
     public static final String U_DAY_CUBEMAP = "uDayCubemap";
 
     public static final String U_NIGHT_CUBEMAP = "uNightCubemap";
+
+    public static final String U_MATS = "uMats";
+
+    public static final String U_FAR_PLANE = "uFarPlane";
 
     public static final String U_BLEND = "uBlend";
 
@@ -96,6 +101,8 @@ public class Shader {
 
     private String vertexSource;
 
+    private String geometrySource;
+
     private String fragmentSource;
 
     public Shader(String path) {
@@ -114,25 +121,56 @@ public class Shader {
             eol = src.indexOf(System.lineSeparator(), index);
             String secondPattern = src.substring(index, eol).trim();
 
-            if (firstPattern.equals("vertex")) {
-                vertexSource = split[1];
-            } else if (firstPattern.equals("fragment")) {
-                fragmentSource = split[1];
-            } else {
-                throw new IOException(
-                        "Unexpected token: '" + firstPattern + "'."
-                );
-            }
-            if (secondPattern.equals("vertex")) {
-                vertexSource = split[2];
-            } else if (secondPattern.equals("fragment")) {
-                fragmentSource = split[2];
-            } else {
-                throw new IOException(
-                        "Unexpected token: '" + secondPattern + "'."
-                );
-            }
+            // find the third pattern after #type
+            index = src.indexOf("#type", eol) + 6;
+            eol = src.indexOf(System.lineSeparator(), index);
+            String thirdPattern = src.substring(index, eol).trim();
 
+            switch (firstPattern) {
+                case "vertex":
+                    vertexSource = split[1];
+                    break;
+                case "geometry":
+                    geometrySource = split[1];
+                    break;
+                case "fragment":
+                    fragmentSource = split[1];
+                    break;
+                default:
+                    throw new IOException(
+                            "Unexpected token: '" + firstPattern + "'."
+                    );
+            }
+            switch (secondPattern) {
+                case "vertex":
+                    vertexSource = split[2];
+                    break;
+                case "geometry":
+                    geometrySource = split[2];
+                    break;
+                case "fragment":
+                    fragmentSource = split[2];
+                    break;
+                default:
+                    throw new IOException(
+                            "Unexpected token: '" + secondPattern + "'."
+                    );
+            }
+            switch (thirdPattern) {
+                case "vertex":
+                    vertexSource = split[3];
+                    break;
+                case "geometry":
+                    geometrySource = split[3];
+                    break;
+                case "fragment":
+                    fragmentSource = split[3];
+                    break;
+                default:
+                    throw new IOException(
+                            "Unexpected token: '" + thirdPattern + "'."
+                    );
+            }
         } catch (IOException e) {
             e.printStackTrace();
             assert false : "Error: Could not open file for shader: '" + path + "'.";
@@ -142,6 +180,7 @@ public class Shader {
 
     public void compile() {
         int vertexID;
+        int geometryID = 0;
         int fragmentID;
 
         // ===========================
@@ -178,11 +217,31 @@ public class Shader {
             assert false : "";
         }
 
-        // Todo: move to separate link method
+        // Create and Compile optional geometry shader
+        if (geometrySource != null) {
+            // Third load and compile the geometry shader
+            geometryID = glCreateShader(GL_GEOMETRY_SHADER);
+            // Pass the shader source to the GPU
+            glShaderSource(geometryID, geometrySource);
+            glCompileShader(geometryID);
+
+            // Check for errors in compilation process
+            success = glGetShaderi(geometryID, GL_COMPILE_STATUS);
+            if (success == GL_FALSE) {
+                int len = glGetShaderi(geometryID, GL_INFO_LOG_LENGTH);
+                System.out.println("ERROR: '" + path + "\n\tGeometry shader compilation failed.");
+                System.out.println(glGetShaderInfoLog(geometryID, len));
+                assert false : "";
+            }
+        }
+
         // Link shaders and check for errors
         id = glCreateProgram();
         glAttachShader(id, vertexID);
         glAttachShader(id, fragmentID);
+        if (geometryID > 0) {
+            glAttachShader(id, geometryID);
+        }
         glLinkProgram(id);
 
         // Check for linking errors
@@ -219,8 +278,19 @@ public class Shader {
         return vertexSource;
     }
 
+    public String getGeometrySource() {
+        return geometrySource;
+    }
+
     public String getFragmentSource() {
         return fragmentSource;
+    }
+
+    public void uploadMatrix4fArray(String varName, Matrix4f[] array) {
+        for (int i = 0; i < array.length; i++) {
+            Matrix4f mat4f = array[i];
+            uploadMatrix4f(varName + ".[" + i + "]", mat4f);
+        }
     }
 
     public void uploadMatrix4f(String varName, Matrix4f mat4f) {

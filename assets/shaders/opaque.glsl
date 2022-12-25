@@ -14,11 +14,9 @@ out struct Face {
 } face;
 out vec3 fColor;
 flat out uint vertex;
-out vec4 fPosLightSpace;
 
 uniform mat4 uView;
 uniform mat4 uProjection;
-uniform mat4 uLightSpaceMatrix;
 uniform samplerBuffer uTexCoordsTexture;
 
 const vec3 VERTS[8] = {
@@ -164,7 +162,6 @@ void main()
 
     pos.x += float(aChunkPos.x) * 16.0;
     pos.z += float(aChunkPos.y) * 16.0;
-    fPosLightSpace = uLightSpaceMatrix * vec4(pos, 1.0);
     gl_Position = uProjection * uView * vec4(pos, 1.0);
 }
 
@@ -181,14 +178,15 @@ in struct Face {
 } face;
 in vec3 fColor;
 flat in uint vertex;
-in vec4 fPosLightSpace;
 
 out vec4 color;
 
 uniform sampler2DArray uTexture;
-uniform sampler2D uShadowMap;
+uniform samplerCube uShadowMap;
+
 uniform vec3 uViewPos;
 uniform vec3 uLightPos;
+uniform float uFarPlane;
 
 void getNormal(in Face face, out vec3 normal)
 {
@@ -215,6 +213,7 @@ void getNormal(in Face face, out vec3 normal)
     }
 }
 
+/*
 float shadowCalculation(vec4 fPosLightSpace, vec3 normal, vec3 lightDir)
 {
     // perform perspective divide
@@ -231,6 +230,23 @@ float shadowCalculation(vec4 fPosLightSpace, vec3 normal, vec3 lightDir)
     // calculate bias used to counteract "shadow acne"
     float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
     // check whether current frag pos is in shadow
+    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+    return shadow;
+}
+*/
+
+float shadowCalculation(vec3 fPos)
+{
+    // get vector between fragment position and light position
+    vec3 fragToLight = fPos - uLightPos;
+    // use the light to fragment vector to sample from the depth map
+    float closestDepth = texture(uShadowMap, fragToLight).r;
+    // it is currently in linear range between [0,1]. Re-transform back to original value
+    closestDepth *= uFarPlane;
+    // now get current linear depth as the length between the fragment and light position
+    float currentDepth = length(fragToLight);
+    // now test for shadows
+    float bias = 0.05f;
     float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
     return shadow;
 }
@@ -252,7 +268,7 @@ void main()
     float diff = max(dot(lightDir, normal), 0.0);
     vec3 diffuse = diff * lightColor;
     // calculate shadow
-    float shadow = shadowCalculation(fPosLightSpace, normal, lightDir);
+    float shadow = shadowCalculation(pos);
     vec3 lighting = (ambient + (1.0 - shadow) * diffuse) * objectColor;
     color = vec4(lighting, 1.0);
 }

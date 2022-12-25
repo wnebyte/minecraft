@@ -2,6 +2,7 @@ package com.github.wnebyte.minecraft.renderer;
 
 import java.util.List;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import org.lwjgl.BufferUtils;
@@ -13,7 +14,7 @@ import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X;
 import static org.lwjgl.stb.STBImage.*;
 
-public class Cubemap {
+public class Cubemap extends Texture {
 
     /*
     ###########################
@@ -26,13 +27,69 @@ public class Cubemap {
         NIGHT;
     }
 
+    public static class Configuration {
+
+        private List<String> faces;
+
+        private List<Texture.Parameter> parameters;
+
+        private Configuration(List<String> faces, List<Texture.Parameter> parameters) {
+            this.faces = faces;
+            this.parameters = parameters;
+        }
+
+        public List<String> getFaces() {
+            return faces;
+        }
+
+        public List<Texture.Parameter> getParameters() {
+            return parameters;
+        }
+
+        public static class Builder {
+
+            private List<String> faces = new ArrayList<>();
+
+            private List<Texture.Parameter> parameters = new ArrayList<>();
+
+            public Builder setFaces(List<String> faces) {
+                this.faces = faces;
+                return this;
+            }
+
+            public Builder addFace(String... faces) {
+                this.faces.addAll(Arrays.asList(faces));
+                return this;
+            }
+
+            public Builder setParameters(List<Texture.Parameter> parameters) {
+                this.parameters = parameters;
+                return this;
+            }
+
+            public Builder addParameter(Texture.Parameter... parameters) {
+                this.parameters.addAll(Arrays.asList(parameters));
+                return this;
+            }
+
+            public Builder addParameter(int name, int value) {
+                this.parameters.add(new Texture.Parameter(name, value));
+                return this;
+            }
+
+            public Configuration build() {
+                return new Configuration(faces, parameters);
+            }
+        }
+    }
+
     /*
     ###########################
     #      STATIC FIELDS      #
     ###########################
     */
 
-    private static final List<String> FACES_DAY = Arrays.asList(
+    public static final List<String> DEFAULT_FACES_DAY = Arrays.asList(
             Assets.DIR + "/images/sky/dayRight.png",
             Assets.DIR + "/images/sky/dayLeft.png",
             Assets.DIR + "/images/sky/dayTop.png",
@@ -41,13 +98,29 @@ public class Cubemap {
             Assets.DIR + "/images/sky/dayFront.png"
     );
 
-    private static final List<String> FACES_NIGHT = Arrays.asList(
+    public static final List<String> DEFAULT_FACES_NIGHT = Arrays.asList(
             Assets.DIR + "/images/sky/nightRight.png",
             Assets.DIR + "/images/sky/nightLeft.png",
             Assets.DIR + "/images/sky/nightTop.png",
             Assets.DIR + "/images/sky/nightBottom.png",
             Assets.DIR + "/images/sky/nightBack.png",
             Assets.DIR + "/images/sky/nightFront.png"
+    );
+
+    public static final List<Texture.Parameter> DEFAULT_TEXTURE_PARAMS = Arrays.asList(
+            new Texture.Parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR),
+            new Texture.Parameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR),
+            new Texture.Parameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE),
+            new Texture.Parameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE),
+            new Texture.Parameter(GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE)
+    );
+
+    public static final List<Texture.Parameter> PIXELATED_TEXTURE_PARAMS = Arrays.asList(
+            new Texture.Parameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST),
+            new Texture.Parameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST),
+            new Texture.Parameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE),
+            new Texture.Parameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE),
+            new Texture.Parameter(GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE)
     );
 
     /*
@@ -65,16 +138,18 @@ public class Cubemap {
     */
 
     public Cubemap(Type type) {
+        this((type == Type.DAY) ? DEFAULT_FACES_DAY : DEFAULT_FACES_NIGHT, PIXELATED_TEXTURE_PARAMS);
+    }
+
+    public Cubemap(List<String> faces, List<Texture.Parameter> params) {
         this.id = glGenTextures();
         glBindTexture(GL_TEXTURE_CUBE_MAP, id);
 
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        for (Texture.Parameter param : params) {
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, param.getName(), param.getValue());
+        }
 
-        List<String> textures = (type == Type.NIGHT) ? FACES_NIGHT : FACES_DAY;
+        List<String> textures = faces;
         for (int i = 0; i < textures.size(); i++) {
             String path = textures.get(i);
             IntBuffer width = BufferUtils.createIntBuffer(1);
@@ -94,13 +169,27 @@ public class Cubemap {
                     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, w, h,
                             0, GL_RGBA, GL_UNSIGNED_BYTE, image);
                 } else {
-                    assert false : "Error: (Texture) Unknown number of channels '" + channels.get(0) + "'.";
+                    assert false : "Error: (Cubemap) Unknown number of channels '" + channels.get(0) + "'.";
                 }
             } else {
-                assert false : "Error: (Texture) Could not load image '" + path + "'.";
+                assert false : "Error: (Cubemap) Could not load image '" + path + "'.";
             }
 
             stbi_image_free(image);
+        }
+    }
+
+    public Cubemap(int width, int height, List<Texture.Parameter> params) {
+        this.id = glGenTextures();
+        glBindTexture(GL_TEXTURE_CUBE_MAP, id);
+
+        for (Texture.Parameter param : params) {
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, param.getName(), param.getValue());
+        }
+
+        for (int i = 0; i < 6; i++) {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, width, height,
+                    0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
         }
     }
 
